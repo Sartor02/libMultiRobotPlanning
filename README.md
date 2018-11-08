@@ -26,31 +26,20 @@ The following algorithms are currently supported:
 Tested on Ubuntu 16.04.
 
 ```
-mkdir build
-cd build
-cmake ..
 make
 ```
 
 ### Targets
 
-* `make`: Build examples, only
-* `make docs`: build doxygen documentation
+* `make`: Build all code
 * `make clang-format`: Re-format all source files
-* `make clang-tidy`: Run linter & static code analyzer
-* `make run-test`: Run unit-tests
-
-## Run specific tests
-
-```
-python3 ../test/test_next_best_assignment.py TestNextBestAssignment.test_1by2
-```
+* `make test`: Run unit-tests
 
 ## Run example instances
 
 ### ECBS
 
 ````
-./ecbs -i ../benchmark/32x32_obst204/map_32by32_obst204_agents10_ex1.yaml -o output.yaml -w 1.3
-python3 ../example/visualize.py ../benchmark/32x32_obst204/map_32by32_obst204_agents10_ex1.yaml output.yaml
+./build/ecbs -i benchmark/32x32_obst204/map_32by32_obst204_agents10_ex1.yaml -o output.yaml -w 1.3
+python3 example/visualize.py benchmark/32x32_obst204/map_32by32_obst204_agents10_ex1.yaml output.yaml
 ````

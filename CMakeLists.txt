@@ -30,7 +30,7 @@ endif (DOXYGEN_FOUND)
 
 # clang-tidy target (linter & static code analysis)
 add_custom_target(clang-tidy
-  COMMAND CMAKE_EXPORT_COMPILE_COMMANDS=ON run-clang-tidy-3.8.py ${CMAKE_CURRENT_SOURCE_DIR})
+  COMMAND CMAKE_EXPORT_COMPILE_COMMANDS=ON run-clang-tidy-3.9.py ${CMAKE_CURRENT_SOURCE_DIR})
 
 # clang-format
 set(ALL_SOURCE_FILES
