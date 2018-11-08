@@ -1,10 +1,12 @@
 #include <fstream>
 #include <iostream>
 
+#include <yaml-cpp/yaml.h>
 #include <boost/functional/hash.hpp>
 #include <boost/program_options.hpp>
 
 #include <libMultiRobotPlanning/a_star.hpp>
+#include "timer.hpp"
 
 using libMultiRobotPlanning::AStar;
 using libMultiRobotPlanning::Neighbor;
@@ -116,6 +118,12 @@ class Environment {
 
  public:
   bool stateValid(const State& s) {
+    if (!(m_obstacles.find(s) == m_obstacles.end())) {
+      std::cout << s << " collides!\n";
+    }
+    if (!(s.x >= 0 && s.x < m_dimx && s.y >= 0 && s.y < m_dimy)) {
+      std::cout << s << " out of bounds! " << m_dimx << ", " << m_dimy << "\n";
+    }
     return s.x >= 0 && s.x < m_dimx && s.y >= 0 && s.y < m_dimy &&
            m_obstacles.find(s) == m_obstacles.end();
   }
@@ -131,17 +139,9 @@ int main(int argc, char* argv[]) {
   namespace po = boost::program_options;
   // Declare the supported options.
   po::options_description desc("Allowed options");
-  int startX, startY, goalX, goalY;
   std::string mapFile;
   std::string outputFile;
   desc.add_options()("help", "produce help message")(
-      "startX",
-      po::value<int>(&startX)->required(),
-      "start position x-component")("startY",
-                                    po::value<int>(&startY)->required(),
-                                    "start position y-component")(
-      "goalX", po::value<int>(&goalX)->required(), "goal position x-component")(
-      "goalY", po::value<int>(&goalY)->required(), "goal position y-component")(
       "map,m", po::value<std::string>(&mapFile)->required(), "input map (txt)")(
       "output,o",
       po::value<std::string>(&outputFile)->required(),
@@ -164,36 +164,41 @@ int main(int argc, char* argv[]) {
 
   std::unordered_set<State> obstacles;
 
-  std::ifstream map(mapFile);
-  int dimX = 0;
-  int y = 0;
-  while (map.good()) {
-    std::string line;
-    std::getline(map, line);
-    int x = 0;
-    for (char c : line) {
-      if (c == '#') {
-        obstacles.insert(State(x, y));
-      }
-      ++x;
-    }
-    dimX = std::max(dimX, x);
-    ++y;
+  YAML::Node config = YAML::LoadFile(mapFile);
+
+  const auto& dim = config["map"]["dimensions"];
+  int dimx = dim[0].as<int>();
+  int dimy = dim[1].as<int>();
+
+  for (const auto& node : config["map"]["obstacles"]) {
+    obstacles.insert(State(node[0].as<int>(), node[1].as<int>()));
   }
-  std::cout << dimX << " " << y << std::endl;
 
-  bool success = false;
+  if (std::distance(config["agents"].begin(), config["agents"].end()) != 1) {
+    throw std::out_of_range("Expected a single agent!");
+  }
+  const auto& node = *config["agents"].begin();
+  const auto& start_yaml = node["start"];
+  const auto& goal_yaml = node["goal"];
+  State start(start_yaml[0].as<int>(), start_yaml[1].as<int>());
+  State goal(goal_yaml[0].as<int>(), goal_yaml[1].as<int>());
 
-  State goal(goalX, goalY);
-  State start(startX, startY);
-  Environment env(dimX, y - 1, obstacles, goal);
+  Environment env(dimx, dimy, obstacles, goal);
 
   AStar<State, Action, int, Environment> astar(env);
 
   PlanResult<State, Action, int> solution;
 
+  bool success = false;
+  std::cout << "Start state: " << start << "\n";
+  double planTime = 0;
   if (env.stateValid(start)) {
+    Timer timer;
     success = astar.search(start, solution);
+    timer.stop();
+    planTime = timer.elapsedSeconds();
+  } else {
+    std::cerr << "Start state not valid!\n";
   }
 
   std::ofstream out(outputFile);
@@ -208,8 +213,10 @@ int main(int argc, char* argv[]) {
     std::cout << solution.states.back().second << ": "
               << solution.states.back().first << std::endl;
 
+    out << "statistics:" << std::endl;
+    out << "  runtime: " << planTime << std::endl;
     out << "schedule:" << std::endl;
-    out << "  agent1:" << std::endl;
+    out << "  agent0:" << std::endl;
     for (size_t i = 0; i < solution.states.size(); ++i) {
       out << "    - x: " << solution.states[i].first.x << std::endl
           << "      y: " << solution.states[i].first.y << std::endl

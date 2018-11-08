@@ -91,6 +91,7 @@ add_executable(a_star
 )
 target_link_libraries(a_star
   ${Boost_LIBRARIES}
+  yaml-cpp
 )
 
 ## a_star_epsilon

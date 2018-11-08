@@ -66,6 +66,7 @@ class AStar {
   bool search(const State& startState,
               PlanResult<State, Action, Cost>& solution,
               Cost initialCost = 0) {
+    std::cout << "Search!\n";
     solution.states.clear();
     solution.states.push_back(std::make_pair<>(startState, 0));
     solution.actions.clear();
