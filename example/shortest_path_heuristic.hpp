@@ -12,7 +12,7 @@ class ShortestPathHeuristic {
   ShortestPathHeuristic(size_t dimx,
                         size_t dimy,
                         const std::unordered_set<Location>& obstacles)
-      : m_shortestDistance(nullptr), m_dimx(dimx), m_dimy(dimy) {
+      : m_shortestDistance(nullptr), m_dimx(dimx) {
     searchGraph_t searchGraph;
 
     // add vertices
@@ -95,8 +95,8 @@ class ShortestPathHeuristic {
 
   class VertexDotWriter {
    public:
-    explicit VertexDotWriter(const searchGraph_t& graph, size_t dimx)
-        : m_graph(graph), m_dimx(dimx) {}
+    explicit VertexDotWriter(size_t dimx)
+        : m_dimx(dimx) {}
 
     void operator()(std::ostream& out, const vertex_t& v) const {
       static const float DX = 100;
@@ -108,7 +108,6 @@ class ShortestPathHeuristic {
     }
 
    private:
-    const searchGraph_t& m_graph;
     size_t m_dimx;
   };
 
@@ -126,7 +125,7 @@ class ShortestPathHeuristic {
 
  private:
   void writeDotFile(const searchGraph_t& graph, const std::string& fileName) {
-    VertexDotWriter vw(graph, m_dimx);
+    VertexDotWriter vw(m_dimx);
     EdgeDotWriter ew(graph);
     std::ofstream dotFile(fileName);
     boost::write_graphviz(dotFile, graph, vw, ew);
@@ -135,5 +134,4 @@ class ShortestPathHeuristic {
  private:
   distanceMatrix_t* m_shortestDistance;
   size_t m_dimx;
-  size_t m_dimy;
 };

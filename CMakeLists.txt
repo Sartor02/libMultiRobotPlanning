@@ -38,6 +38,7 @@ set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/a_star_epsilon.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/assignment.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/cbs.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/x_star.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/cbs_ta.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/ecbs.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/ecbs_ta.hpp
@@ -49,6 +50,7 @@ set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/example/a_star_epsilon.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/assignment.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/cbs.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/x_star.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/cbs_ta.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/ecbs.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/ecbs_ta.cpp
@@ -77,7 +79,7 @@ add_custom_target(everything
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -O3")
 
 include_directories(
   include
@@ -115,6 +117,15 @@ add_executable(cbs
   example/cbs.cpp
 )
 target_link_libraries(cbs
+  ${Boost_LIBRARIES}
+  yaml-cpp
+)
+
+## x star
+add_executable(x_star
+  example/x_star.cpp
+)
+target_link_libraries(x_star
   ${Boost_LIBRARIES}
   yaml-cpp
 )

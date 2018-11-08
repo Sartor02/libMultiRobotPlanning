@@ -154,15 +154,12 @@ class ECBSTA {
     (*handle).handle = handle;
     focal.push(handle);
 
-    Cost bestCost = (*handle).cost;
-
     solution.clear();
     int id = 1;
     while (!open.empty()) {
 // update focal list
 #ifdef REBUILT_FOCAL_LIST
       focal.clear();
-      Cost LB = open.top().LB;
 
       auto iter = open.ordered_begin();
       auto iterEnd = open.ordered_end();
