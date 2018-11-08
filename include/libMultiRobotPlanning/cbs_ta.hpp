@@ -78,8 +78,13 @@ statistical purposes.
     This function is called on every low-level expansion and can be used for
 statistical purposes.
 */
-template <typename State, typename Action, typename Cost, typename Conflict,
-          typename Constraints, typename Task, typename Environment>
+template <typename State,
+          typename Action,
+          typename Cost,
+          typename Conflict,
+          typename Constraints,
+          typename Task,
+          typename Environment>
 class CBSTA {
  public:
   CBSTA(Environment& environment) : m_env(environment) {}
@@ -103,8 +108,8 @@ class CBSTA {
       // } else {
       bool success = false;
       if (!start.tasks.empty()) {
-        LowLevelEnvironment llenv(m_env, i, start.constraints[i],
-                                  start.task(i));
+        LowLevelEnvironment llenv(
+            m_env, i, start.constraints[i], start.task(i));
         LowLevelSearch_t lowLevel(llenv);
         success = lowLevel.search(initialStates[i], start.solution[i]);
       }
@@ -116,7 +121,8 @@ class CBSTA {
     }
 
     // std::priority_queue<HighLevelNode> open;
-    typename boost::heap::d_ary_heap<HighLevelNode, boost::heap::arity<2>,
+    typename boost::heap::d_ary_heap<HighLevelNode,
+                                     boost::heap::arity<2>,
                                      boost::heap::mutable_<true> >
         open;
 
@@ -193,8 +199,8 @@ class CBSTA {
 
         newNode.cost -= newNode.solution[i].cost;
 
-        LowLevelEnvironment llenv(m_env, i, newNode.constraints[i],
-                                  newNode.task(i));
+        LowLevelEnvironment llenv(
+            m_env, i, newNode.constraints[i], newNode.task(i));
         LowLevelSearch_t lowLevel(llenv);
         bool success = lowLevel.search(initialStates[i], newNode.solution[i]);
 
@@ -225,7 +231,8 @@ class CBSTA {
     int id;
     bool isRoot;
 
-    typename boost::heap::d_ary_heap<HighLevelNode, boost::heap::arity<2>,
+    typename boost::heap::d_ary_heap<HighLevelNode,
+                                     boost::heap::arity<2>,
                                      boost::heap::mutable_<true> >::handle_type
         handle;
 
@@ -261,8 +268,10 @@ class CBSTA {
   };
 
   struct LowLevelEnvironment {
-    LowLevelEnvironment(Environment& env, size_t agentIdx,
-                        const Constraints& constraints, const Task* task)
+    LowLevelEnvironment(Environment& env,
+                        size_t agentIdx,
+                        const Constraints& constraints,
+                        const Task* task)
         : m_env(env)
     // , m_agentIdx(agentIdx)
     // , m_constraints(constraints)

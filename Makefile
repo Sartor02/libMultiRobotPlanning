@@ -18,7 +18,7 @@ $(build_dir)/CMakeLists.txt.copy: CMakeLists.txt Makefile $(build_dir)
 	cp CMakeLists.txt $(build_dir)/CMakeLists.txt.copy
 	
 clang-format:
-	$(MAKE) --no-print-directory -C $(build_dir) everything
+	$(MAKE) --no-print-directory -C $(build_dir) clang-format run-test
 	
 clean:
 	rm -rf $(build_dir) bin lib

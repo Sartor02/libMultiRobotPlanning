@@ -193,11 +193,13 @@ struct Constraints {
   bool overlap(const Constraints& other) {
     std::vector<VertexConstraint> vertexIntersection;
     std::vector<EdgeConstraint> edgeIntersection;
-    std::set_intersection(vertexConstraints.begin(), vertexConstraints.end(),
+    std::set_intersection(vertexConstraints.begin(),
+                          vertexConstraints.end(),
                           other.vertexConstraints.begin(),
                           other.vertexConstraints.end(),
                           std::back_inserter(vertexIntersection));
-    std::set_intersection(edgeConstraints.begin(), edgeConstraints.end(),
+    std::set_intersection(edgeConstraints.begin(),
+                          edgeConstraints.end(),
                           other.edgeConstraints.begin(),
                           other.edgeConstraints.end(),
                           std::back_inserter(edgeIntersection));
@@ -251,7 +253,8 @@ struct hash<Location> {
 ///
 class Environment {
  public:
-  Environment(size_t dimx, size_t dimy,
+  Environment(size_t dimx,
+              size_t dimy,
               const std::unordered_set<Location>& obstacles,
               const std::vector<State>& startStates,
               const std::vector<std::unordered_set<Location> >& goals,
@@ -272,7 +275,8 @@ class Environment {
     for (size_t i = 0; i < startStates.size(); ++i) {
       for (const auto& goal : goals[i]) {
         m_assignment.setCost(
-            i, goal,
+            i,
+            goal,
             m_heuristic.getValue(Location(startStates[i].x, startStates[i].y),
                                  goal));
         m_goals.insert(goal);
@@ -281,7 +285,8 @@ class Environment {
     m_assignment.solve();
   }
 
-  void setLowLevelContext(size_t agentIdx, const Constraints* constraints,
+  void setLowLevelContext(size_t agentIdx,
+                          const Constraints* constraints,
                           const Location* task) {
     assert(constraints);
     m_agentIdx = agentIdx;
@@ -458,7 +463,8 @@ class Environment {
 
   void onExpandHighLevelNode(int /*cost*/) { m_highLevelExpanded++; }
 
-  void onExpandLowLevelNode(const State& /*s*/, int /*fScore*/,
+  void onExpandLowLevelNode(const State& /*s*/,
+                            int /*fScore*/,
                             int /*gScore*/) {
     m_lowLevelExpanded++;
   }
@@ -522,7 +528,8 @@ int main(int argc, char* argv[]) {
   std::string outputFile;
   size_t maxTaskAssignments;
   desc.add_options()("help", "produce help message")(
-      "input,i", po::value<std::string>(&inputFile)->required(),
+      "input,i",
+      po::value<std::string>(&inputFile)->required(),
       "input file (YAML)")("output,o",
                            po::value<std::string>(&outputFile)->required(),
                            "output file (YAML)")(
@@ -568,8 +575,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  Environment mapf(dimx, dimy, obstacles, startStates, goals,
-                   maxTaskAssignments);
+  Environment mapf(
+      dimx, dimy, obstacles, startStates, goals, maxTaskAssignments);
   CBSTA<State, Action, int, Conflict, Constraints, Location, Environment> cbs(
       mapf);
   std::vector<PlanResult<State, Action, int> > solution;

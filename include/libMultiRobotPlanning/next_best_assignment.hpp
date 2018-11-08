@@ -29,7 +29,8 @@ Stockholm, Sweden, July 2018.
 \tparam Agent Type of the agent. Needs to be copy'able and comparable
 \tparam Task Type of task. Needs to be copy'able and comparable
 */
-template <typename Agent, typename Task,
+template <typename Agent,
+          typename Task,
           typename Assignment = Assignment<Agent, Task> >
 class NextBestAssignment {
  public:
@@ -154,8 +155,8 @@ class NextBestAssignment {
         if (Iagents.find(c.first.first) != Iagents.end()) {
           costOffset = 0;
         }
-        m_assignment.setCost(c.first.first, c.first.second,
-                             c.second + costOffset);
+        m_assignment.setCost(
+            c.first.first, c.first.second, c.second + costOffset);
       }
     }
 

@@ -9,7 +9,8 @@
 
 class ShortestPathHeuristic {
  public:
-  ShortestPathHeuristic(size_t dimx, size_t dimy,
+  ShortestPathHeuristic(size_t dimx,
+                        size_t dimy,
                         const std::unordered_set<Location>& obstacles)
       : m_shortestDistance(nullptr), m_dimx(dimx), m_dimy(dimy) {
     searchGraph_t searchGraph;
@@ -49,7 +50,8 @@ class ShortestPathHeuristic {
     // The following generates a clang-tidy error, see
     // https://svn.boost.org/trac10/ticket/10830
     boost::floyd_warshall_all_pairs_shortest_paths(
-        searchGraph, distanceMap,
+        searchGraph,
+        distanceMap,
         boost::weight_map(boost::get(&Edge::weight, searchGraph)));
   }
 
@@ -71,9 +73,9 @@ class ShortestPathHeuristic {
   }
 
  private:
-  typedef boost::adjacency_list_traits<boost::vecS, boost::vecS,
-                                       boost::undirectedS>
-      searchGraphTraits_t;
+  typedef boost::
+      adjacency_list_traits<boost::vecS, boost::vecS, boost::undirectedS>
+          searchGraphTraits_t;
   typedef searchGraphTraits_t::vertex_descriptor vertex_t;
   typedef searchGraphTraits_t::edge_descriptor edge_t;
 
@@ -83,9 +85,9 @@ class ShortestPathHeuristic {
     int weight;
   };
 
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
-                                Vertex, Edge>
-      searchGraph_t;
+  typedef boost::
+      adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, Vertex, Edge>
+          searchGraph_t;
   typedef boost::exterior_vertex_property<searchGraph_t, int>
       distanceProperty_t;
   typedef distanceProperty_t::matrix_type distanceMatrix_t;

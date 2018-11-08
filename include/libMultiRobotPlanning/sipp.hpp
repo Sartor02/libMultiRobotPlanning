@@ -61,7 +61,10 @@ purposes.
     This function is called on every node discovery and can be used for
    statistical purposes.
 */
-template <typename State, typename Location, typename Action, typename Cost,
+template <typename State,
+          typename Location,
+          typename Action,
+          typename Cost,
           typename Environment>
 class SIPP {
  public:
@@ -88,8 +91,10 @@ class SIPP {
     return m_env.mightHaveSolution(goal);
   }
 
-  bool search(const State& startState, const Action& waitAction,
-              PlanResult<State, Action, Cost>& solution, Cost startTime = 0) {
+  bool search(const State& startState,
+              const Action& waitAction,
+              PlanResult<State, Action, Cost>& solution,
+              Cost startTime = 0) {
     PlanResult<SIPPState, SIPPAction, Cost> astarsolution;
     solution.cost = 0;
     solution.fmin = 0;
@@ -99,8 +104,8 @@ class SIPP {
     if (!m_env.findSafeInterval(startState, startTime, interval)) {
       return false;
     }
-    bool success = m_astar.search(SIPPState(startState, interval),
-                                  astarsolution, startTime);
+    bool success = m_astar.search(
+        SIPPState(startState, interval), astarsolution, startTime);
     solution.cost = astarsolution.cost - startTime;
     solution.fmin = astarsolution.fmin;
     for (size_t i = 0; i < astarsolution.actions.size(); ++i) {
@@ -210,12 +215,19 @@ class SIPP {
             continue;
           }
           int t;
-          if (m_env.isCommandValid(s.state, m.state, m.action, m_lastGScore,
-                                   end_t, si.start, si.end, t)) {
+          if (m_env.isCommandValid(s.state,
+                                   m.state,
+                                   m.action,
+                                   m_lastGScore,
+                                   end_t,
+                                   si.start,
+                                   si.end,
+                                   t)) {
             // std::cout << "  gN: " << m.state << "," << i << "," << t << ","
             // << m_lastGScore << std::endl;
             neighbors.emplace_back(Neighbor<SIPPState, SIPPAction, Cost>(
-                SIPPState(m.state, i), SIPPAction(m.action, m.cost),
+                SIPPState(m.state, i),
+                SIPPAction(m.action, m.cost),
                 t - m_lastGScore));
           }
         }

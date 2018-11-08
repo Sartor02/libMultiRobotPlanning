@@ -54,14 +54,18 @@ purposes.
     \tparam StateHasher A class to convert a state to a hash value. Default:
    std::hash<State>
 */
-template <typename State, typename Action, typename Cost, typename Environment,
+template <typename State,
+          typename Action,
+          typename Cost,
+          typename Environment,
           typename StateHasher = std::hash<State> >
 class AStar {
  public:
   AStar(Environment& environment) : m_env(environment) {}
 
   bool search(const State& startState,
-              PlanResult<State, Action, Cost>& solution, Cost initialCost = 0) {
+              PlanResult<State, Action, Cost>& solution,
+              Cost initialCost = 0) {
     solution.states.clear();
     solution.states.push_back(std::make_pair<>(startState, 0));
     solution.actions.clear();
@@ -70,9 +74,9 @@ class AStar {
     openSet_t openSet;
     std::unordered_map<State, fibHeapHandle_t, StateHasher> stateToHeap;
     std::unordered_set<State, StateHasher> closedSet;
-    std::unordered_map<State, std::tuple<State, Action, Cost, Cost>,
-                       StateHasher>
-        cameFrom;
+    std::
+        unordered_map<State, std::tuple<State, Action, Cost, Cost>, StateHasher>
+            cameFrom;
 
     auto handle = openSet.push(
         Node(startState, m_env.admissibleHeuristic(startState), initialCost));
@@ -141,18 +145,20 @@ class AStar {
             (*handle).gScore = tentative_gScore;
             (*handle).fScore -= delta;
             openSet.increase(handle);
-            m_env.onDiscover(neighbor.state, (*handle).fScore,
-                             (*handle).gScore);
+            m_env.onDiscover(
+                neighbor.state, (*handle).fScore, (*handle).gScore);
           }
 
           // Best path for this node so far
           // TODO: this is not the best way to update "cameFrom", but otherwise
           // default c'tors of State and Action are required
           cameFrom.erase(neighbor.state);
-          cameFrom.insert(std::make_pair<>(
-              neighbor.state,
-              std::make_tuple<>(current.state, neighbor.action, neighbor.cost,
-                                tentative_gScore)));
+          cameFrom.insert(
+              std::make_pair<>(neighbor.state,
+                               std::make_tuple<>(current.state,
+                                                 neighbor.action,
+                                                 neighbor.cost,
+                                                 tentative_gScore)));
         }
       }
     }
@@ -192,7 +198,8 @@ class AStar {
 #ifdef USE_FIBONACCI_HEAP
     typename boost::heap::fibonacci_heap<Node>::handle_type handle;
 #else
-    typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
+    typename boost::heap::d_ary_heap<Node,
+                                     boost::heap::arity<2>,
                                      boost::heap::mutable_<true> >::handle_type
         handle;
 #endif
@@ -202,9 +209,9 @@ class AStar {
   typedef typename boost::heap::fibonacci_heap<Node> openSet_t;
   typedef typename openSet_t::handle_type fibHeapHandle_t;
 #else
-  typedef typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
-                                           boost::heap::mutable_<true> >
-      openSet_t;
+  typedef typename boost::heap::
+      d_ary_heap<Node, boost::heap::arity<2>, boost::heap::mutable_<true> >
+          openSet_t;
   typedef typename openSet_t::handle_type fibHeapHandle_t;
 #endif
 

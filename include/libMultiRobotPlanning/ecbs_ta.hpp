@@ -84,8 +84,13 @@ statistical purposes.
     This function is called on every low-level expansion and can be used for
 statistical purposes.
 */
-template <typename State, typename Action, typename Cost, typename Conflict,
-          typename Constraints, typename Task, typename Environment>
+template <typename State,
+          typename Action,
+          typename Cost,
+          typename Conflict,
+          typename Constraints,
+          typename Task,
+          typename Environment>
 class ECBSTA {
  public:
   ECBSTA(Environment& environment, float w) : m_env(environment), m_w(w) {}
@@ -121,8 +126,8 @@ class ECBSTA {
         start.solution[i] = solution[i];
         std::cout << "use existing solution for agent: " << i << std::endl;
       } else {
-        LowLevelEnvironment llenv(m_env, i, start.constraints[i], start.task(i),
-                                  start.solution);
+        LowLevelEnvironment llenv(
+            m_env, i, start.constraints[i], start.task(i), start.solution);
         LowLevelSearch_t lowLevel(llenv, m_w);
         bool success = lowLevel.search(initialStates[i], start.solution[i]);
         if (!success) {
@@ -272,8 +277,11 @@ class ECBSTA {
         newNode.cost -= newNode.solution[i].cost;
         newNode.LB -= newNode.solution[i].fmin;
 
-        LowLevelEnvironment llenv(m_env, i, newNode.constraints[i],
-                                  newNode.task(i), newNode.solution);
+        LowLevelEnvironment llenv(m_env,
+                                  i,
+                                  newNode.constraints[i],
+                                  newNode.task(i),
+                                  newNode.solution);
         LowLevelSearch_t lowLevel(llenv, m_w);
         bool success = lowLevel.search(initialStates[i], newNode.solution[i]);
 
@@ -315,8 +323,8 @@ class ECBSTA {
 
           bool allSuccessful = true;
           for (size_t i = 0; i < numAgents; ++i) {
-            LowLevelEnvironment llenv(m_env, i, n.constraints[i], n.task(i),
-                                      n.solution);
+            LowLevelEnvironment llenv(
+                m_env, i, n.constraints[i], n.task(i), n.solution);
             LowLevelSearch_t lowLevel(llenv, m_w);
             bool success = lowLevel.search(initialStates[i], n.solution[i]);
             if (!success) {
@@ -359,7 +367,8 @@ class ECBSTA {
 // typedef typename boost::heap::fibonacci_heap<fibHeapHandle_t,
 // boost::heap::compare<compareFocalHeuristic> > focalSet_t;
 #else
-  typedef typename boost::heap::d_ary_heap<HighLevelNode, boost::heap::arity<2>,
+  typedef typename boost::heap::d_ary_heap<HighLevelNode,
+                                           boost::heap::arity<2>,
                                            boost::heap::mutable_<true> >
       openSet_t;
   typedef typename openSet_t::handle_type handle_t;
@@ -427,19 +436,23 @@ class ECBSTA {
   };
 
 #ifdef USE_FIBONACCI_HEAP
-  typedef typename boost::heap::fibonacci_heap<
-      openSet_t, boost::heap::compare<compareFocalHeuristic> >
-      focalSet_t;
+  typedef typename boost::heap::
+      fibonacci_heap<openSet_t, boost::heap::compare<compareFocalHeuristic> >
+          focalSet_t;
 #else
   typedef typename boost::heap::d_ary_heap<
-      handle_t, boost::heap::arity<2>, boost::heap::mutable_<true>,
+      handle_t,
+      boost::heap::arity<2>,
+      boost::heap::mutable_<true>,
       boost::heap::compare<compareFocalHeuristic> >
       focalSet_t;
 #endif
 
   struct LowLevelEnvironment {
     LowLevelEnvironment(
-        Environment& env, size_t agentIdx, const Constraints& constraints,
+        Environment& env,
+        size_t agentIdx,
+        const Constraints& constraints,
         const Task* task,
         const std::vector<PlanResult<State, Action, Cost> >& solution)
         : m_env(env)
@@ -458,10 +471,12 @@ class ECBSTA {
       return m_env.focalStateHeuristic(s, gScore, m_solution);
     }
 
-    Cost focalTransitionHeuristic(const State& s1, const State& s2,
-                                  Cost gScoreS1, Cost gScoreS2) {
-      return m_env.focalTransitionHeuristic(s1, s2, gScoreS1, gScoreS2,
-                                            m_solution);
+    Cost focalTransitionHeuristic(const State& s1,
+                                  const State& s2,
+                                  Cost gScoreS1,
+                                  Cost gScoreS2) {
+      return m_env.focalTransitionHeuristic(
+          s1, s2, gScoreS1, gScoreS2, m_solution);
     }
 
     bool isSolution(const State& s) { return m_env.isSolution(s); }

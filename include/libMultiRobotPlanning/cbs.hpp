@@ -76,8 +76,12 @@ statistical purposes.
     This function is called on every low-level expansion and can be used for
 statistical purposes.
 */
-template <typename State, typename Action, typename Cost, typename Conflict,
-          typename Constraints, typename Environment>
+template <typename State,
+          typename Action,
+          typename Cost,
+          typename Conflict,
+          typename Constraints,
+          typename Environment>
 class CBS {
  public:
   CBS(Environment& environment) : m_env(environment) {}
@@ -107,7 +111,8 @@ class CBS {
     }
 
     // std::priority_queue<HighLevelNode> open;
-    typename boost::heap::d_ary_heap<HighLevelNode, boost::heap::arity<2>,
+    typename boost::heap::d_ary_heap<HighLevelNode,
+                                     boost::heap::arity<2>,
                                      boost::heap::mutable_<true> >
         open;
 
@@ -180,7 +185,8 @@ class CBS {
 
     int id;
 
-    typename boost::heap::d_ary_heap<HighLevelNode, boost::heap::arity<2>,
+    typename boost::heap::d_ary_heap<HighLevelNode,
+                                     boost::heap::arity<2>,
                                      boost::heap::mutable_<true> >::handle_type
         handle;
 
@@ -207,7 +213,8 @@ class CBS {
   };
 
   struct LowLevelEnvironment {
-    LowLevelEnvironment(Environment& env, size_t agentIdx,
+    LowLevelEnvironment(Environment& env,
+                        size_t agentIdx,
                         const Constraints& constraints)
         : m_env(env)
     // , m_agentIdx(agentIdx)

@@ -76,7 +76,10 @@ purposes.
     \tparam StateHasher A class to convert a state to a hash value. Default:
    std::hash<State>
 */
-template <typename State, typename Action, typename Cost, typename Environment,
+template <typename State,
+          typename Action,
+          typename Cost,
+          typename Environment,
           typename StateHasher = std::hash<State> >
 class AStarEpsilon {
  public:
@@ -95,9 +98,9 @@ class AStarEpsilon {
         focalSet;  // subset of open nodes that are within suboptimality bound
     std::unordered_map<State, fibHeapHandle_t, StateHasher> stateToHeap;
     std::unordered_set<State, StateHasher> closedSet;
-    std::unordered_map<State, std::tuple<State, Action, Cost, Cost>,
-                       StateHasher>
-        cameFrom;
+    std::
+        unordered_map<State, std::tuple<State, Action, Cost, Cost>, StateHasher>
+            cameFrom;
 
     auto handle = openSet.push(
         Node(startState, m_env.admissibleHeuristic(startState), 0, 0));
@@ -231,7 +234,8 @@ class AStarEpsilon {
             Cost focalHeuristic =
                 current.focalHeuristic +
                 m_env.focalStateHeuristic(neighbor.state, tentative_gScore) +
-                m_env.focalTransitionHeuristic(current.state, neighbor.state,
+                m_env.focalTransitionHeuristic(current.state,
+                                               neighbor.state,
                                                current.gScore,
                                                tentative_gScore);
             auto handle = openSet.push(
@@ -260,8 +264,8 @@ class AStarEpsilon {
             (*handle).gScore = tentative_gScore;
             (*handle).fScore -= delta;
             openSet.increase(handle);
-            m_env.onDiscover(neighbor.state, (*handle).fScore,
-                             (*handle).gScore);
+            m_env.onDiscover(
+                neighbor.state, (*handle).fScore, (*handle).gScore);
             if ((*handle).fScore <= bestFScore * m_w &&
                 last_fScore > bestFScore * m_w) {
               // std::cout << "focalAdd: " << *handle << std::endl;
@@ -273,10 +277,12 @@ class AStarEpsilon {
           // TODO: this is not the best way to update "cameFrom", but otherwise
           // default c'tors of State and Action are required
           cameFrom.erase(neighbor.state);
-          cameFrom.insert(std::make_pair<>(
-              neighbor.state,
-              std::make_tuple<>(current.state, neighbor.action, neighbor.cost,
-                                tentative_gScore)));
+          cameFrom.insert(
+              std::make_pair<>(neighbor.state,
+                               std::make_tuple<>(current.state,
+                                                 neighbor.action,
+                                                 neighbor.cost,
+                                                 tentative_gScore)));
         }
       }
     }
@@ -293,9 +299,9 @@ class AStarEpsilon {
 // typedef typename boost::heap::fibonacci_heap<fibHeapHandle_t,
 // boost::heap::compare<compareFocalHeuristic> > focalSet_t;
 #else
-  typedef typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
-                                           boost::heap::mutable_<true> >
-      openSet_t;
+  typedef typename boost::heap::
+      d_ary_heap<Node, boost::heap::arity<2>, boost::heap::mutable_<true> >
+          openSet_t;
   typedef typename openSet_t::handle_type fibHeapHandle_t;
 // typedef typename boost::heap::d_ary_heap<fibHeapHandle_t,
 // boost::heap::arity<2>, boost::heap::mutable_<true>,
@@ -369,14 +375,17 @@ class AStarEpsilon {
   // typedef typename boost::heap::fibonacci_heap<Node> openSet_t;
   // typedef typename openSet_t::handle_type fibHeapHandle_t;
   typedef typename boost::heap::fibonacci_heap<
-      fibHeapHandle_t, boost::heap::compare<compareFocalHeuristic> >
+      fibHeapHandle_t,
+      boost::heap::compare<compareFocalHeuristic> >
       focalSet_t;
 #else
   // typedef typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
   // boost::heap::mutable_<true> > openSet_t;
   // typedef typename openSet_t::handle_type fibHeapHandle_t;
   typedef typename boost::heap::d_ary_heap<
-      fibHeapHandle_t, boost::heap::arity<2>, boost::heap::mutable_<true>,
+      fibHeapHandle_t,
+      boost::heap::arity<2>,
+      boost::heap::mutable_<true>,
       boost::heap::compare<compareFocalHeuristic> >
       focalSet_t;
 #endif

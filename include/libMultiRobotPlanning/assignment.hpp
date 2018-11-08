@@ -82,7 +82,9 @@ class Assignment {
     using namespace boost;
 
     successive_shortest_path_nonnegative_weights(
-        m_graph, m_sourceVertex, m_sinkVertex,
+        m_graph,
+        m_sourceVertex,
+        m_sinkVertex,
         boost::capacity_map(get(&Edge::capacity, m_graph))
             .residual_capacity_map(get(&Edge::residualCapacity, m_graph))
             .weight_map(get(&Edge::cost, m_graph))
@@ -118,9 +120,9 @@ class Assignment {
   }
 
  protected:
-  typedef boost::adjacency_list_traits<boost::vecS, boost::vecS,
-                                       boost::bidirectionalS>
-      graphTraits_t;
+  typedef boost::
+      adjacency_list_traits<boost::vecS, boost::vecS, boost::bidirectionalS>
+          graphTraits_t;
   typedef graphTraits_t::vertex_descriptor vertex_t;
   typedef graphTraits_t::edge_descriptor edge_t;
 
@@ -144,8 +146,11 @@ class Assignment {
     bool isReverseEdge;
   };
 
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
-                                Vertex, Edge>
+  typedef boost::adjacency_list<boost::vecS,
+                                boost::vecS,
+                                boost::bidirectionalS,
+                                Vertex,
+                                Edge>
       graph_t;
 
  protected:

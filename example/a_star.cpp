@@ -69,7 +69,9 @@ std::ostream& operator<<(std::ostream& os, const Action& a) {
 
 class Environment {
  public:
-  Environment(size_t dimx, size_t dimy, std::unordered_set<State> obstacles,
+  Environment(size_t dimx,
+              size_t dimy,
+              std::unordered_set<State> obstacles,
               State goal)
       : m_dimx(dimx),
         m_dimy(dimy),
@@ -133,14 +135,16 @@ int main(int argc, char* argv[]) {
   std::string mapFile;
   std::string outputFile;
   desc.add_options()("help", "produce help message")(
-      "startX", po::value<int>(&startX)->required(),
+      "startX",
+      po::value<int>(&startX)->required(),
       "start position x-component")("startY",
                                     po::value<int>(&startY)->required(),
                                     "start position y-component")(
       "goalX", po::value<int>(&goalX)->required(), "goal position x-component")(
       "goalY", po::value<int>(&goalY)->required(), "goal position y-component")(
       "map,m", po::value<std::string>(&mapFile)->required(), "input map (txt)")(
-      "output,o", po::value<std::string>(&outputFile)->required(),
+      "output,o",
+      po::value<std::string>(&outputFile)->required(),
       "output file (YAML)");
 
   try {

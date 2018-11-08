@@ -70,7 +70,9 @@ std::ostream& operator<<(std::ostream& os, const Action& a) {
 
 class Environment {
  public:
-  Environment(size_t dimx, size_t dimy, std::unordered_set<State> obstacles,
+  Environment(size_t dimx,
+              size_t dimy,
+              std::unordered_set<State> obstacles,
               State goal)
       : m_dimx(dimx),
         m_dimy(dimy),
@@ -119,7 +121,9 @@ class Environment {
   }
 
   bool isCommandValid(
-      const State& /*s1*/, const State& /*s2*/, const Action& /*a*/,
+      const State& /*s1*/,
+      const State& /*s2*/,
+      const Action& /*a*/,
       int earliestStartTime,      // can start motion at this time
       int /*latestStartTime*/,    // must have left s by this time
       int earliestArrivalTime,    // can only arrive at (s+cmd)
@@ -153,7 +157,8 @@ int main(int argc, char* argv[]) {
   std::string inputFile;
   std::string outputFile;
   desc.add_options()("help", "produce help message")(
-      "input,i", po::value<std::string>(&inputFile)->required(),
+      "input,i",
+      po::value<std::string>(&inputFile)->required(),
       "input file (YAML)")("output,o",
                            po::value<std::string>(&outputFile)->required(),
                            "output file (YAML)")
@@ -188,7 +193,9 @@ int main(int argc, char* argv[]) {
     obstacles.insert(State(node[0].as<int>(), node[1].as<int>()));
   }
   Environment env(config["environment"]["size"][0].as<int>(),
-                  config["environment"]["size"][1].as<int>(), obstacles, goal);
+                  config["environment"]["size"][1].as<int>(),
+                  obstacles,
+                  goal);
 
   typedef SIPP<State, State, Action, int, Environment> sipp_t;
   sipp_t sipp(env);
