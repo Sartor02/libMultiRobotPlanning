@@ -23,7 +23,7 @@ The following algorithms are currently supported:
 
 ## Building
 
-Tested on Ubuntu 16.04.
+Tested on Ubuntu 18.04.
 
 ```
 make
