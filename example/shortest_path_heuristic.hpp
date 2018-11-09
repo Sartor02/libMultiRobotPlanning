@@ -95,8 +95,7 @@ class ShortestPathHeuristic {
 
   class VertexDotWriter {
    public:
-    explicit VertexDotWriter(size_t dimx)
-        : m_dimx(dimx) {}
+    explicit VertexDotWriter(size_t dimx) : m_dimx(dimx) {}
 
     void operator()(std::ostream& out, const vertex_t& v) const {
       static const float DX = 100;

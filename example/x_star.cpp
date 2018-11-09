@@ -121,30 +121,48 @@ struct Window {
   int radius;
   int x;
   int y;
-  std::set<size_t> agents;
+  std::vector<size_t> agents;
+  size_t start_index;
+  std::vector<size_t> goal_indices;
 
   Window() = delete;
   Window(const Conflict& c)
-      : radius(2), x(c.x1), y(c.y1), agents({c.agent1, c.agent2}) {}
+      : radius(2),
+        x(c.x1),
+        y(c.y1),
+        agents({c.agent1, c.agent2}),
+        start_index(0) {}
+
+  bool isInWindow(const int qx, const int qy) const {
+    return linfNorm(qx, qy, this->x, this->y) <= radius;
+  }
+
+  void deDupAgents() {
+    std::sort(agents.begin(), agents.end());
+    agents.erase(std::unique(agents.begin(), agents.end()), agents.end());
+  }
 
   bool mergeIfApplicable(const Conflict& c) {
     switch (c.type) {
       case Conflict::Vertex:
         if (linfNorm(x, y, c.x1, c.y1) <= radius) {
-          agents.insert(c.agent1);
-          agents.insert(c.agent2);
+          agents.push_back(c.agent1);
+          agents.push_back(c.agent2);
+          deDupAgents();
           return true;
         }
         break;
       case Conflict::Edge:
         if (linfNorm(x, y, c.x1, c.y1) <= radius) {
-          agents.insert(c.agent1);
-          agents.insert(c.agent2);
+          agents.push_back(c.agent1);
+          agents.push_back(c.agent2);
+          deDupAgents();
           return true;
         }
         if (linfNorm(x, y, c.x2, c.y2) <= radius) {
-          agents.insert(c.agent1);
-          agents.insert(c.agent2);
+          agents.push_back(c.agent1);
+          agents.push_back(c.agent2);
+          deDupAgents();
           return true;
         }
         break;
@@ -157,8 +175,11 @@ struct Window {
     for (const auto& e : w.agents) {
       os << e << " ";
     }
+    os << "Start index: " << w.start_index << " Goal indices: ";
+    for (const auto& i : w.goal_indices) {
+      os << i << " ";
+    }
     return os;
-    // return os << "(" << s.x << "," << s.y << ")";
   }
 };
 
@@ -350,7 +371,7 @@ class Environment {
   }
 
   void getNeighbors(const State& s,
-                    std::vector<Neighbor<State, Action, int> >& neighbors) {
+                    std::vector<Neighbor<State, Action, int>>& neighbors) {
     // std::cout << "#VC " << constraints.vertexConstraints.size() << std::endl;
     // for(const auto& vc : constraints.vertexConstraints) {
     //   std::cout << "  " << vc.time << "," << vc.x << "," << vc.y <<
@@ -394,7 +415,7 @@ class Environment {
   }
 
   bool getFirstConflict(
-      const std::vector<PlanResult<State, Action, int> >& solution,
+      const std::vector<PlanResult<State, Action, int>>& solution,
       Conflict& result) {
     int max_t = 0;
     for (const auto& sol : solution) {
@@ -447,7 +468,7 @@ class Environment {
   }
 
   std::vector<Conflict> getAllConflicts(
-      const std::vector<PlanResult<State, Action, int> >& solution) {
+      const std::vector<PlanResult<State, Action, int>>& solution) {
     std::vector<Conflict> conflicts;
     int max_t = 0;
     for (const auto& sol : solution) {
@@ -517,7 +538,33 @@ class Environment {
 
       windows.push_back({c});
     }
+
     return windows;
+  }
+
+  void setWindowIndices(
+      Window& w,
+      const std::vector<PlanResult<State, Action, int>>& individual_solutions) {
+    w.start_index = std::numeric_limits<size_t>::max();
+    w.goal_indices.clear();
+    for (const size_t& agent_index : w.agents) {
+      const auto& solution = individual_solutions[agent_index];
+      for (size_t i = 0; i < solution.states.size(); ++i) {
+        const std::pair<State, int>& step = solution.states[i];
+        if (w.isInWindow(step.first.x, step.first.y)) {
+          w.start_index = std::min(w.start_index, i);
+          break;
+        }
+      }
+
+      for (int i = solution.states.size() - 1; i >= 0; --i) {
+        const std::pair<State, int>& step = solution.states[i];
+        if (w.isInWindow(step.first.x, step.first.y)) {
+          w.goal_indices.push_back(i);
+          break;
+        }
+      }
+    }
   }
 
   void onExpandHighLevelNode(int /*cost*/) { m_highLevelExpanded++; }
@@ -534,7 +581,7 @@ class Environment {
 
  private:
   State getState(size_t agentIdx,
-                 const std::vector<PlanResult<State, Action, int> >& solution,
+                 const std::vector<PlanResult<State, Action, int>>& solution,
                  size_t t) {
     assert(agentIdx < solution.size());
     if (t < solution[agentIdx].states.size()) {
@@ -737,7 +784,7 @@ int main(int argc, char* argv[]) {
   Environment mapf(dimx, dimy, obstacles, goals);
   XStar<State, Action, int, Conflict, Constraints, Environment, Window> x_star(
       mapf);
-  std::vector<PlanResult<State, Action, int> > solution;
+  std::vector<PlanResult<State, Action, int>> solution;
 
   Timer timer;
   bool success = x_star.search(startStates, solution);
