@@ -6,12 +6,23 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <signal.h>
+#include <libMultiRobotPlanning/helpers.hpp>
 #include <libMultiRobotPlanning/x_star.hpp>
 #include "timer.hpp"
 
 using libMultiRobotPlanning::Neighbor;
 using libMultiRobotPlanning::PlanResult;
 using libMultiRobotPlanning::XStar;
+
+void FatalSignalHandler(const int signo) {
+  fprintf(stderr,
+          "Received fatal signal %s, firing custom stack trace:\n",
+          strsignal(signo));
+  fflush(stderr);
+  PrintStackTrace();
+  exit(1);
+}
 
 template <typename T>
 T l1Norm(T x1, T y1, T x2, T y2) {
@@ -24,7 +35,9 @@ T linfNorm(T x1, T y1, T x2, T y2) {
 }
 
 struct State {
+  State() : time(0), x(0), y(0) {}
   State(int time, int x, int y) : time(time), x(x), y(y) {}
+  State(const State& s) : time(s.time), x(s.x), y(s.y) {}
 
   bool operator==(const State& s) const {
     return time == s.time && x == s.x && y == s.y;
@@ -118,18 +131,22 @@ struct Conflict {
 };
 
 struct Window {
+  static constexpr int kRadius = 1;
+  static constexpr int kTimeDelta = 2;
   int radius;
   int x;
   int y;
+  int time;
   std::vector<size_t> agents;
   size_t start_index;
   std::vector<size_t> goal_indices;
 
   Window() = delete;
   Window(const Conflict& c)
-      : radius(2),
+      : radius(kRadius),
         x(c.x1),
         y(c.y1),
+        time(c.time),
         agents({c.agent1, c.agent2}),
         start_index(0) {}
 
@@ -145,7 +162,8 @@ struct Window {
   bool mergeIfApplicable(const Conflict& c) {
     switch (c.type) {
       case Conflict::Vertex:
-        if (linfNorm(x, y, c.x1, c.y1) <= radius) {
+        if (linfNorm(x, y, c.x1, c.y1) <= radius &&
+            std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           deDupAgents();
@@ -153,13 +171,15 @@ struct Window {
         }
         break;
       case Conflict::Edge:
-        if (linfNorm(x, y, c.x1, c.y1) <= radius) {
+        if (linfNorm(x, y, c.x1, c.y1) <= radius &&
+            std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           deDupAgents();
           return true;
         }
-        if (linfNorm(x, y, c.x2, c.y2) <= radius) {
+        if (linfNorm(x, y, c.x2, c.y2) <= radius &&
+            std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           deDupAgents();
@@ -178,116 +198,6 @@ struct Window {
     os << "Start index: " << w.start_index << " Goal indices: ";
     for (const auto& i : w.goal_indices) {
       os << i << " ";
-    }
-    return os;
-  }
-};
-
-struct VertexConstraint {
-  VertexConstraint(int time, int x, int y) : time(time), x(x), y(y) {}
-  int time;
-  int x;
-  int y;
-
-  bool operator<(const VertexConstraint& other) const {
-    return std::tie(time, x, y) < std::tie(other.time, other.x, other.y);
-  }
-
-  bool operator==(const VertexConstraint& other) const {
-    return std::tie(time, x, y) == std::tie(other.time, other.x, other.y);
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, const VertexConstraint& c) {
-    return os << "VC(" << c.time << "," << c.x << "," << c.y << ")";
-  }
-};
-
-namespace std {
-template <>
-struct hash<VertexConstraint> {
-  size_t operator()(const VertexConstraint& s) const {
-    size_t seed = 0;
-    boost::hash_combine(seed, s.time);
-    boost::hash_combine(seed, s.x);
-    boost::hash_combine(seed, s.y);
-    return seed;
-  }
-};
-}  // namespace std
-
-struct EdgeConstraint {
-  EdgeConstraint(int time, int x1, int y1, int x2, int y2)
-      : time(time), x1(x1), y1(y1), x2(x2), y2(y2) {}
-  int time;
-  int x1;
-  int y1;
-  int x2;
-  int y2;
-
-  bool operator<(const EdgeConstraint& other) const {
-    return std::tie(time, x1, y1, x2, y2) <
-           std::tie(other.time, other.x1, other.y1, other.x2, other.y2);
-  }
-
-  bool operator==(const EdgeConstraint& other) const {
-    return std::tie(time, x1, y1, x2, y2) ==
-           std::tie(other.time, other.x1, other.y1, other.x2, other.y2);
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, const EdgeConstraint& c) {
-    return os << "EC(" << c.time << "," << c.x1 << "," << c.y1 << "," << c.x2
-              << "," << c.y2 << ")";
-  }
-};
-
-namespace std {
-template <>
-struct hash<EdgeConstraint> {
-  size_t operator()(const EdgeConstraint& s) const {
-    size_t seed = 0;
-    boost::hash_combine(seed, s.time);
-    boost::hash_combine(seed, s.x1);
-    boost::hash_combine(seed, s.y1);
-    boost::hash_combine(seed, s.x2);
-    boost::hash_combine(seed, s.y2);
-    return seed;
-  }
-};
-}  // namespace std
-
-struct Constraints {
-  std::unordered_set<VertexConstraint> vertexConstraints;
-  std::unordered_set<EdgeConstraint> edgeConstraints;
-
-  void add(const Constraints& other) {
-    vertexConstraints.insert(other.vertexConstraints.begin(),
-                             other.vertexConstraints.end());
-    edgeConstraints.insert(other.edgeConstraints.begin(),
-                           other.edgeConstraints.end());
-  }
-
-  bool overlap(const Constraints& other) {
-    std::vector<VertexConstraint> vertexIntersection;
-    std::vector<EdgeConstraint> edgeIntersection;
-    std::set_intersection(vertexConstraints.begin(),
-                          vertexConstraints.end(),
-                          other.vertexConstraints.begin(),
-                          other.vertexConstraints.end(),
-                          std::back_inserter(vertexIntersection));
-    std::set_intersection(edgeConstraints.begin(),
-                          edgeConstraints.end(),
-                          other.edgeConstraints.begin(),
-                          other.edgeConstraints.end(),
-                          std::back_inserter(edgeIntersection));
-    return !vertexIntersection.empty() || !edgeIntersection.empty();
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, const Constraints& c) {
-    for (const auto& vc : c.vertexConstraints) {
-      os << vc << std::endl;
-    }
-    for (const auto& ec : c.edgeConstraints) {
-      os << ec << std::endl;
     }
     return os;
   }
@@ -334,8 +244,6 @@ class Environment {
         m_dimy(dimy),
         m_obstacles(std::move(obstacles)),
         m_goals(std::move(goals)),
-        m_agentIdx(0),
-        m_constraints(nullptr),
         m_lastGoalConstraint(-1),
         m_highLevelExpanded(0),
         m_lowLevelExpanded(0) {
@@ -345,32 +253,21 @@ class Environment {
   Environment(const Environment&) = delete;
   Environment& operator=(const Environment&) = delete;
 
-  void setLowLevelContext(size_t agentIdx, const Constraints* constraints) {
-    assert(constraints);  // NOLINT
-    m_agentIdx = agentIdx;
-    m_constraints = constraints;
-    m_lastGoalConstraint = -1;
-    for (const auto& vc : constraints->vertexConstraints) {
-      if (vc.x == m_goals[m_agentIdx].x && vc.y == m_goals[m_agentIdx].y) {
-        m_lastGoalConstraint = std::max(m_lastGoalConstraint, vc.time);
-      }
-    }
-  }
-
-  int admissibleHeuristic(const State& s) {
+  int admissibleHeuristic(const State& s, const size_t agent_index) {
     // std::cout << "H: " <<  s << " " << m_heuristic[m_agentIdx][s.x + m_dimx *
     // s.y] << std::endl;
     // return m_heuristic[m_agentIdx][s.x + m_dimx * s.y];
-    return std::abs(s.x - m_goals[m_agentIdx].x) +
-           std::abs(s.y - m_goals[m_agentIdx].y);
+    return std::abs(s.x - m_goals[agent_index].x) +
+           std::abs(s.y - m_goals[agent_index].y);
   }
 
-  bool isSolution(const State& s) {
-    return s.x == m_goals[m_agentIdx].x && s.y == m_goals[m_agentIdx].y &&
+  bool isSolution(const State& s, const size_t agent_index) {
+    return s.x == m_goals[agent_index].x && s.y == m_goals[agent_index].y &&
            s.time > m_lastGoalConstraint;
   }
 
   void getNeighbors(const State& s,
+                    const size_t agent_index,
                     std::vector<Neighbor<State, Action, int>>& neighbors) {
     // std::cout << "#VC " << constraints.vertexConstraints.size() << std::endl;
     // for(const auto& vc : constraints.vertexConstraints) {
@@ -378,6 +275,15 @@ class Environment {
     //   std::endl;
     // }
     neighbors.clear();
+
+    if (isSolution(s, agent_index)) {
+      State n(s.time + 1, s.x, s.y);
+      if (stateValid(n) && transitionValid(s, n)) {
+        neighbors.emplace_back(
+            Neighbor<State, Action, int>(n, Action::Wait, 0));
+      }
+    }
+
     {
       State n(s.time + 1, s.x, s.y);
       if (stateValid(n) && transitionValid(s, n)) {
@@ -592,19 +498,12 @@ class Environment {
   }
 
   bool stateValid(const State& s) {
-    assert(m_constraints);
-    const auto& con = m_constraints->vertexConstraints;
     return s.x >= 0 && s.x < m_dimx && s.y >= 0 && s.y < m_dimy &&
-           m_obstacles.find(Location(s.x, s.y)) == m_obstacles.end() &&
-           con.find(VertexConstraint(s.time, s.x, s.y)) == con.end();
+           m_obstacles.find(Location(s.x, s.y)) == m_obstacles.end();
+    ;
   }
 
-  bool transitionValid(const State& s1, const State& s2) {
-    assert(m_constraints);
-    const auto& con = m_constraints->edgeConstraints;
-    return con.find(EdgeConstraint(s1.time, s1.x, s1.y, s2.x, s2.y)) ==
-           con.end();
-  }
+  bool transitionValid(const State&, const State&) { return true; }
 #if 0
   // We use another A* search for simplicity
   // we compute the shortest path to each goal by using the fact that our getNeighbor function is
@@ -724,14 +623,27 @@ class Environment {
   std::unordered_set<Location> m_obstacles;
   std::vector<Location> m_goals;
   // std::vector< std::vector<int> > m_heuristic;
-  size_t m_agentIdx;
-  const Constraints* m_constraints;
   int m_lastGoalConstraint;
   int m_highLevelExpanded;
   int m_lowLevelExpanded;
 };
 
 int main(int argc, char* argv[]) {
+  if (signal(SIGINT, FatalSignalHandler) == SIG_ERR) {
+    std::cerr << "Cannot trap SIGINT\n";
+    exit(-1);
+  }
+
+  if (signal(SIGSEGV, FatalSignalHandler) == SIG_ERR) {
+    std::cerr << "Cannot trap SIGSEGV\n";
+    exit(-1);
+  }
+
+  if (signal(SIGABRT, FatalSignalHandler) == SIG_ERR) {
+    std::cerr << "Cannot trap SIGABRT\n";
+    exit(-1);
+  }
+
   namespace po = boost::program_options;
   // Declare the supported options.
   po::options_description desc("Allowed options");
@@ -782,8 +694,7 @@ int main(int argc, char* argv[]) {
   }
 
   Environment mapf(dimx, dimy, obstacles, goals);
-  XStar<State, Action, int, Conflict, Constraints, Environment, Window> x_star(
-      mapf);
+  XStar<State, Action, int, Conflict, Environment, Window> x_star(mapf);
   std::vector<PlanResult<State, Action, int>> solution;
 
   Timer timer;

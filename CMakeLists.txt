@@ -35,6 +35,7 @@ add_custom_target(clang-tidy
 # clang-format
 set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/a_star.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/joint_a_star.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/a_star_epsilon.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/assignment.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/cbs.hpp
@@ -79,7 +80,20 @@ add_custom_target(everything
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -O3")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -g")
+
+IF(${CMAKE_BUILD_TYPE} MATCHES "Release")
+  MESSAGE(STATUS "Additional Flags for ***RELEASE*** mode")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -openmp -fno-builtin-malloc")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fno-builtin-calloc")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fno-builtin-realloc")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fno-builtin-free -O3 -DNDEBUG")
+  #SET(BUILD_SPECIFIC_LIBRARIES "tcmalloc")
+ELSEIF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+  MESSAGE(STATUS "Additional Flags for ***DEBUG*** mode")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g ")
+  SET(BUILD_SPECIFIC_LIBRARIES "")
+ENDIF()
 
 include_directories(
   include

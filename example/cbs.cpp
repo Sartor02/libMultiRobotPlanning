@@ -644,7 +644,7 @@ int main(int argc, char* argv[]) {
     out << "statistics:" << std::endl;
     out << "  cost: " << cost << std::endl;
     out << "  makespan: " << makespan << std::endl;
-    out << "  runtime: " << timer.elapsedSeconds() << std::endl;
+    out << "  runtime (ms): " << timer.elapsedSeconds() * 1000.0f << std::endl;
     out << "  highLevelExpanded: " << mapf.highLevelExpanded() << std::endl;
     out << "  lowLevelExpanded: " << mapf.lowLevelExpanded() << std::endl;
     out << "schedule:" << std::endl;
