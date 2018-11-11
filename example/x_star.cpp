@@ -25,7 +25,7 @@ void FatalSignalHandler(const int signo) {
 }
 
 template <typename T>
-T l1Norm(T x1, T y1, T x2, T y2) {
+T L1Norm(T x1, T y1, T x2, T y2) {
   return std::abs(x1 - x2) + std::abs(y1 - y2);
 }
 
@@ -131,7 +131,7 @@ struct Conflict {
 };
 
 struct Window {
-  static constexpr int kRadius = 1;
+  static constexpr int kRadius = 2;
   static constexpr int kTimeDelta = 2;
   int radius;
   int x;
@@ -150,7 +150,7 @@ struct Window {
         agents({c.agent1, c.agent2}),
         start_index(0) {}
 
-  bool isInWindow(const int qx, const int qy) const {
+  bool IsInWindow(const int qx, const int qy) const {
     return linfNorm(qx, qy, this->x, this->y) <= radius;
   }
 
@@ -159,7 +159,7 @@ struct Window {
     agents.erase(std::unique(agents.begin(), agents.end()), agents.end());
   }
 
-  bool mergeIfApplicable(const Conflict& c) {
+  bool MergeIfApplicable(const Conflict& c) {
     switch (c.type) {
       case Conflict::Vertex:
         if (linfNorm(x, y, c.x1, c.y1) <= radius &&
@@ -259,6 +259,13 @@ class Environment {
     // return m_heuristic[m_agentIdx][s.x + m_dimx * s.y];
     return std::abs(s.x - m_goals[agent_index].x) +
            std::abs(s.y - m_goals[agent_index].y);
+  }
+  
+  int AdmissibleHeuristic(const State& s1, const State& s2) {
+    // std::cout << "H: " <<  s << " " << m_heuristic[m_agentIdx][s.x + m_dimx *
+    // s.y] << std::endl;
+    // return m_heuristic[m_agentIdx][s.x + m_dimx * s.y];
+    return L1Norm(s1.x, s1.y, s2.x, s2.y);
   }
 
   bool isSolution(const State& s, const size_t agent_index) {
@@ -432,7 +439,7 @@ class Environment {
     for (const Conflict& c : conflicts) {
       bool incorporatedInWindow = false;
       for (Window& w : windows) {
-        if (w.mergeIfApplicable(c)) {
+        if (w.MergeIfApplicable(c)) {
           incorporatedInWindow = true;
           break;
         }
@@ -448,25 +455,25 @@ class Environment {
     return windows;
   }
 
-  void setWindowIndices(
-      Window& w,
+  void SetWindowIndices(
+      Window* w,
       const std::vector<PlanResult<State, Action, int>>& individual_solutions) {
-    w.start_index = std::numeric_limits<size_t>::max();
-    w.goal_indices.clear();
-    for (const size_t& agent_index : w.agents) {
+    w->start_index = std::numeric_limits<size_t>::max();
+    w->goal_indices.clear();
+    for (const size_t& agent_index : w->agents) {
       const auto& solution = individual_solutions[agent_index];
       for (size_t i = 0; i < solution.states.size(); ++i) {
         const std::pair<State, int>& step = solution.states[i];
-        if (w.isInWindow(step.first.x, step.first.y)) {
-          w.start_index = std::min(w.start_index, i);
+        if (w->IsInWindow(step.first.x, step.first.y)) {
+          w->start_index = std::min(w->start_index, i);
           break;
         }
       }
 
       for (int i = solution.states.size() - 1; i >= 0; --i) {
         const std::pair<State, int>& step = solution.states[i];
-        if (w.isInWindow(step.first.x, step.first.y)) {
-          w.goal_indices.push_back(i);
+        if (w->IsInWindow(step.first.x, step.first.y)) {
+          w->goal_indices.push_back(i);
           break;
         }
       }

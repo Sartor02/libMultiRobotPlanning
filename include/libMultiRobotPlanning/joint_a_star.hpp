@@ -73,21 +73,54 @@ class JointAStar {
     solution.actions.clear();
     solution.cost = initial_cost;
 
+    std::cout << "Start state: ";
+    for (const auto& s : start_state) {
+      std::cout << s << ' ';
+    }
+    std::cout << '\n';
+
+    std::cout << "Goal state: ";
+    for (const auto& s : m_env.goal) {
+      std::cout << s << ' ';
+    }
+    std::cout << '\n';
+
     openSet_t openSet;
     stateMap_t stateToHeap;
     closedSet_t closedSet;
     cameFromMap_t cameFrom;
 
     auto handle = openSet.push(Node(
-        start_state, m_env.admissibleHeuristic(start_state), initial_cost));
+        start_state, m_env.AdmissibleJointHeuristic(start_state) + initial_cost, initial_cost));
     stateToHeap.insert(std::make_pair<>(start_state, handle));
     (*handle).handle = handle;
 
     std::vector<Neighbor<JointState, JointAction, JointCost>> neighbors;
     neighbors.reserve(10);
 
+    JointState prev_state = start_state;
+    for (auto& e : prev_state) {
+      e.time = -100;
+    }
+    
     while (!openSet.empty()) {
       Node current = openSet.top();
+      
+//       std::cout << "Current state:";
+//       for (const auto& s : current.state) {
+//         std::cout << s << ' ';
+//       }
+//       std::cout << '\n';
+      
+      for (auto& e : prev_state) {
+        e.time += 1;
+      }
+      if (prev_state == current.state) {
+        std::cerr << "Loop detected!\n";
+        exit(1);
+      }
+      prev_state = current.state;
+      
       m_env.onExpandNode(
           current.state, current.totalFScore, current.totalGScore);
 
@@ -96,6 +129,7 @@ class JointAStar {
         solution.actions.clear();
         auto iter = cameFrom.find(current.state);
         while (iter != cameFrom.end()) {
+          std::cout << "Unwind path!\n";
           const JointState& key = iter->first;
           const std::tuple<JointState, JointAction, JointCost, TotalCost>&
               value = iter->second;
@@ -113,6 +147,8 @@ class JointAStar {
         solution.cost = current.gScore;
         solution.fmin = current.fScore;
 
+        assert(solution.states.size() == solution.actions.size());
+
         return true;
       }
 
@@ -122,7 +158,8 @@ class JointAStar {
 
       // traverse neighbors
       neighbors.clear();
-      m_env.getJointNeighbors(current.state, &neighbors);
+      m_env.GetJointNeighbors(current.state, current.totalFScore, current.totalGScore, &neighbors);
+      std::cout << "Found " << neighbors.size() << " neighbors\n";
       for (const Neighbor<JointState, JointAction, JointCost>& neighbor :
            neighbors) {
         assert(!neighbor.state.empty());
@@ -132,13 +169,22 @@ class JointAStar {
         assert(neighbor.action.size() == neighbor.cost.size());
         assert(current.state.size() == neighbor.cost.size());
 
+//         std::cout << "Neighbor state:";
+//         for (const auto& s : neighbor.state) {
+//           std::cout << s << ' ';
+//         }
+//         std::cout << '\n';
+
         if (closedSet.find(neighbor.state) != closedSet.end()) {
+//           std::cout << "Rejected by closed set\n";
           continue;
         }
 
         if (!m_env.IsValidNeighbor(current.state, neighbor.state)) {
+//           std::cout << "Neighbor reject\n";
           continue;
         }
+//         std::cout << "Neighbor kept\n";
 
         const JointCost tentative_gScore = current.gScore + neighbor.cost;
 
@@ -146,7 +192,7 @@ class JointAStar {
         auto iter = stateToHeap.find(neighbor.state);
         if (iter == stateToHeap.end()) {  // Discover a new node
           const JointCost fScore =
-              tentative_gScore + m_env.admissibleHeuristic(neighbor.state);
+              tentative_gScore + m_env.AdmissibleJointHeuristic(neighbor.state);
           assert(current.state.size() == fScore.size());
           auto handle =
               openSet.push(Node(neighbor.state, fScore, tentative_gScore));
