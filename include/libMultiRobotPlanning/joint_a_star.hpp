@@ -73,13 +73,13 @@ class JointAStar {
     solution.actions.clear();
     solution.cost = initial_cost;
 
-    std::cout << "Start state: ";
+    std::cout << "Joint A* Start state: ";
     for (const auto& s : start_state) {
       std::cout << s << ' ';
     }
     std::cout << '\n';
 
-    std::cout << "Goal state: ";
+    std::cout << "Joint A* Goal state: ";
     for (const auto& s : m_env.goal) {
       std::cout << s << ' ';
     }
@@ -131,7 +131,6 @@ class JointAStar {
         solution.actions.clear();
         auto iter = cameFrom.find(current.state);
         while (iter != cameFrom.end()) {
-          std::cout << "Unwind path!\n";
           const JointState& key = iter->first;
           const std::tuple<JointState, JointAction, JointCost, TotalCost>&
               value = iter->second;
@@ -161,8 +160,7 @@ class JointAStar {
       // traverse neighbors
       neighbors.clear();
       m_env.GetJointNeighbors(
-          current.state, current.totalFScore, current.totalGScore, &neighbors);
-      std::cout << "Found " << neighbors.size() << " neighbors\n";
+          current.state, &neighbors);
       for (const Neighbor<JointState, JointAction, JointCost>& neighbor :
            neighbors) {
         assert(!neighbor.state.empty());

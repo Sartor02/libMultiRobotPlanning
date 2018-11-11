@@ -139,42 +139,6 @@ class XStar {
       assert(initial_cost.size() == start_state.size());
 
       m_env.SetWindowIndices(&w, global_solution);
-      std::cout << "Window: " << w << "\n";
-      std::cout << "Start locations:\n";
-      for (const size_t& agent_idx : w.agents) {
-        const PlanResult<State, Action, Cost>& result =
-            global_solution[agent_idx];
-        std::cout << result.states[w.start_index].first << " ";
-      }
-      std::cout << "\n";
-
-      std::cout << "Goal locations:\n";
-      assert(w.agents.size() == w.goal_indices.size());
-      for (size_t i = 0; i < w.agents.size(); ++i) {
-        const size_t& agent_idx = w.agents[i];
-        const PlanResult<State, Action, Cost>& result =
-            global_solution[agent_idx];
-        std::cout << result.states[w.goal_indices[i]].first << " ";
-      }
-      std::cout << "\n";
-
-      std::cout << "BEFORE:\n";
-
-      for (const size_t& agent_idx : w.agents) {
-        std::cout << "AGENT: " << agent_idx << '\n';
-        const PlanResult<State, Action, Cost>& pr = global_solution[agent_idx];
-        std::cout << "States:\n";
-        for (const auto& sc : pr.states) {
-          std::cout << sc.first << ", " << sc.second << '\n';
-        }
-
-        //         std::cout << "Actions:\n";
-        //         for (const auto& ac : pr.actions) {
-        //           std::cout << ac.first << ", " << ac.second << '\n';
-        //         }
-
-        std::cout << "Cost: " << pr.cost << '\n';
-      }
 
       PlanResult<JointState, JointAction, JointCost> window_solution;
       const bool search_result = joint_a_star.search(
@@ -182,56 +146,13 @@ class XStar {
       assert(search_result);
       assert(window_solution.actions.size() == window_solution.states.size());
 
-      //       const PlanResult<JointState, JointAction, JointCost>&
-      //       replan_solution,
-      //         const Window& w,
-      //         std::vector<PlanResult<State, Action, Cost>>* full_solution
-
-      std::cout << "SOLUTION:\n";
-
-      for (size_t i = 0; i < window_solution.states.size(); ++i) {
-        const std::pair<JointState, JointCost>& jsc = window_solution.states[i];
-        for (const State& s : jsc.first) {
-          std::cout << s << " ";
-        }
-        std::cout << jsc.second;
-        std::cout << "\n";
-      }
-
       IncorporateToExistingResults(window_solution, w, &global_solution);
 
-      std::cout << "AFTER:\n";
-
-      for (const size_t& agent_idx : w.agents) {
-        std::cout << "AGENT: " << agent_idx << '\n';
-        const PlanResult<State, Action, Cost>& pr = global_solution[agent_idx];
-        std::cout << "States:\n";
-        for (const auto& sc : pr.states) {
-          std::cout << sc.first << ", " << sc.second << '\n';
-        }
-
-        //         std::cout << "Actions:\n";
-        //         for (const auto& ac : pr.actions) {
-        //           std::cout << ac.first << ", " << ac.second << '\n';
-        //         }
-
-        std::cout << "Cost: " << pr.cost << '\n';
-      }
-
-      //       for (const auto& pair : window_solution.states) {
-      //         assert(pair.first.size() == pair.second.size());
-      //         for (const auto& s : pair.first) {
-      //           std::cout << s << " ";
-      //         }
-      //         std::cout << ", Costs: " << pair.second << '\n';
-      //       }
     }
 
     t.stop();
 
     std::cout << t.elapsedSeconds() * 1000.0f << '\n';
-
-    std::cout << "Repair not finished!\n";
     return true;
   }
 
@@ -374,10 +295,6 @@ class XStar {
       //           {window_solution.actions[end_indices[i]].first[i],
       //           window_solution.actions[end_indices[i]].second[i]};
 
-      std::cout << "Old goal state time: " << old_goal_state.first.time << '\n';
-      std::cout << "New goal state time: " << new_goal_state.first.time << '\n';
-      std::cout << "Old goal state cost: " << old_goal_state.second << '\n';
-      std::cout << "New goal state cost: " << new_goal_state.second << '\n';
 
       const int time_delta =
           new_goal_state.first.time - old_goal_state.first.time;
@@ -406,12 +323,8 @@ class XStar {
             individual_global_plan.states.begin() + start_idx, s);
         individual_global_plan.actions.insert(
             individual_global_plan.actions.begin() + start_idx, a);
-        std::cout << "Inserted for agent " << w.agents[i] << ": " << s.first
-                  << '\n';
       }
 
-      std::cout << "Time delta: " << time_delta << '\n';
-      std::cout << "Cost delta: " << cost_delta << '\n';
 
       for (size_t j = end_indices[i] + 1 + w.start_index;
            j < individual_global_plan.states.size();
@@ -513,10 +426,6 @@ class XStar {
 
     void GetJointNeighbors(
         const JointState& js,
-        //         const JointCost& fScore,
-        //         const JointCost& gScore,
-        const TotalCost& totalFScore,
-        const TotalCost& totalGScore,
         std::vector<Neighbor<JointState, JointAction, JointCost>>* neighbors) {
       assert(js.size() == agent_indices.size());
       neighbors->clear();
@@ -539,8 +448,6 @@ class XStar {
               global_solution[agent_idx].actions[s.time].second;
           individual_neighbors[i] = {
               Neighbor<State, Action, int>(next_state, next_action, next_cost)};
-          std::cout << "Adding path only neighbors for agent " << agent_idx
-                    << "\n";
           continue;
         }
 
@@ -552,29 +459,14 @@ class XStar {
         m_env.getNeighbors(s, agent_idx, individual_neighbors[i]);
       }
 
-      std::cout << "Joint Neighbor State: ";
-      for (const auto& s : js) {
-        std::cout << s << " ";
-      }
-      std::cout << " Total F Score: " << totalFScore
-                << " Total G Score: " << totalGScore << '\n';
-
-      std::cout << "Individual Neighbors:\n";
-      for (const std::vector<Neighbor<State, Action, int>>& ns :
-           individual_neighbors) {
-        for (const auto& n : ns) {
-          std::cout << n.state << " ";
-        }
-        std::cout << '\n';
-      }
-
       MakeJointNeighbors(individual_neighbors, neighbors);
     }
 
     bool IsValidNeighbor(const JointState& old_js, const JointState& new_js) {
       assert(old_js.size() == new_js.size());
       for (size_t i = 0; i < new_js.size(); ++i) {
-        assert(old_js[i].time + 1 == new_js[i].time);
+//         std::cout << "Old: " << old_js[i].time << " New: " << new_js[i].time << '\n';
+        assert(old_js[i].time + 1 == new_js[i].time || old_js[i].time == new_js[i].time);
       }
       for (size_t i = 0; i < new_js.size(); ++i) {
         if (!window.IsInWindow(new_js[i].x, new_js[i].y)) {
