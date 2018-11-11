@@ -108,18 +108,18 @@ class JointAStar {
     while (!openSet.empty()) {
       Node current = openSet.top();
 
-      //       std::cout << "Current state:";
-      //       for (const auto& s : current.state) {
-      //         std::cout << s << ' ';
-      //       }
-      //       std::cout << '\n';
+//             std::cout << "Current state:";
+//             for (const auto& s : current.state) {
+//               std::cout << s << ' ';
+//             }
+//             std::cout << '\n';
 
       for (auto& e : prev_state) {
         e.time += 1;
       }
       if (prev_state == current.state) {
         std::cerr << "Loop detected!\n";
-        exit(1);
+        return false;
       }
       prev_state = current.state;
 

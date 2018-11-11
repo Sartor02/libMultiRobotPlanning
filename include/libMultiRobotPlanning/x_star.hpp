@@ -95,6 +95,7 @@ class XStar {
       solutionCost += global_solution[i].cost;
     }
 
+
     std::vector<Conflict> conflicts = m_env.getAllConflicts(global_solution);
     if (conflicts.empty()) {
       std::cout << "done; cost: " << solutionCost << std::endl;
@@ -458,6 +459,24 @@ class XStar {
 
         m_env.getNeighbors(s, agent_idx, individual_neighbors[i]);
       }
+      
+      for (const size_t& agent_idx : agent_indices) {
+         const PlanResult<State, Action, Cost>& individual_global_plan = global_solution[agent_idx];
+         std::cout << "Agent Idx: " << agent_idx << '\n';
+      }
+      
+      std::cout << "Joint State: ";
+      for (const auto& s : js) {
+        std::cout << s << " ";
+      }
+      std::cout << '\n';
+      std::cout << "Individual Neighbors:\n";
+      for (const auto& in : individual_neighbors) {
+        for (const auto& n : in) {
+          std::cout << n.state << " ";
+        }
+        std::cout << '\n';
+      }
 
       MakeJointNeighbors(individual_neighbors, neighbors);
     }
@@ -475,13 +494,13 @@ class XStar {
           const size_t& global_solution_idx = new_js[i].time;
           if (states.size() > global_solution_idx &&
               !(states[global_solution_idx].first == new_js[i])) {
-            //             std::cout << "Not in window\n";
+                        std::cout << "Not in window: " << new_js[i] << "\n";
             return false;
           }
         }
         for (size_t j = i + 1; j < new_js.size(); ++j) {
           if (new_js[i] == (new_js[j])) {
-            //             std::cout << "Collide with self\n";
+                        std::cout << "Collide with self\n";
             return false;
           }
 
@@ -489,7 +508,7 @@ class XStar {
               (old_js[i].time + 1 == new_js[j].time) &&
               (new_js[i].equalExceptTime(old_js[j])) &&
               (new_js[i].time == old_js[j].time + 1)) {
-            //             std::cout << "Collide swap\n";
+                        std::cout << "Collide swap\n";
             return false;
           }
         }

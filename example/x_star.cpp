@@ -131,7 +131,7 @@ struct Conflict {
 };
 
 struct Window {
-  static constexpr int kRadius = 1;
+  static constexpr int kRadius = 2;
   static constexpr int kTimeDelta = 2;
   int radius;
   int x;
