@@ -513,8 +513,8 @@ class XStar {
 
     void GetJointNeighbors(
         const JointState& js,
-//         const JointCost& fScore,
-//         const JointCost& gScore,
+        //         const JointCost& fScore,
+        //         const JointCost& gScore,
         const TotalCost& totalFScore,
         const TotalCost& totalGScore,
         std::vector<Neighbor<JointState, JointAction, JointCost>>* neighbors) {
@@ -551,15 +551,17 @@ class XStar {
 
         m_env.getNeighbors(s, agent_idx, individual_neighbors[i]);
       }
-      
+
       std::cout << "Joint Neighbor State: ";
       for (const auto& s : js) {
         std::cout << s << " ";
       }
-      std::cout << " Total F Score: " << totalFScore << " Total G Score: " << totalGScore << '\n';
-      
+      std::cout << " Total F Score: " << totalFScore
+                << " Total G Score: " << totalGScore << '\n';
+
       std::cout << "Individual Neighbors:\n";
-      for (const std::vector<Neighbor<State, Action, int>>& ns : individual_neighbors) {
+      for (const std::vector<Neighbor<State, Action, int>>& ns :
+           individual_neighbors) {
         for (const auto& n : ns) {
           std::cout << n.state << " ";
         }
@@ -581,13 +583,13 @@ class XStar {
           const size_t& global_solution_idx = new_js[i].time;
           if (states.size() > global_solution_idx &&
               !(states[global_solution_idx].first == new_js[i])) {
-//             std::cout << "Not in window\n";
+            //             std::cout << "Not in window\n";
             return false;
           }
         }
         for (size_t j = i + 1; j < new_js.size(); ++j) {
           if (new_js[i] == (new_js[j])) {
-//             std::cout << "Collide with self\n";
+            //             std::cout << "Collide with self\n";
             return false;
           }
 
@@ -595,7 +597,7 @@ class XStar {
               (old_js[i].time + 1 == new_js[j].time) &&
               (new_js[i].equalExceptTime(old_js[j])) &&
               (new_js[i].time == old_js[j].time + 1)) {
-//             std::cout << "Collide swap\n";
+            //             std::cout << "Collide swap\n";
             return false;
           }
         }

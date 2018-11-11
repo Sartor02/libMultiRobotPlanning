@@ -90,8 +90,10 @@ class JointAStar {
     closedSet_t closedSet;
     cameFromMap_t cameFrom;
 
-    auto handle = openSet.push(Node(
-        start_state, m_env.AdmissibleJointHeuristic(start_state) + initial_cost, initial_cost));
+    auto handle = openSet.push(
+        Node(start_state,
+             m_env.AdmissibleJointHeuristic(start_state) + initial_cost,
+             initial_cost));
     stateToHeap.insert(std::make_pair<>(start_state, handle));
     (*handle).handle = handle;
 
@@ -102,16 +104,16 @@ class JointAStar {
     for (auto& e : prev_state) {
       e.time = -100;
     }
-    
+
     while (!openSet.empty()) {
       Node current = openSet.top();
-      
-//       std::cout << "Current state:";
-//       for (const auto& s : current.state) {
-//         std::cout << s << ' ';
-//       }
-//       std::cout << '\n';
-      
+
+      //       std::cout << "Current state:";
+      //       for (const auto& s : current.state) {
+      //         std::cout << s << ' ';
+      //       }
+      //       std::cout << '\n';
+
       for (auto& e : prev_state) {
         e.time += 1;
       }
@@ -120,7 +122,7 @@ class JointAStar {
         exit(1);
       }
       prev_state = current.state;
-      
+
       m_env.onExpandNode(
           current.state, current.totalFScore, current.totalGScore);
 
@@ -158,7 +160,8 @@ class JointAStar {
 
       // traverse neighbors
       neighbors.clear();
-      m_env.GetJointNeighbors(current.state, current.totalFScore, current.totalGScore, &neighbors);
+      m_env.GetJointNeighbors(
+          current.state, current.totalFScore, current.totalGScore, &neighbors);
       std::cout << "Found " << neighbors.size() << " neighbors\n";
       for (const Neighbor<JointState, JointAction, JointCost>& neighbor :
            neighbors) {
@@ -169,22 +172,22 @@ class JointAStar {
         assert(neighbor.action.size() == neighbor.cost.size());
         assert(current.state.size() == neighbor.cost.size());
 
-//         std::cout << "Neighbor state:";
-//         for (const auto& s : neighbor.state) {
-//           std::cout << s << ' ';
-//         }
-//         std::cout << '\n';
+        //         std::cout << "Neighbor state:";
+        //         for (const auto& s : neighbor.state) {
+        //           std::cout << s << ' ';
+        //         }
+        //         std::cout << '\n';
 
         if (closedSet.find(neighbor.state) != closedSet.end()) {
-//           std::cout << "Rejected by closed set\n";
+          //           std::cout << "Rejected by closed set\n";
           continue;
         }
 
         if (!m_env.IsValidNeighbor(current.state, neighbor.state)) {
-//           std::cout << "Neighbor reject\n";
+          //           std::cout << "Neighbor reject\n";
           continue;
         }
-//         std::cout << "Neighbor kept\n";
+        //         std::cout << "Neighbor kept\n";
 
         const JointCost tentative_gScore = current.gScore + neighbor.cost;
 
