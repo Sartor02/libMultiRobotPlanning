@@ -108,11 +108,11 @@ class JointAStar {
     while (!openSet.empty()) {
       Node current = openSet.top();
 
-//             std::cout << "Current state:";
-//             for (const auto& s : current.state) {
-//               std::cout << s << ' ';
-//             }
-//             std::cout << '\n';
+      //             std::cout << "Current state:";
+      //             for (const auto& s : current.state) {
+      //               std::cout << s << ' ';
+      //             }
+      //             std::cout << '\n';
 
       for (auto& e : prev_state) {
         e.time += 1;
@@ -159,8 +159,7 @@ class JointAStar {
 
       // traverse neighbors
       neighbors.clear();
-      m_env.GetJointNeighbors(
-          current.state, &neighbors);
+      m_env.GetJointNeighbors(current.state, &neighbors);
       for (const Neighbor<JointState, JointAction, JointCost>& neighbor :
            neighbors) {
         assert(!neighbor.state.empty());
