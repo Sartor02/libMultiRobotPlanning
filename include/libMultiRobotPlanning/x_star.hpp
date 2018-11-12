@@ -101,16 +101,42 @@ class XStar {
       const size_t modified_window =
           m_env.AddConflictToWindows(next_conflict, &windows);
       Window& w = windows[modified_window];
-      m_env.SetWindowIndices(&w, global_solution);
-      std::cout << "Window idx: " << modified_window << '\n';
-      std::cout << "Window: " << w << "\n";
 
       JointState goal(w.agents.size());
-      for (size_t i = 0; i < w.agents.size(); ++i) {
-        const auto& agent_idx = w.agents[i];
-        const auto& goal_idx = w.goal_indices[i];
-        goal[i] = (global_solution[agent_idx].states[goal_idx]).first;
-      }
+
+      bool no_shared_goals;
+      do {
+        no_shared_goals = true;
+        m_env.SetWindowIndices(&w, global_solution);
+
+        for (size_t i = 0; i < w.agents.size(); ++i) {
+          const auto& agent_idx = w.agents[i];
+          const auto& goal_idx = w.goal_indices[i];
+          goal[i] = (global_solution[agent_idx].states[goal_idx]).first;
+        }
+
+        for (size_t i = 0; i < goal.size(); ++i) {
+          for (size_t j = i + 1; j < goal.size(); ++j) {
+            if (goal[i].equalExceptTime(goal[j])) {
+              no_shared_goals = false;
+              break;
+            }
+          }
+          if (!no_shared_goals) {
+            break;
+          }
+        }
+
+        if (!no_shared_goals) {
+          w.radius += 1;
+          std::cout << "Radius: " << w.radius << "\n";
+        }
+
+      } while (!no_shared_goals);
+
+      std::cout << "Window: " << w << "\n";
+
+      assert(w.agents.size() == w.goal_indices.size());
 
       JointEnvironment joint_environment(
           m_env, w.agents, goal, w, global_solution);
@@ -133,41 +159,45 @@ class XStar {
         start_action[i] = Action::Wait;
       }
       assert(initial_cost.size() == start_state.size());
-
-      m_env.SetWindowIndices(&w, global_solution);
+      assert(w.agents.size() == w.goal_indices.size());
 
       PlanResult<JointState, JointAction, JointCost> window_solution;
       const bool search_result = joint_a_star.search(
           start_state, start_action, window_solution, initial_cost);
-      assert(search_result);
+      if (!search_result) {
+        std::cerr << "No Joint Search Solution!\n";
+        return false;
+      }
       assert(window_solution.actions.size() == window_solution.states.size());
 
-      for (size_t i = 0; i < w.agents.size(); ++i) {
-        std::cout << "Agent: " << w.agents[i] << '\n';
-        for (size_t j = 0; j < window_solution.states.size(); ++j) {
-          const State& s = window_solution.states[j].first[i];
-          std::cout << s << '\n';
-        }
-      }
+      //       for (size_t i = 0; i < w.agents.size(); ++i) {
+      //         std::cout << "Agent: " << w.agents[i] << '\n';
+      //         for (size_t j = 0; j < window_solution.states.size(); ++j) {
+      //           const State& s = window_solution.states[j].first[i];
+      //           std::cout << s << '\n';
+      //         }
+      //       }
 
       IncorporateToExistingResults(window_solution, w, &global_solution);
 
-      std::cout << "Global solution:\n";
-      for (size_t i = 0; i < w.agents.size(); ++i) {
-        std::cout << "Agent: " << w.agents[i] << '\n';
-        const size_t& agent_idx = w.agents[i];
-        const auto& individual_global_plan = global_solution[agent_idx];
-        for (const auto& p : individual_global_plan.states) {
-          std::cout << p.first << '\n';
-        }
-      }
+      //       std::cout << "Global solution:\n";
+      //       for (size_t i = 0; i < w.agents.size(); ++i) {
+      //         std::cout << "Agent: " << w.agents[i] << '\n';
+      //         const size_t& agent_idx = w.agents[i];
+      //         const auto& individual_global_plan =
+      //         global_solution[agent_idx]; for (const auto& p :
+      //         individual_global_plan.states) {
+      //           std::cout << p.first << '\n';
+      //         }
+      //       }
 
-      Conflict next_next_conflict;
-      if (m_env.getFirstConflict(global_solution, next_next_conflict)) {
-        assert(next_next_conflict != next_conflict);
-        std::cout << "Current: " << next_conflict << '\n';
-        std::cout << "Next: " << next_next_conflict << '\n';
-      }
+      //       Conflict next_next_conflict;
+      //       if (m_env.getFirstConflict(global_solution, next_next_conflict))
+      //       {
+      //         assert(next_next_conflict != next_conflict);
+      //         std::cout << "Current: " << next_conflict << '\n';
+      //         std::cout << "Next: " << next_next_conflict << '\n';
+      //       }
     }
 
     t.stop();
@@ -302,10 +332,11 @@ class XStar {
 
     const std::vector<size_t>& end_joint_solution_indices =
         GetEndIndices(window_solution, w);
-    for (size_t i = 0; i < w.agents.size(); ++i) {
-      std::cout << "Agent: " << w.agents[i]
-                << " End cost: " << end_joint_solution_indices[i] + w.start_index << '\n';
-    }
+    //     for (size_t i = 0; i < w.agents.size(); ++i) {
+    //       std::cout << "Agent: " << w.agents[i]
+    //                 << " End cost: " << end_joint_solution_indices[i] +
+    //                 w.start_index << '\n';
+    //     }
 
     assert(w.goal_indices.size() == w.agents.size());
     for (size_t i = 0; i < w.agents.size(); ++i) {

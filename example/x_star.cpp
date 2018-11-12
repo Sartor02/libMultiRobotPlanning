@@ -147,8 +147,8 @@ struct Conflict {
 };
 
 struct Window {
-  static constexpr int kRadius = 2;
-  static constexpr int kTimeDelta = kRadius * 2;
+  static constexpr int kRadius = 1;
+  static constexpr int kTimeDelta = kRadius * 3;
   int radius;
   int x;
   int y;
@@ -207,6 +207,7 @@ struct Window {
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Window& w) {
+    assert(w.agents.size() == w.goal_indices.size());
     os << "Radius: " << w.radius << "; Time: " << w.time << "; (" << w.x << ","
        << w.y << ") Agents: ";
     for (const auto& e : w.agents) {
