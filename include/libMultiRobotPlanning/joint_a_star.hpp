@@ -84,7 +84,7 @@ class JointAStar {
       std::cout << s << ' ';
     }
     std::cout << '\n';
-    
+
     for (size_t i = 0; i < m_env.goal.size(); ++i) {
       for (size_t j = i + 1; j < m_env.goal.size(); ++j) {
         assert(!m_env.goal[i].equalExceptTime(m_env.goal[j]));
@@ -111,21 +111,33 @@ class JointAStar {
       e.time = -100;
     }
 
+    size_t loops = 0;
+
     while (!openSet.empty()) {
       Node current = openSet.top();
 
-//                   std::cout << "Current state:";
-//                   for (const auto& s : current.state) {
-//                     std::cout << s << ' ';
-//                   }
-//                   std::cout << '\n';
+      //       std::cout << "Current state:";
+      //       for (const auto& s : current.state) {
+      //         std::cout << s << ' ';
+      //       }
+      //       std::cout << '\n';
 
       for (auto& e : prev_state) {
         e.time += 1;
       }
       if (prev_state == current.state) {
-        std::cerr << "Loop detected!\n";
-        return false;
+        if (loops >= 10) {
+          std::cerr << "Loop detected!\n";
+          std::cerr << "State: ";
+          for (const auto& s : current.state) {
+            std::cerr << s << " ";
+          }
+          std::cerr << "\n";
+          return false;
+        }
+        ++loops;
+      } else {
+        loops = 0;
       }
       prev_state = current.state;
 

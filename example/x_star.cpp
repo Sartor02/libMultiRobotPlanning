@@ -116,6 +116,22 @@ struct Conflict {
   int x2;
   int y2;
 
+  bool operator==(const Conflict& other) const {
+    switch (type) {
+      case Vertex:
+        return (time == other.time) && (agent1 == other.agent1) &&
+               (agent2 == other.agent2) && (type == other.type) &&
+               (x1 == other.x1) && (y1 == other.y1);
+      case Edge:
+        return (time == other.time) && (agent1 == other.agent1) &&
+               (agent2 == other.agent2) && (type == other.type) &&
+               (x1 == other.x1) && (x2 == other.x2) && (y1 == other.y1) &&
+               (y2 == other.y2);
+    }
+  };
+
+  bool operator!=(const Conflict& other) const { return !(*this == other); }
+
   friend std::ostream& operator<<(std::ostream& os, const Conflict& c) {
     switch (c.type) {
       case Vertex:
@@ -154,7 +170,7 @@ struct Window {
     return linfNorm(qx, qy, this->x, this->y) <= radius;
   }
 
-  void deDupAgents() {
+  void DeDupAgents() {
     std::sort(agents.begin(), agents.end());
     agents.erase(std::unique(agents.begin(), agents.end()), agents.end());
   }
@@ -166,7 +182,7 @@ struct Window {
             std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
-          deDupAgents();
+          DeDupAgents();
           return true;
         }
         break;
@@ -175,14 +191,14 @@ struct Window {
             std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
-          deDupAgents();
+          DeDupAgents();
           return true;
         }
         if (linfNorm(x, y, c.x2, c.y2) <= radius &&
             std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
-          deDupAgents();
+          DeDupAgents();
           return true;
         }
         break;
@@ -191,7 +207,8 @@ struct Window {
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Window& w) {
-    os << "Radius: " << w.radius << "; (" << w.x << "," << w.y << ") Agents: ";
+    os << "Radius: " << w.radius << "; Time: " << w.time << "; (" << w.x << ","
+       << w.y << ") Agents: ";
     for (const auto& e : w.agents) {
       os << e << " ";
     }
@@ -433,26 +450,18 @@ class Environment {
     return conflicts;
   }
 
-  std::vector<Window> createWindowsFromConflicts(
-      const std::vector<Conflict>& conflicts) {
-    std::vector<Window> windows;
-    for (const Conflict& c : conflicts) {
-      bool incorporatedInWindow = false;
-      for (Window& w : windows) {
-        if (w.MergeIfApplicable(c)) {
-          incorporatedInWindow = true;
-          break;
-        }
+  size_t AddConflictToWindows(Conflict& c, std::vector<Window>* windows) {
+    for (size_t i = 0; i < windows->size(); ++i) {
+      Window& w = (*windows)[i];
+      if (w.MergeIfApplicable(c)) {
+        std::cout << "Merged into existing window\n";
+        return i;
       }
-
-      if (incorporatedInWindow) {
-        continue;
-      }
-
-      windows.push_back({c});
     }
 
-    return windows;
+    std::cout << "Added new window\n";
+    windows->push_back({c});
+    return windows->size() - 1;
   }
 
   void SetWindowIndices(
@@ -739,7 +748,7 @@ int main(int argc, char* argv[]) {
       for (const auto& state : solution[a].states) {
         out << "    - x: " << state.first.x << std::endl
             << "      y: " << state.first.y << std::endl
-            << "      t: " << state.second << std::endl;
+            << "      t: " << state.first.time << std::endl;
       }
     }
   } else {
