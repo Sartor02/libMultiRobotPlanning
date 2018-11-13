@@ -128,8 +128,7 @@ class XStar {
         }
 
         if (!no_shared_goals) {
-          w.radius += 1;
-          std::cout << "Radius: " << w.radius << "\n";
+          w.box.Expand();
         }
 
       } while (!no_shared_goals);
@@ -198,6 +197,32 @@ class XStar {
       //         std::cout << "Current: " << next_conflict << '\n';
       //         std::cout << "Next: " << next_next_conflict << '\n';
       //       }
+    }
+
+    for (auto& w : windows) {
+      w.Expand();
+    }
+
+    bool need_sweep = true;
+    while (need_sweep) {
+      need_sweep = false;
+      for (size_t i = 0; i < windows.size(); ++i) {
+        auto& wi = windows[i];
+        for (size_t j = i + 1; j < windows.size(); ++j) {
+          auto& wj = windows[j];
+          if (wi.Intersects(wj)) {
+            Window merged = wi.Merge(wj);
+            windows.erase(windows.begin() + i);
+            windows.erase(windows.begin() + j);
+            windows.push_back(merged);
+            need_sweep = true;
+            break;
+          }
+        }
+        if (need_sweep) {
+          break;
+        }
+      }
     }
 
     t.stop();

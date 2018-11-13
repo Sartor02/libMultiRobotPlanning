@@ -146,12 +146,87 @@ struct Conflict {
   }
 };
 
+struct WindowBox {
+  using GridVertex = std::pair<int, int>;
+  GridVertex upper_left;
+  GridVertex lower_right;
+  int expansion_delta;
+
+  WindowBox() : upper_left(0, 0), lower_right(0, 0), expansion_delta(0) {}
+  WindowBox(const GridVertex& center, const int start_radius)
+      : upper_left({center.first - start_radius, center.second + start_radius}),
+        lower_right(
+            {center.first + start_radius, center.second - start_radius}) {}
+  WindowBox(const GridVertex& upper_right,
+            const GridVertex& lower_left,
+            const int& expansion_delta)
+      : upper_left(upper_right),
+        lower_right(lower_left),
+        expansion_delta(expansion_delta) {}
+
+  void Expand() {
+    upper_left.first -= expansion_delta;
+    upper_left.second += expansion_delta;
+    lower_right.first += expansion_delta;
+    lower_right.second -= expansion_delta;
+  }
+
+  bool Inside(const GridVertex& p) const { return InXRange(p) && InYRange(p); }
+
+  bool Intersects(const WindowBox& other) const {
+    if (Inside(other.lower_right)) {
+      return true;
+    }
+    if (Inside(other.upper_left)) {
+      return true;
+    }
+    const GridVertex other_upper_right = other.ComputeUpperRight();
+    if (Inside(other_upper_right)) {
+      return true;
+    }
+    const GridVertex other_lower_left = other.ComputeLowerLeft();
+    if (Inside(other_lower_left)) {
+      return true;
+    }
+    return false;
+  }
+
+  WindowBox Merge(const WindowBox& other) const {
+    const GridVertex new_upper_left(
+        std::min(upper_left.first, other.upper_left.first),
+        std::max(upper_left.second, other.upper_left.second));
+    const GridVertex new_lower_right(
+        std::max(lower_right.first, other.lower_right.first),
+        std::min(lower_right.second, other.lower_right.second));
+    return {new_upper_left, new_lower_right, expansion_delta};
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const GridVertex& v) {
+    os << "(" << v.first << ", " << v.second << ")";
+    return os;
+  }
+
+ private:
+  bool InXRange(const GridVertex& p) const {
+    return (p.first <= lower_right.first && p.first >= upper_left.first);
+  }
+  bool InYRange(const GridVertex& p) const {
+    return (p.second >= lower_right.second && p.second <= upper_left.second);
+  }
+
+  GridVertex ComputeUpperRight() const {
+    return {lower_right.first, upper_left.second};
+  }
+
+  GridVertex ComputeLowerLeft() const {
+    return {upper_left.first, lower_right.second};
+  }
+};
+
 struct Window {
   static constexpr int kRadius = 1;
   static constexpr int kTimeDelta = kRadius * 3;
-  int radius;
-  int x;
-  int y;
+  WindowBox box;
   int time;
   std::vector<size_t> agents;
   size_t start_index;
@@ -159,15 +234,19 @@ struct Window {
 
   Window() = delete;
   Window(const Conflict& c)
-      : radius(kRadius),
-        x(c.x1),
-        y(c.y1),
+      : box({c.x1, c.y1}, kRadius),
         time(c.time),
         agents({c.agent1, c.agent2}),
         start_index(0) {}
+  Window(const WindowBox& box,
+         const int& time,
+         const std::vector<size_t>& agents)
+      : box(box), time(time), agents(agents), start_index(0) {}
+
+  void Expand() { box.Expand(); }
 
   bool IsInWindow(const int qx, const int qy) const {
-    return linfNorm(qx, qy, this->x, this->y) <= radius;
+    return box.Inside({qx, qy});
   }
 
   void DeDupAgents() {
@@ -175,11 +254,25 @@ struct Window {
     agents.erase(std::unique(agents.begin(), agents.end()), agents.end());
   }
 
-  bool MergeIfApplicable(const Conflict& c) {
+  bool Intersects(const Window& other) const {
+    return box.Intersects(other.box);
+  }
+
+  Window Merge(const Window& other) const {
+    const WindowBox new_box = box.Merge(other.box);
+    std::vector<size_t> new_agents(agents);
+    std::copy(other.agents.begin(),
+              other.agents.end(),
+              std::back_inserter(new_agents));
+    Window new_window(new_box, (time + other.time) / 2, new_agents);
+    new_window.DeDupAgents();
+    return new_window;
+  }
+
+  bool IncludeConflictIfApplicable(const Conflict& c) {
     switch (c.type) {
       case Conflict::Vertex:
-        if (linfNorm(x, y, c.x1, c.y1) <= radius &&
-            std::abs(c.time - time) <= kTimeDelta) {
+        if (IsInWindow(c.x1, c.y1) && std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           DeDupAgents();
@@ -187,15 +280,13 @@ struct Window {
         }
         break;
       case Conflict::Edge:
-        if (linfNorm(x, y, c.x1, c.y1) <= radius &&
-            std::abs(c.time - time) <= kTimeDelta) {
+        if (IsInWindow(c.x1, c.y1) && std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           DeDupAgents();
           return true;
         }
-        if (linfNorm(x, y, c.x2, c.y2) <= radius &&
-            std::abs(c.time - time) <= kTimeDelta) {
+        if (IsInWindow(c.x2, c.y2) && std::abs(c.time - time) <= kTimeDelta) {
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           DeDupAgents();
@@ -208,8 +299,9 @@ struct Window {
 
   friend std::ostream& operator<<(std::ostream& os, const Window& w) {
     assert(w.agents.size() == w.goal_indices.size());
-    os << "Radius: " << w.radius << "; Time: " << w.time << "; (" << w.x << ","
-       << w.y << ") Agents: ";
+    os << "LR: " << w.box.lower_right.first << ", " << w.box.lower_right.second
+       << " UL: " << w.box.upper_left.first << ", " << w.box.upper_left.second
+       << "; Time: " << w.time << "; Agents: ";
     for (const auto& e : w.agents) {
       os << e << " ";
     }
@@ -454,7 +546,7 @@ class Environment {
   size_t AddConflictToWindows(Conflict& c, std::vector<Window>* windows) {
     for (size_t i = 0; i < windows->size(); ++i) {
       Window& w = (*windows)[i];
-      if (w.MergeIfApplicable(c)) {
+      if (w.IncludeConflictIfApplicable(c)) {
         std::cout << "Merged into existing window\n";
         return i;
       }

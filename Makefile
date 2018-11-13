@@ -1,7 +1,7 @@
 build_dir=build
 
-build_type=Release
-# build_type=Debug
+# build_type=Release
+build_type=Debug
 
 C_compiler=/usr/bin/clang
 CXX_compiler=/usr/bin/clang++
