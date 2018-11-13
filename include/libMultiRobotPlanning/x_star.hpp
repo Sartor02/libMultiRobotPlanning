@@ -78,44 +78,8 @@ class XStar {
  public:
   XStar(Environment& environment) : m_env(environment) {}
 
-  Window& MergeWindows(std::vector<Window>* windows,
-                       const size_t w1_idx,
-                       const size_t w2_idx) {
-    const Window& w1 = (*windows)[w1_idx];
-    const Window& w2 = (*windows)[w2_idx];
-    const Window merge_result = w1.Merge(w2);
-    windows->erase(windows->begin() + w1_idx);
-    windows->erase(windows->begin() + w2_idx);
-    windows->push_back(merge_result);
-    return (*windows)[windows->size() - 1];
-  }
-
-  bool search(const std::vector<State>& initialStates,
-              std::vector<PlanResult<State, Action, Cost>>& global_solution) {
-    Timer t;
-    Cost solutionCost = 0;
-    global_solution.resize(initialStates.size());
-
-    for (size_t i = 0; i < initialStates.size(); ++i) {
-      IndividualEnvironment individualEnvironment(m_env, i);
-      IndividualPlanner_t individualPlanner(individualEnvironment);
-      bool success =
-          individualPlanner.search(initialStates[i], global_solution[i]);
-      if (!success) {
-        return false;
-      }
-      solutionCost += global_solution[i].cost;
-    }
-
-    Conflict next_conflict;
-    std::vector<Window> windows;
-    while (m_env.getFirstConflict(global_solution, next_conflict)) {
-      const size_t modified_window =
-          m_env.AddConflictToWindows(next_conflict, &windows);
-
-      Window& w = windows[modified_window];
-    rest_of_loop:
-      JointState goal(w.agents.size());
+  bool SearchWindow(Window& w, std::vector<Window>& windows, std::vector<PlanResult<State, Action, Cost>>& global_solution) {
+    JointState goal(w.agents.size());
 
       bool no_shared_goals;
       do {
@@ -217,9 +181,39 @@ class XStar {
           if (wi.Intersects(wj) && wi.AgentsOverlap(wj)) {
             w = MergeWindows(&windows, i, j);
             std::cout << "Window squash\n";
-            goto rest_of_loop;
+            return SearchWindow(w, windows, global_solution);
           }
         }
+      }
+    return true;
+  }
+  
+  bool search(const std::vector<State>& initialStates,
+              std::vector<PlanResult<State, Action, Cost>>& global_solution) {
+    Timer t;
+    Cost solutionCost = 0;
+    global_solution.resize(initialStates.size());
+
+    for (size_t i = 0; i < initialStates.size(); ++i) {
+      IndividualEnvironment individualEnvironment(m_env, i);
+      IndividualPlanner_t individualPlanner(individualEnvironment);
+      bool success =
+          individualPlanner.search(initialStates[i], global_solution[i]);
+      if (!success) {
+        return false;
+      }
+      solutionCost += global_solution[i].cost;
+    }
+
+    Conflict next_conflict;
+    std::vector<Window> windows;
+    while (m_env.getFirstConflict(global_solution, next_conflict)) {
+      const size_t modified_window =
+          m_env.AddConflictToWindows(next_conflict, &windows);
+
+      Window& w = windows[modified_window];
+      if (!SearchWindow(w, windows, global_solution)) {
+        return false;
       }
     }
 
@@ -253,6 +247,19 @@ class XStar {
   }
 
  private:
+  Window& MergeWindows(std::vector<Window>* windows,
+                       const size_t w1_idx,
+                       const size_t w2_idx) {
+    const Window& w1 = (*windows)[w1_idx];
+    const Window& w2 = (*windows)[w2_idx];
+    const Window merge_result = w1.Merge(w2);
+    windows->erase(windows->begin() + w1_idx);
+    windows->erase(windows->begin() + w2_idx);
+    windows->push_back(merge_result);
+    return (*windows)[windows->size() - 1];
+  }
+
+   
   struct IndividualEnvironment {
     IndividualEnvironment(Environment& env, size_t agent_index)
         : m_env(env), agent_index(agent_index) {}
