@@ -225,7 +225,7 @@ struct WindowBox {
 
 struct Window {
   static constexpr int kRadius = 1;
-  static constexpr int kTimeDelta = kRadius * 3;
+  static constexpr int kTimeDelta = 3;
   WindowBox box;
   int time;
   std::vector<size_t> agents;
@@ -258,6 +258,16 @@ struct Window {
     return box.Intersects(other.box);
   }
 
+  bool AgentsOverlap(const Window& other) const {
+    std::vector<size_t> overlap;
+    std::set_intersection(agents.begin(),
+                          agents.end(),
+                          other.agents.begin(),
+                          other.agents.end(),
+                          std::back_inserter(overlap));
+    return !overlap.empty();
+  }
+
   Window Merge(const Window& other) const {
     const WindowBox new_box = box.Merge(other.box);
     std::vector<size_t> new_agents(agents);
@@ -273,23 +283,46 @@ struct Window {
     switch (c.type) {
       case Conflict::Vertex:
         if (IsInWindow(c.x1, c.y1) && std::abs(c.time - time) <= kTimeDelta) {
+          if (std::find(agents.begin(), agents.end(), c.agent1) ==
+                  agents.end() &&
+              std::find(agents.begin(), agents.end(), c.agent2) ==
+                  agents.end()) {
+            return false;
+          }
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           DeDupAgents();
+          std::cout << "Included " << c << " into " << *this << '\n';
           return true;
         }
         break;
       case Conflict::Edge:
         if (IsInWindow(c.x1, c.y1) && std::abs(c.time - time) <= kTimeDelta) {
+          if (std::find(agents.begin(), agents.end(), c.agent1) ==
+                  agents.end() &&
+              std::find(agents.begin(), agents.end(), c.agent2) ==
+                  agents.end()) {
+            return false;
+          }
+
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           DeDupAgents();
+          std::cout << "Included " << c << " into " << *this << '\n';
           return true;
         }
         if (IsInWindow(c.x2, c.y2) && std::abs(c.time - time) <= kTimeDelta) {
+          if (std::find(agents.begin(), agents.end(), c.agent1) ==
+                  agents.end() &&
+              std::find(agents.begin(), agents.end(), c.agent2) ==
+                  agents.end()) {
+            return false;
+          }
+
           agents.push_back(c.agent1);
           agents.push_back(c.agent2);
           DeDupAgents();
+          std::cout << "Included " << c << " into " << *this << '\n';
           return true;
         }
         break;

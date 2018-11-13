@@ -78,6 +78,18 @@ class XStar {
  public:
   XStar(Environment& environment) : m_env(environment) {}
 
+  Window& MergeWindows(std::vector<Window>* windows,
+                       const size_t w1_idx,
+                       const size_t w2_idx) {
+    const Window& w1 = (*windows)[w1_idx];
+    const Window& w2 = (*windows)[w2_idx];
+    const Window merge_result = w1.Merge(w2);
+    windows->erase(windows->begin() + w1_idx);
+    windows->erase(windows->begin() + w2_idx);
+    windows->push_back(merge_result);
+    return (*windows)[windows->size() - 1];
+  }
+
   bool search(const std::vector<State>& initialStates,
               std::vector<PlanResult<State, Action, Cost>>& global_solution) {
     Timer t;
@@ -100,8 +112,9 @@ class XStar {
     while (m_env.getFirstConflict(global_solution, next_conflict)) {
       const size_t modified_window =
           m_env.AddConflictToWindows(next_conflict, &windows);
-      Window& w = windows[modified_window];
 
+      Window& w = windows[modified_window];
+    rest_of_loop:
       JointState goal(w.agents.size());
 
       bool no_shared_goals;
@@ -197,6 +210,17 @@ class XStar {
       //         std::cout << "Current: " << next_conflict << '\n';
       //         std::cout << "Next: " << next_next_conflict << '\n';
       //       }
+      for (size_t i = 0; i < windows.size(); ++i) {
+        auto& wi = windows[i];
+        for (size_t j = i + 1; j < windows.size(); ++j) {
+          auto& wj = windows[j];
+          if (wi.Intersects(wj) && wi.AgentsOverlap(wj)) {
+            w = MergeWindows(&windows, i, j);
+            std::cout << "Window squash\n";
+            goto rest_of_loop;
+          }
+        }
+      }
     }
 
     for (auto& w : windows) {
@@ -211,10 +235,7 @@ class XStar {
         for (size_t j = i + 1; j < windows.size(); ++j) {
           auto& wj = windows[j];
           if (wi.Intersects(wj)) {
-            Window merged = wi.Merge(wj);
-            windows.erase(windows.begin() + i);
-            windows.erase(windows.begin() + j);
-            windows.push_back(merged);
+            MergeWindows(&windows, i, j);
             need_sweep = true;
             break;
           }
