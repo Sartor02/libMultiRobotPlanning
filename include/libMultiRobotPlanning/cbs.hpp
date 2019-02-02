@@ -3,6 +3,7 @@
 #include <map>
 
 #include "a_star.hpp"
+#include "../example/timer.hpp"
 
 namespace libMultiRobotPlanning {
 
@@ -87,13 +88,15 @@ class CBS {
   CBS(Environment& environment) : m_env(environment) {}
 
   bool search(const std::vector<State>& initialStates,
-              std::vector<PlanResult<State, Action, Cost> >& solution) {
+              std::vector<PlanResult<State, Action, Cost> >& solution, double* initial_plan_time) {
+    *initial_plan_time = 0;
     HighLevelNode start;
     start.solution.resize(initialStates.size());
     start.constraints.resize(initialStates.size());
     start.cost = 0;
     start.id = 0;
 
+    Timer t;
     for (size_t i = 0; i < initialStates.size(); ++i) {
       // if (   i < solution.size()
       //     && solution[i].states.size() > 1) {
@@ -109,6 +112,8 @@ class CBS {
       // }
       start.cost += start.solution[i].cost;
     }
+    t.stop();
+    *initial_plan_time = t.elapsedSeconds();
 
     // std::priority_queue<HighLevelNode> open;
     typename boost::heap::d_ary_heap<HighLevelNode,
