@@ -30,7 +30,7 @@ endif (DOXYGEN_FOUND)
 
 # clang-tidy target (linter & static code analysis)
 add_custom_target(clang-tidy
-  COMMAND CMAKE_EXPORT_COMPILE_COMMANDS=ON run-clang-tidy-3.8.py ${CMAKE_CURRENT_SOURCE_DIR})
+  COMMAND CMAKE_EXPORT_COMPILE_COMMANDS=ON run-clang-tidy ${CMAKE_CURRENT_SOURCE_DIR})
 
 # clang-format
 set(ALL_SOURCE_FILES
@@ -52,6 +52,8 @@ add_custom_target(everything
   DEPENDS clang-format clang-tidy docs run-test
 )
 
+set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_C_COMPILER "clang")
 message(STATUS "Build mode: " ${CMAKE_BUILD_TYPE})
 message(STATUS "C++ Compiler: " ${CMAKE_CXX_COMPILER})
 message(STATUS "C Compiler: " ${CMAKE_C_COMPILER})
@@ -100,6 +102,15 @@ add_executable(assignment
 )
 target_link_libraries(assignment
   ${Boost_LIBRARIES}
+)
+
+## xstar
+add_executable(xstar
+  example/xstar.cpp
+)
+target_link_libraries(xstar
+  ${Boost_LIBRARIES}
+  yaml-cpp
 )
 
 ## cbs
