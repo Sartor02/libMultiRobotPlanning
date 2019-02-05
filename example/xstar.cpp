@@ -108,19 +108,73 @@ struct Conflict {
 struct Window {
   State min_state;
   State max_state;
-};
+  std::vector<size_t> agent_idxs;
+  Window() : min_state(0, 0, 0), max_state(0, 0, 0) {}
+  Window(const State& min_state, const State& max_state,
+         std::vector<size_t> agent_idxs)
+      : min_state(min_state), max_state(max_state), agent_idxs(agent_idxs) {
+    std::sort(agent_idxs.begin(), agent_idxs.end());
+  }
 
-namespace std {
-template <>
-struct hash<Window> {
-  size_t operator()(const Window& w) const {
-    size_t seed = 0;
-    boost::hash_combine(seed, w.min_state);
-    boost::hash_combine(seed, w.max_state);
-    return seed;
+  void expand() {
+    static constexpr int kExpandAmount = 1;
+    min_state.x -= kExpandAmount;
+    min_state.y -= kExpandAmount;
+    max_state.x += kExpandAmount;
+    max_state.y += kExpandAmount;
+  }
+
+  Window merge(const Window& o) {
+    int min_x = std::min(min_state.x, o.min_state.x);
+    int max_x = std::max(min_state.x, o.min_state.x);
+    int min_y = std::min(min_state.y, o.min_state.y);
+    int max_y = std::max(min_state.y, o.min_state.y);
+    int min_time = std::min(min_state.time, o.min_state.time);
+    int max_time = std::min(max_state.time, o.max_state.time);
+    State min_state(min_time, min_x, min_y);
+    State max_state(max_time, max_x, max_y);
+
+    auto joined_agent_idxs = agent_idxs;
+    joined_agent_idxs.insert(joined_agent_idxs.end(), o.agent_idxs.begin(),
+                             o.agent_idxs.end());
+    std::sort(joined_agent_idxs.begin(), joined_agent_idxs.end());
+    const auto it =
+        std::unique(joined_agent_idxs.begin(), joined_agent_idxs.end());
+    joined_agent_idxs.resize(std::distance(joined_agent_idxs.begin(), it));
+
+    return {min_state, max_state, joined_agent_idxs};
+  }
+
+  bool contains(const State& s, const size_t& agent_idx) const {
+    if (find(agent_idxs.begin(), agent_idxs.end(), agent_idx) ==
+        agent_idxs.end()) {
+      return false;
+    }
+    return (s.x >= min_state.x && s.y <= max_state.y && s.y >= min_state.y &&
+            s.y <= min_state.y && s.time >= min_state.time &&
+            s.time <= max_state.time);
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const Window& w) {
+    os << "Min: " << w.min_state << " Max: " << w.max_state << " Agents: ";
+    for (const auto& e : w.agent_idxs) {
+      os << e << " ";
+    }
+    return os;
   }
 };
-}  // namespace std
+
+// namespace std {
+// template <>
+// struct hash<Window> {
+//   size_t operator()(const Window& w) const {
+//     size_t seed = 0;
+//     boost::hash_combine(seed, w.min_state);
+//     boost::hash_combine(seed, w.max_state);
+//     return seed;
+//   }
+// };
+// }  // namespace std
 
 struct Location {
   Location(int x, int y) : x(x), y(y) {}
@@ -181,8 +235,7 @@ class Environment {
   }
 
   bool isSolution(const State& s) {
-    return s.x == m_goals[m_agentIdx].x && s.y == m_goals[m_agentIdx].y &&
-           s.time > m_lastGoalConstraint;
+    return s.x == m_goals[m_agentIdx].x && s.y == m_goals[m_agentIdx].y;
   }
 
   void getNeighbors(const State& s,
@@ -282,6 +335,46 @@ class Environment {
     return false;
   }
 
+  Window createWindowFromConflict(const Conflict& conflict) {
+    static constexpr int kInitialRadius = 2;
+    static constexpr int kInitialTimeDelta = 2;
+    switch (conflict.type) {
+      case Conflict::Type::Edge: {
+        std::cout << "Type: Edge"
+                  << " x1: " << conflict.x1 << " y1: " << conflict.y1
+                  << " x2: " << conflict.x2 << " y2: " << conflict.y2
+                  << " time: " << conflict.time
+                  << " Agents: " << conflict.agent1 << ", " << conflict.agent2
+                  << '\n';
+        int min_x = std::min(conflict.x1, conflict.x2) - kInitialRadius;
+        int max_x = std::max(conflict.x1, conflict.x2) + kInitialRadius;
+        int min_y = std::min(conflict.y1, conflict.y2) - kInitialRadius;
+        int max_y = std::max(conflict.y1, conflict.y2) + kInitialRadius;
+        int min_time = conflict.time - kInitialTimeDelta;
+        int max_time = conflict.time + kInitialTimeDelta;
+        State min_state(min_time, min_x, min_y);
+        State max_state(max_time, max_x, max_y);
+        return {min_state, max_state, {conflict.agent1, conflict.agent2}};
+      }
+      case Conflict::Type::Vertex: {
+        std::cout << "Type: Vertex"
+                  << " x1: " << conflict.x1 << " y1: " << conflict.y1
+                  << " time: " << conflict.time
+                  << " Agents: " << conflict.agent1 << ", " << conflict.agent2
+                  << '\n';
+        int min_x = conflict.x1 - kInitialRadius;
+        int max_x = conflict.x1 + kInitialRadius;
+        int min_y = conflict.y1 - kInitialRadius;
+        int max_y = conflict.y1 + kInitialRadius;
+        int min_time = conflict.time - kInitialTimeDelta;
+        int max_time = conflict.time + kInitialTimeDelta;
+        State min_state(min_time, min_x, min_y);
+        State max_state(max_time, max_x, max_y);
+        return {min_state, max_state, {conflict.agent1, conflict.agent2}};
+      }
+    }
+  }
+
   void onExpandHighLevelNode(int /*cost*/) { m_highLevelExpanded++; }
 
   void onExpandLowLevelNode(const State& /*s*/, int /*fScore*/,
@@ -319,7 +412,6 @@ class Environment {
   std::vector<Location> m_goals;
   // std::vector< std::vector<int> > m_heuristic;
   size_t m_agentIdx;
-  int m_lastGoalConstraint;
   int m_highLevelExpanded;
   int m_lowLevelExpanded;
 };

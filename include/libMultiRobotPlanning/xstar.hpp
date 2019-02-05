@@ -100,13 +100,45 @@ class XStar {
     Environment& m_env;
     // size_t m_agentIdx;
   };
-  Environment& m_env;
-  using LowLevelSearch_t = AStar<State, Action, Cost, LowLevelEnvironment>;
-  using Pi = std::vector<PlanResult<State, Action, Cost> >;
-  using w = Window;
-  using W = std::vector<w>;
 
-  bool recWAMPF(W& windows, Pi& solution) {
+  struct SearchState {
+    friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
+      return os;
+    }
+  };
+
+  Environment& m_env;
+
+  using JointState_t = std::vector<State>;
+  using LowLevelSearch_t = AStar<State, Action, Cost, LowLevelEnvironment>;
+  using IndividualPlan_t = PlanResult<State, Action, Cost>;
+  using JointPlan_t = std::vector<IndividualPlan_t>;
+
+  struct WindowPlannerState {
+    Window window;
+    SearchState search_state;
+
+    WindowPlannerState() = delete;
+    explicit WindowPlannerState(const Window& window)
+        : window(window), search_state() {}
+    WindowPlannerState(const Window& window, const SearchState* search_state)
+        : window(window), search_state(search_state) {}
+
+    WindowPlannerState merge(const WindowPlannerState& o) const {
+      return {window.merge(o.window)};
+    }
+
+    friend std::ostream& operator<<(std::ostream& os,
+                                    const WindowPlannerState& ws) {
+      return os << "Window: " << ws.window
+                << " Search state: " << ws.search_state;
+    }
+  };
+
+  using WPS_t = WindowPlannerState;
+  using WPSList_t = std::vector<WindowPlannerState>;
+
+  bool recWAMPF(WPSList_t& windows, JointPlan_t& solution) {
     for (auto& window : windows) {
       growAndReplanIn(window, solution);
       // if overlapping
@@ -115,22 +147,24 @@ class XStar {
     return true;
   }
 
-  void growAndReplanIn(w& window, Pi& solution) {}
+  void growAndReplanIn(WPS_t& window, JointPlan_t& solution) {}
 
   bool shouldQuit() { return true; }
 
-  bool windowOverlapsWithOther(const w& window, const W& windows) const {
+  bool windowOverlapsWithOther(const WPS_t& window,
+                               const WPSList_t& windows) const {
     return true;
   }
 
-  bool planInOverlapWindows(w& window, W& windows) { return true; }
-  
-  bool planIndividually(const std::vector<State>& initialStates, Pi& solution) {
-    solution.resize(initialStates.size());
-    for (size_t i = 0; i < initialStates.size(); ++i) {
+  bool planInOverlapWindows(WPS_t& window, WPSList_t& windows) { return true; }
+
+  bool planIndividually(const JointState_t& initial_states,
+                        JointPlan_t& solution) {
+    solution.resize(initial_states.size());
+    for (size_t i = 0; i < initial_states.size(); ++i) {
       LowLevelEnvironment llenv(m_env, i);
       LowLevelSearch_t lowLevel(llenv);
-      if (!lowLevel.search(initialStates[i], solution[i])) {
+      if (!lowLevel.search(initial_states[i], solution[i])) {
         return false;
       }
     }
@@ -140,10 +174,17 @@ class XStar {
  public:
   XStar(Environment& environment) : m_env(environment) {}
 
-  bool search(const std::vector<State>& initialStates, Pi& solution) {
-    if (!planIndividually(initialStates, solution)) return false;
+  bool search(const JointState_t& initial_states, JointPlan_t& solution) {
+    if (!planIndividually(initial_states, solution)) return false;
 
-    W windows;
+    Conflict result;
+    if (!m_env.getFirstConflict(solution, result)) {
+      return true;
+    }
+    std::cout << WindowPlannerState(m_env.createWindowFromConflict(result))
+              << '\n';
+
+    WPSList_t windows;
     do {
       recWAMPF(windows, solution);
     } while (!shouldQuit());

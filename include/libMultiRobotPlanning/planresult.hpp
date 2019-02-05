@@ -25,6 +25,8 @@ struct PlanResult {
   Cost cost;
   //! lower bound of the cost (for suboptimal solvers)
   Cost fmin;
+
+  PlanResult() : states(), actions(), cost(0), fmin(0) {}
 };
 
 }  // namespace libMultiRobotPlanning

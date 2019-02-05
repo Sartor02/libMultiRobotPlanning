@@ -85,7 +85,6 @@ class AStar {
     while (!openSet.empty()) {
       Node current = openSet.top();
       m_env.onExpandNode(current.state, current.fScore, current.gScore);
-
       if (m_env.isSolution(current.state)) {
         solution.states.clear();
         solution.actions.clear();
