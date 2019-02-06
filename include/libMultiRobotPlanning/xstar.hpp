@@ -127,6 +127,10 @@ class XStar {
     WindowPlannerState merge(const WindowPlannerState& o) const {
       return {window.merge(o.window)};
     }
+    
+    bool overlapping(const WindowPlannerState& other) const {
+      return false;
+    }
 
     friend std::ostream& operator<<(std::ostream& os,
                                     const WindowPlannerState& ws) {
@@ -139,10 +143,16 @@ class XStar {
   using WPSList_t = std::vector<WindowPlannerState>;
 
   bool recWAMPF(WPSList_t& windows, JointPlan_t& solution) {
-    for (auto& window : windows) {
+    for (WPS_t& window : windows) {
       growAndReplanIn(window, solution);
       // if overlapping
-      //
+      //    planInOverlapWindows
+    }
+    
+    Conflict result;
+    while (m_env.getFirstConflict(solution, result)) {
+      WPS_t w = WindowPlannerState(m_env.createWindowFromConflict(result));
+      // planInOverlapWindows  
     }
     return true;
   }
@@ -167,7 +177,7 @@ class XStar {
       if (!lowLevel.search(initial_states[i], solution[i])) {
         return false;
       }
-    }
+    }    
     return true;
   }
 
@@ -177,13 +187,7 @@ class XStar {
   bool search(const JointState_t& initial_states, JointPlan_t& solution) {
     if (!planIndividually(initial_states, solution)) return false;
 
-    Conflict result;
-    if (!m_env.getFirstConflict(solution, result)) {
-      return true;
-    }
-    std::cout << WindowPlannerState(m_env.createWindowFromConflict(result))
-              << '\n';
-
+    
     WPSList_t windows;
     do {
       recWAMPF(windows, solution);

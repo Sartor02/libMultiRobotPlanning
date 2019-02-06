@@ -116,14 +116,6 @@ struct Window {
     std::sort(agent_idxs.begin(), agent_idxs.end());
   }
 
-  void expand() {
-    static constexpr int kExpandAmount = 1;
-    min_state.x -= kExpandAmount;
-    min_state.y -= kExpandAmount;
-    max_state.x += kExpandAmount;
-    max_state.y += kExpandAmount;
-  }
-
   Window merge(const Window& o) {
     int min_x = std::min(min_state.x, o.min_state.x);
     int max_x = std::max(min_state.x, o.min_state.x);
