@@ -99,6 +99,7 @@ class Animation:
     return self.patches + self.artists
 
   def animate_func(self, i):
+    i_in = i
     for agent_name in self.schedule["schedule"]:
       agent = schedule["schedule"][agent_name]
       pos = self.getState(i / 10, agent)
@@ -121,7 +122,7 @@ class Animation:
         if np.linalg.norm(pos1 - pos2) < 0.7:
           d1.set_facecolor('red')
           d2.set_facecolor('red')
-          print("COLLISION! (agent-agent) ({}, {})".format(i, j))
+          print("COLLISION! (agent-agent) ({}, {}) t: {}".format(i, j, i_in / 10))
 
     return self.patches + self.artists
 
