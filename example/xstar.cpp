@@ -64,15 +64,20 @@ struct hash<std::vector<State>> {
 
 ///
 enum class Action {
+  None,
   Up,
   Down,
   Left,
   Right,
   Wait,
+  GoalWait,
 };
 
 std::ostream& operator<<(std::ostream& os, const Action& a) {
   switch (a) {
+    case Action::None:
+      os << "None";
+      break;
     case Action::Up:
       os << "Up";
       break;
@@ -87,6 +92,9 @@ std::ostream& operator<<(std::ostream& os, const Action& a) {
       break;
     case Action::Wait:
       os << "Wait";
+      break;
+    case Action::GoalWait:
+      os << "GoalWait";
       break;
   }
   return os;
@@ -389,18 +397,19 @@ class Environment {
 
   utils::CartesianProduct<Neighbor<State, Action, int>>
   getInWindowJointWindowNeighbors(
-      const std::vector<State>& states, const std::vector<State>& goals,
-      const Window& window,
+      const std::vector<State>& states, const std::vector<Action>& actions,
+      const std::vector<State>& goals, const Window& window,
       const std::vector<PlanResult<State, Action, int>>& joint_plan) {
     assert(states.size() == window.agent_idxs.size());
     std::vector<std::vector<Neighbor<State, Action, int>>> neighbor_list;
     for (size_t i = 0; i < states.size(); ++i) {
       const State& s = states[i];
+      const Action& a = actions[i];
       const State& goal = goals[i];
       const size_t agent_idx = window.agent_idxs[i];
       std::vector<Neighbor<State, Action, int>> in_window_neighbors;
       std::vector<Neighbor<State, Action, int>> out_window_neighbors;
-      getWindowNeighbors(s, goal, agent_idx, window, joint_plan,
+      getWindowNeighbors(s, a, goal, agent_idx, window, joint_plan,
                          in_window_neighbors, out_window_neighbors);
       assert(!in_window_neighbors.empty());
 
@@ -426,8 +435,8 @@ class Environment {
   }
 
   void getWindowNeighbors(
-      const State& s, const State& goal, const size_t agent_idx,
-      const Window& w,
+      const State& s, const Action& a, const State& goal,
+      const size_t agent_idx, const Window& w,
       const std::vector<PlanResult<State, Action, int>>& joint_plan,
       std::vector<Neighbor<State, Action, int>>& in_window_neighbors,
       std::vector<Neighbor<State, Action, int>>& out_window_neighbors) {
@@ -452,6 +461,10 @@ class Environment {
     if (s.equalExceptTime(goal)) {
       const auto& n = getStateAsGoalNeighbor(s);
       in_window_neighbors.emplace_back(n);
+      // If the planner elected to goal wait, it may not do anything else.
+      if (a == Action::GoalWait) {
+        return;
+      }
     }
 
     std::vector<Neighbor<State, Action, int>> neighbors;
@@ -564,7 +577,7 @@ class Environment {
   }
 
   Window createWindowFromConflict(const Conflict& conflict) {
-    static constexpr int kInitialRadius = 2;
+    static constexpr int kInitialRadius = 1;
     switch (conflict.type) {
       case Conflict::Type::Edge: {
         //         std::cout << "Type: Edge"
@@ -615,7 +628,7 @@ class Environment {
   Neighbor<State, Action, int> getStateAsGoalNeighbor(const State& s) const {
     State new_state = s;
     new_state.time++;
-    Neighbor<State, Action, int> n(new_state, Action::Wait, 1);
+    Neighbor<State, Action, int> n(new_state, Action::GoalWait, 0);
     return n;
   }
 

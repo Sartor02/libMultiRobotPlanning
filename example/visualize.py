@@ -30,6 +30,7 @@ class Animation:
     self.artists = []
     self.agents = dict()
     self.agent_names = dict()
+    self.goal_names = dict()
     # create boundary patch
     xmin = -0.5
     ymin = -0.5
@@ -54,7 +55,12 @@ class Animation:
     self.T = 0
     # draw goals first
     for d, i in zip(map["agents"], range(0, len(map["agents"]))):
+      name = d["name"]
       self.patches.append(Rectangle((d["goal"][0] - 0.25, d["goal"][1] - 0.25), 0.5, 0.5, facecolor=Colors[i%len(Colors)], edgecolor='black', alpha=0.5))
+      self.goal_names[name] = self.ax.text(d["goal"][0], d["goal"][1], name.replace('agent', ''))
+      self.goal_names[name].set_horizontalalignment('center')
+      self.goal_names[name].set_verticalalignment('center')
+      self.artists.append(self.goal_names[name])
     for d, i in zip(map["agents"], range(0, len(map["agents"]))):
       name = d["name"]
       self.agents[name] = Circle((d["start"][0], d["start"][1]), 0.3, facecolor=Colors[i%len(Colors)], edgecolor='black')
@@ -80,7 +86,7 @@ class Animation:
                                interval=10,
                                blit=True)
 
-  def save(self, file_name, speed):
+  def save(self, file_name, speed, dpi):
     self.anim.save(
       file_name,
       "ffmpeg",
@@ -151,6 +157,9 @@ if __name__ == "__main__":
   parser.add_argument("schedule", help="schedule for agents")
   parser.add_argument('--video', dest='video', default=None, help="output video file (or leave empty to show on screen)")
   parser.add_argument("--speed", type=int, default=1, help="speedup-factor")
+  parser.add_argument("--width", type=float, default=1080, help="Figure width in pixles")
+  parser.add_argument("--height", type=float, default=1080, help="Figure height in pixles")
+  parser.add_argument("--dpi", type=int, default=100, help="Figure dpi")
   args = parser.parse_args()
 
 
@@ -161,8 +170,9 @@ if __name__ == "__main__":
     schedule = yaml.load(states_file)
 
   animation = Animation(map, schedule)
+  plt.gcf().set_size_inches(args.width / args.dpi, args.height / args.dpi, forward=True)
 
   if args.video:
-    animation.save(args.video, args.speed)
+    animation.save(args.video, args.speed, args.dpi)
   else:
     animation.show()

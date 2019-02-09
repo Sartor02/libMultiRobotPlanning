@@ -253,7 +253,6 @@ class XStar {
     std::cout << "Number of windows: " << windows.size() << std::endl;
     bool planned_in = false;
     for (size_t i = 0; i < windows.size();) {
-      std::cout << "i: " << i << '\n';
       const WPS_t& w = windows[i];
       if (&given_window == &w) {
         // Ignore self.
@@ -280,8 +279,10 @@ class XStar {
   }
 
   struct Node {
-    Node(const JointState_t& state, Cost fScore, JointCost_t gScore)
+    Node(const JointState_t& state, const JointAction_t& action, Cost fScore,
+         JointCost_t gScore)
         : state(state),
+          action(action),
           fScore(fScore),
           gScoreSum(utils::sum(gScore)),
           gScore(gScore) {}
@@ -306,6 +307,7 @@ class XStar {
     }
 
     JointState_t state;
+    JointAction_t action;
 
     Cost fScore;
     Cost gScoreSum;
@@ -388,6 +390,7 @@ class XStar {
     JointState_t& goals = starts_goals.second.first;
     JointCost_t& goals_costs = starts_goals.second.second;
 
+  check_needs_grow:
     while (needsGrow(goals)) {
       std::cout << "Needed to grow" << std::endl;
       window.window.grow();
@@ -417,21 +420,27 @@ class XStar {
         StateHasher>
         cameFrom;
 
-    auto handle = openSet.push(
-        Node(starts.first, m_env.admissibleJointHeuristic(starts.first, goals),
-             starts.second));
+    auto handle = openSet.push(Node(
+        starts.first, JointAction_t(starts.first.size(), Action::None),
+        m_env.admissibleJointHeuristic(starts.first, goals), starts.second));
     stateToHeap.insert(std::make_pair<>(starts.first, handle));
     (*handle).handle = handle;
 
     JointPlan_t window_solution(starts.first.size());
 
-    while (!openSet.empty()) {
+    for (size_t expand_count = 0; !openSet.empty(); ++expand_count) {
+      if (expand_count > std::pow(100, window.window.agent_idxs.size())) {
+        window.window.grow();
+        std::cerr << "Initial window too small, needed to bail out.\n";
+        goto check_needs_grow;
+      }
+
       Node current = openSet.top();
-      //             std::cout << "Current: ";
-      //             for (const auto& s : current.state) {
-      //               std::cout << s << ' ';
-      //             }
-      //             std::cout << std::endl;
+      //                   std::cout << "Current: ";
+      //                   for (const auto& s : current.state) {
+      //                     std::cout << s << ' ';
+      //                   }
+      //                   std::cout << std::endl;
       m_env.onExpandNode(current.state, current.fScore, current.gScore);
       if (m_env.isJointSolution(current.state, goals)) {
         auto iter = cameFrom.find(current.state);
@@ -468,7 +477,7 @@ class XStar {
       closedSet.insert(current.state);
 
       auto cartesian_product = m_env.getInWindowJointWindowNeighbors(
-          current.state, goals, window.window, solution);
+          current.state, current.action, goals, window.window, solution);
       do {
         JointState_t neighbor_joint_state = starts.first;
         JointAction_t neighbor_joint_action;
@@ -517,8 +526,9 @@ class XStar {
           Cost f_score =
               utils::sum(tenative_gscore) +
               m_env.admissibleJointHeuristic(neighbor_joint_state, goals);
-          auto handle = openSet.push(
-              Node(neighbor_joint_state, f_score, tenative_gscore));
+          auto handle =
+              openSet.push(Node(neighbor_joint_state, neighbor_joint_action,
+                                f_score, tenative_gscore));
           (*handle).handle = handle;
 
           stateToHeap.insert(std::make_pair<>(neighbor_joint_state, handle));
@@ -559,14 +569,26 @@ class XStar {
     assert(starts_cost.size() == goals_cost.size());
     assert(window.agent_idxs.size() == goals_cost.size());
 
-    std::cout << "Full:\n";
-    for (const auto& i : window.agent_idxs) {
-      const auto& e = full_path.at(i);
-      for (const auto& p : e.states) {
-        std::cout << p.first << ' ' << p.second << "  ";
-      }
-      std::cout << std::endl;
-    }
+    //     std::cout << "Full:\n";
+    //     for (const auto& i : window.agent_idxs) {
+    //       const auto& e = full_path.at(i);
+    //       for (const auto& p : e.states) {
+    //         std::cout << p.first << ' ' << p.second << "  ";
+    //       }
+    //       std::cout << std::endl;
+    //     }
+
+//     std::cout << "Window:\n";
+//     for (const auto& e : window_path) {
+//       for (const auto& p : e.states) {
+//         std::cout << p.first << ' ' << p.second << "  ";
+//       }
+//       std::cout << std::endl;
+//       for (const auto& a : e.actions) {
+//         std::cout << a.first << " " << a.second << " ";
+//       }
+//       std::cout << std::endl;
+//     }
 
     for (size_t i = 0; i < window.agent_idxs.size(); ++i) {
       const auto& agent_idx = window.agent_idxs.at(i);
@@ -597,13 +619,26 @@ class XStar {
         it->first.time += cost_delta;
       }
 
+      size_t ignore_wait_command_count = 0;
+      for (auto it = individual_window_plan.actions.rbegin();
+           it != individual_window_plan.actions.rend(); ++it) {
+        if (it->second == 0 || it->first == Action::GoalWait) {
+          ignore_wait_command_count++;
+        } else {
+          break;
+        }
+      }
+      assert(ignore_wait_command_count < individual_window_plan.actions.size());
+//       std::cout << "Ignoring last " << ignore_wait_command_count
+//                 << " commands\n";
+
       individual_initial_plan.states.erase(
           individual_initial_plan.states.begin() + initial_start_idx,
           individual_initial_plan.states.begin() + initial_goal_idx + 1);
       individual_initial_plan.states.insert(
           individual_initial_plan.states.begin() + initial_start_idx,
           individual_window_plan.states.begin(),
-          individual_window_plan.states.end());
+          individual_window_plan.states.end() - ignore_wait_command_count);
 
       //       std::cout << "ACTIONS: ";
       //       for (const auto& p : individual_window_plan.actions) {
@@ -617,28 +652,17 @@ class XStar {
       individual_initial_plan.actions.insert(
           individual_initial_plan.actions.begin() + initial_start_idx,
           individual_window_plan.actions.begin(),
-          individual_window_plan.actions.end());
+          individual_window_plan.actions.end() - ignore_wait_command_count);
     }
 
-    std::cout << "Window:\n";
-    for (const auto& e : window_path) {
-      for (const auto& p : e.states) {
-        std::cout << p.first << ' ' << p.second << "  ";
-      }
-      //       for (const auto& a : e.actions) {
-      //         std::cout << std::endl;
-      //       }
-      std::cout << std::endl;
-    }
-
-    std::cout << "Full:\n";
-    for (const auto& i : window.agent_idxs) {
-      const auto& e = full_path.at(i);
-      for (const auto& p : e.states) {
-        std::cout << p.first << ' ' << p.second << "  ";
-      }
-      std::cout << std::endl;
-    }
+    //     std::cout << "Full:\n";
+    //     for (const auto& i : window.agent_idxs) {
+    //       const auto& e = full_path.at(i);
+    //       for (const auto& p : e.states) {
+    //         std::cout << p.first << ' ' << p.second << "  ";
+    //       }
+    //       std::cout << std::endl;
+    //     }
     //
     //       std::cout << "Starts costs: ";
     //       for (const auto& e : starts_cost) {
