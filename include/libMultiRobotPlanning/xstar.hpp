@@ -246,7 +246,17 @@ class XStar {
     }
   }
 
-  bool shouldQuit() { return true; }
+  bool shouldQuit() {
+    static int iter = 0;
+    std::cout
+        << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ITERATION:"
+        << iter << std::endl;
+    if (iter > 1) {
+      return true;
+    }
+    ++iter;
+    return false;
+  }
 
   bool windowOverlapsWithOther(const WPS_t& window,
                                const WPSList_t& windows) const {
