@@ -53,19 +53,9 @@ class CartesianProduct {
     return result;
   }
 
-  bool atEnd() const {
-    //     std::cout << "idxs: ";
-    //     for (const auto& e : idxs_) {
-    //       std::cout << e << ' ';
-    //     }
-    //
-    //     std::cout << "end: ";
-    //     for (const auto& e : ends_) {
-    //       std::cout << e << ' ';
-    //     }
-    //     std::cout << std::endl;
-    return idxs_.back() == ends_.back();
-  }
+  inline std::vector<T> current() const { return getCurrent(); }
+
+  bool atEnd() const { return idxs_.back() == ends_.back(); }
 
   void increment() {
     idxs_[0]++;
@@ -78,6 +68,12 @@ class CartesianProduct {
         break;
       }
     }
+  }
+
+  std::vector<T> getAndIncrement() {
+    auto current = getCurrent();
+    increment();
+    return current;
   }
 
  private:

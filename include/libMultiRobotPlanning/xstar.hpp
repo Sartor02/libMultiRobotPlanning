@@ -204,23 +204,23 @@ class XStar {
   using WPS_t = WindowPlannerState;
   using WPSList_t = std::vector<WindowPlannerState>;
 
-  bool recWAMPF(WPSList_t& windows, JointPlan_t& solution) {
+  bool recWAMPF(WPSList_t* windows, JointPlan_t* solution) {
     std::cout << "Starting recWAMPF\n";
-    for (WPS_t& window : windows) {
-      growAndReplanIn(window, solution);
-      if (existsOverlapping(window, windows)) {
-        planInOverlapWindows(window, windows, solution);
+    for (WPS_t& window : *windows) {
+      growAndReplanIn(&window, solution);
+      if (existsOverlapping(window, *windows)) {
+        planInOverlapWindows(&window, windows, solution);
       }
     }
     std::cout << "Finished growAndReplanIn\n";
 
     Conflict result;
-    while (m_env.getFirstConflict(solution, result)) {
+    while (m_env.getFirstConflict(*solution, result)) {
       std::cout << "Found first conflict\n";
       std::cout << "Conflict: " << result << std::endl;
       WPS_t window = WindowPlannerState(m_env.createWindowFromConflict(result));
       std::cout << "Got first window\n";
-      planInOverlapWindows(window, windows, solution);
+      planInOverlapWindows(&window, windows, solution);
     }
 
     std::cout << "Finished all conflicts\n";
@@ -240,7 +240,11 @@ class XStar {
     return false;
   }
 
-  void growAndReplanIn(WPS_t& window, JointPlan_t& solution) {}
+  void growAndReplanIn(WPS_t* window, JointPlan_t* solution) {
+    while (!planIn(window, solution)) {
+      window->window.grow();
+    }
+  }
 
   bool shouldQuit() { return true; }
 
@@ -249,23 +253,23 @@ class XStar {
     return true;
   }
 
-  bool planInOverlapWindows(WPS_t& given_window, WPSList_t& windows,
-                            JointPlan_t& solution) {
-    std::cout << "Number of windows: " << windows.size() << std::endl;
+  bool planInOverlapWindows(WPS_t* given_window, WPSList_t* windows,
+                            JointPlan_t* solution) {
+    std::cout << "Number of windows: " << windows->size() << std::endl;
     bool planned_in = false;
-    for (size_t i = 0; i < windows.size();) {
-      const WPS_t& w = windows[i];
-      if (&given_window == &w) {
+    for (size_t i = 0; i < windows->size();) {
+      const WPS_t& w = (*windows)[i];
+      if (given_window == &w) {
         // Ignore self.
         continue;
       }
 
-      if (given_window.overlapping(w)) {
+      if (given_window->overlapping(w)) {
         std::cout << "Merging with window " << i << '\n';
-        given_window = given_window.merge(w);
-        windows.erase(windows.begin() + i);
+        *given_window = given_window->merge(w);
+        windows->erase(windows->begin() + i);
         while (!planIn(given_window, solution)) {
-          given_window.window.grow();
+          given_window->window.grow();
         }
         planned_in = true;
       } else {
@@ -275,17 +279,17 @@ class XStar {
 
     if (!planned_in) {
       while (!planIn(given_window, solution)) {
-        given_window.window.grow();
+        given_window->window.grow();
       }
     }
     std::cout << "Windows push back\n";
-    windows.push_back(given_window);
+    windows->push_back(*given_window);
     return true;
   }
 
   struct Node {
-    Node(const JointState_t& state, const JointAction_t& action, Cost fScore,
-         JointCost_t gScore)
+    Node(const JointState_t& state, const JointAction_t& action,
+         const Cost& fScore, const JointCost_t& gScore)
         : state(state),
           action(action),
           f_score(fScore),
@@ -510,19 +514,19 @@ class XStar {
         std::make_tuple<>(current.state, neighbor_joint_action,
                           neighbor_joint_cost, neighbor_tenative_gscore)));
   }
-  
+
   bool isTooManyIterations(const size_t& iterations, const WPS_t& window) {
     return (iterations > std::pow(100, window.window.agent_idxs.size()));
   }
 
-  bool planIn(WPS_t& window, JointPlan_t& solution) {
-    std::cout << "Plan in: " << window.window << '\n';
+  bool planIn(WPS_t* window, JointPlan_t* solution) {
+    std::cout << "Plan in: " << window->window << '\n';
 
     JointState_t starts;
     JointCost_t starts_costs;
     JointState_t goals;
     JointCost_t goals_costs;
-    getCollisionFreeStartsGoals(solution, &window, &starts, &starts_costs,
+    getCollisionFreeStartsGoals(*solution, window, &starts, &starts_costs,
                                 &goals, &goals_costs);
 
     open_set_t open_set;
@@ -537,7 +541,7 @@ class XStar {
     (*handle).handle = handle;
 
     for (size_t expand_count = 0; !open_set.empty(); ++expand_count) {
-      if (isTooManyIterations(expand_count, window)) {
+      if (isTooManyIterations(expand_count, *window)) {
         return false;
       }
       Node current = open_set.top();
@@ -546,7 +550,7 @@ class XStar {
       if (m_env.isJointSolution(current.state, goals)) {
         const auto window_solution =
             unwindPath(starts, starts_costs, current, came_from);
-        return insertWindowPath(window_solution, window.window, starts_costs,
+        return insertWindowPath(window_solution, window->window, starts_costs,
                                 goals_costs, solution);
       }
 
@@ -555,21 +559,21 @@ class XStar {
       closed_set.insert(current.state);
 
       auto neighbor_generator = m_env.getInWindowJointWindowNeighbors(
-          current.state, current.action, goals, window.window, solution);
+          current.state, current.action, goals, window->window, *solution);
+
       do {
         const JointNeighbor_t& joint_neighbor_info =
-            neighbor_generator.getCurrent();
+            neighbor_generator.getAndIncrement();
         processNeighbor(starts, goals, current, joint_neighbor_info, closed_set,
                         &state_to_heap, &open_set, &came_from);
-
-      } while (neighbor_generator.increment(), !neighbor_generator.atEnd());
+      } while (!neighbor_generator.atEnd());
     }
     return false;
   }
 
   bool insertWindowPath(const JointPlan_t& window_path, const Window& window,
-                        JointCost_t starts_cost, JointCost_t goals_cost,
-                        JointPlan_t& full_path) {
+                        const JointCost_t& starts_cost,
+                        const JointCost_t& goals_cost, JointPlan_t* full_path) {
     assert(starts_cost.size() == goals_cost.size());
     assert(window.agent_idxs.size() == goals_cost.size());
 
@@ -596,7 +600,7 @@ class XStar {
 
     for (size_t i = 0; i < window.agent_idxs.size(); ++i) {
       const auto& agent_idx = window.agent_idxs.at(i);
-      auto& individual_initial_plan = full_path.at(agent_idx);
+      auto& individual_initial_plan = full_path->at(agent_idx);
       auto& individual_window_plan = window_path.at(i);
 
       assert(individual_window_plan.states.size() ==
@@ -707,7 +711,7 @@ class XStar {
 
     WPSList_t windows;
     do {
-      recWAMPF(windows, solution);
+      recWAMPF(&windows, &solution);
     } while (!shouldQuit());
 
     return true;
