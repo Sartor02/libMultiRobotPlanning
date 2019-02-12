@@ -270,7 +270,7 @@ struct Window {
   std::pair<std::pair<std::vector<State>, std::vector<int>>,
             std::pair<std::vector<State>, std::vector<int>>>
   getStartsAndGoals(
-      const std::vector<PlanResult<State, Action, int>>& joint_plan) {
+      const std::vector<PlanResult<State, Action, int>>& joint_plan) const {
     std::vector<State> starts;
     std::vector<State> goals;
 
