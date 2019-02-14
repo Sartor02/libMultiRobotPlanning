@@ -12,7 +12,7 @@
 #include <boost/heap/d_ary_heap.hpp>
 #include <unordered_map>
 #include <unordered_set>
-#include "cartesian_product.hpp"
+#include "utils.hpp"
 
 namespace libMultiRobotPlanning {
 
@@ -548,6 +548,11 @@ class XStar {
     return (iterations > std::pow(100, window.window.agent_idxs.size()));
   }
 
+  open_set_t global_open_set;
+  state_to_heap_t global_state_to_heap;
+  closed_set_t global_closed_set;
+  came_from_t global_came_from;
+
   bool planIn(WPS_t* window, JointPlan_t* solution) {
     std::cout << "Plan in: " << window->window << '\n';
     assert(!(window->window.agent_idxs.empty()));
@@ -559,10 +564,15 @@ class XStar {
     getCollisionFreeStartsGoals(*solution, window, &starts, &starts_costs,
                                 &goals, &goals_costs);
 
-    open_set_t open_set;
-    state_to_heap_t state_to_heap;
-    closed_set_t closed_set;
-    came_from_t came_from;
+    open_set_t& open_set = global_open_set;
+    state_to_heap_t& state_to_heap = global_state_to_heap;
+    closed_set_t& closed_set = global_closed_set;
+    came_from_t& came_from = global_came_from;
+
+    open_set.clear();
+    state_to_heap.clear();
+    closed_set.clear();
+    came_from.clear();
 
     auto handle = open_set.push(
         Node(starts, JointAction_t(starts.size(), Action::None),

@@ -6,7 +6,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <libMultiRobotPlanning/cartesian_product.hpp>
+#include <libMultiRobotPlanning/utils.hpp>
 #include <libMultiRobotPlanning/xstar.hpp>
 #include "timer.hpp"
 

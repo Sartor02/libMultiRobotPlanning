@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <iostream>
 #include <vector>
@@ -22,6 +23,28 @@ T diffSum(const std::vector<T>& v1, const std::vector<T>& v2) {
   }
   return sum;
 }
+
+template <typename T, size_t Size>
+class StableStorage {
+ public:
+  StableStorage() : data_(), next_free_(0) {}
+
+  size_t add() {
+    data_[next_free_] = T();
+    next_free_++;
+    assert(next_free_ < Size);
+    return next_free_ - 1;
+  }
+
+  T& at(const size_t& idx) {
+    assert(idx <= next_free_);
+    return data_[idx];
+  }
+
+ private:
+  std::array<T, Size> data_;
+  size_t next_free_;
+};
 
 template <typename T>
 class CartesianProduct {
