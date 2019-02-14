@@ -204,23 +204,77 @@ class XStar {
   using WPS_t = WindowPlannerState;
   using WPSList_t = std::vector<WindowPlannerState>;
 
+  void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution) {
+    for (size_t i = 0; i < windows->size(); ++i) {
+      WPS_t& wi = windows->at(i);
+      growAndReplanIn(&wi, solution);
+
+      bool found_overlapping = false;
+      do {
+        found_overlapping = false;
+        for (size_t j = 0; j < windows->size(); ++j) {
+          if (i == j) {
+            continue;
+          }
+          const WPS_t& wj = windows->at(j);
+          if (wi.overlapping(wj)) {
+            found_overlapping = true;
+            wi = wi.merge(wj);
+            while (!planIn(&wi, solution)) {
+              wi.window.grow();
+            }
+
+            // Erase wj.
+            windows->erase(windows->begin() + j);
+
+            // If j < i, then erasing j will cause i to be shifted back by 1, so
+            // the reference and the index need to be updated.
+            if (j < i) {
+              --i;
+              wi = windows->at(i);
+            }
+
+            break;
+          }
+        }
+      } while (found_overlapping);
+    }
+  }
+
+  void integrateNewConflictWindow(WPS_t window, WPSList_t* windows,
+                                  JointPlan_t* solution) {
+    while (!planIn(&window, solution)) {
+      window.window.grow();
+    }
+    bool found_overlapping = false;
+    do {
+      found_overlapping = false;
+      for (size_t i = 0; i < windows->size(); ++i) {
+        const WPS_t& wi = windows->at(i);
+        if (window.overlapping(wi)) {
+          found_overlapping = true;
+          window = window.merge(wi);
+          while (!planIn(&window, solution)) {
+            window.window.grow();
+          }
+          windows->erase(windows->begin() + i);
+          break;
+        }
+      }
+    } while (found_overlapping);
+    windows->push_back(window);
+  }
+
   bool recWAMPF(WPSList_t* windows, JointPlan_t* solution) {
     std::cout << "Starting recWAMPF\n";
-    for (WPS_t& window : *windows) {
-      growAndReplanIn(&window, solution);
-      if (existsOverlapping(window, *windows)) {
-        planInOverlapWindows(&window, windows, solution);
-      }
-    }
-    std::cout << "Finished growAndReplanIn\n";
+    growAndMergeExisting(windows, solution);
 
     Conflict result;
     while (m_env.getFirstConflict(*solution, result)) {
       std::cout << "Found first conflict\n";
       std::cout << "Conflict: " << result << std::endl;
       WPS_t window = WindowPlannerState(m_env.createWindowFromConflict(result));
-      std::cout << "Got first window\n";
-      planInOverlapWindows(&window, windows, solution);
+      integrateNewConflictWindow(window, windows, solution);
     }
 
     std::cout << "Finished all conflicts\n";
@@ -228,11 +282,8 @@ class XStar {
   }
 
   bool existsOverlapping(const WPS_t& given_w, const WPSList_t& list) const {
-    for (const WPS_t& w : list) {
-      if (&given_w == &w) {
-        // Ignore self.
-        continue;
-      }
+    for (size_t i = 0; i < list.size(); ++i) {
+      const WPS_t& w = list[i];
       if (given_w.overlapping(w)) {
         return true;
       }
@@ -241,6 +292,8 @@ class XStar {
   }
 
   void growAndReplanIn(WPS_t* window, JointPlan_t* solution) {
+    std::cout << "Grow and replan in" << std::endl;
+    window->window.grow();
     while (!planIn(window, solution)) {
       window->window.grow();
     }
@@ -260,40 +313,6 @@ class XStar {
 
   bool windowOverlapsWithOther(const WPS_t& window,
                                const WPSList_t& windows) const {
-    return true;
-  }
-
-  bool planInOverlapWindows(WPS_t* given_window, WPSList_t* windows,
-                            JointPlan_t* solution) {
-    std::cout << "Number of windows: " << windows->size() << std::endl;
-    bool planned_in = false;
-    for (size_t i = 0; i < windows->size();) {
-      const WPS_t& w = (*windows)[i];
-      if (given_window == &w) {
-        // Ignore self.
-        continue;
-      }
-
-      if (given_window->overlapping(w)) {
-        std::cout << "Merging with window " << i << '\n';
-        *given_window = given_window->merge(w);
-        windows->erase(windows->begin() + i);
-        while (!planIn(given_window, solution)) {
-          given_window->window.grow();
-        }
-        planned_in = true;
-      } else {
-        ++i;
-      }
-    }
-
-    if (!planned_in) {
-      while (!planIn(given_window, solution)) {
-        given_window->window.grow();
-      }
-    }
-    std::cout << "Windows push back\n";
-    windows->push_back(*given_window);
     return true;
   }
 
@@ -531,6 +550,7 @@ class XStar {
 
   bool planIn(WPS_t* window, JointPlan_t* solution) {
     std::cout << "Plan in: " << window->window << '\n';
+    assert(!(window->window.agent_idxs.empty()));
 
     JointState_t starts;
     JointCost_t starts_costs;
