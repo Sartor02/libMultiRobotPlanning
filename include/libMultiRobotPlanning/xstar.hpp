@@ -132,38 +132,96 @@ class XStar {
       os << " | ";
     }
   }
+  
+  struct Node {
+    Node(const JointState_t& state, const JointAction_t& action,
+         const Cost& fScore, const JointCost_t& gScore)
+        : state(state),
+          action(action),
+          f_score(fScore),
+          g_score_sum(utils::sum(gScore)),
+          g_score(gScore) {}
+
+    bool operator<(const Node& other) const {
+      // Sort order
+      // 1. lowest fScore
+      // 2. highest gScore
+
+      // Our heap is a maximum heap, so we invert the comperator function here
+      if (f_score != other.f_score) {
+        return f_score > other.f_score;
+      } else {
+        return g_score_sum < other.g_score_sum;
+      }
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Node& node) {
+      os << "state: " << node.state << " fScore: " << node.f_score
+         << " gScore: " << node.g_score_sum;
+      return os;
+    }
+
+    JointState_t state;
+    JointAction_t action;
+
+    Cost f_score;
+    Cost g_score_sum;
+    JointCost_t g_score;
+
+    typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
+                                     boost::heap::mutable_<true>>::handle_type
+        handle;
+  };
+
+  
+  using open_set_t =
+      typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
+                                       boost::heap::mutable_<true>>;
+  using open_set_handle_t = typename open_set_t::handle_type;
+
+  using state_to_heap_t =
+      std::unordered_map<JointState_t, open_set_handle_t, StateHasher>;
+
+  using closed_set_t = std::unordered_set<JointState_t, StateHasher>;
+
+  using came_from_t = std::unordered_map<
+      JointState_t,
+      std::tuple<JointState_t, JointAction_t, JointCost_t, JointCost_t>,
+      StateHasher>;
 
   struct SearchState {
-    //     JointPlan_t plan;
+    open_set_t open_set;
+    state_to_heap_t state_to_heap;
+    closed_set_t closed_set;
+    came_from_t came_from;
 
     bool operator==(const SearchState& o) const {
-      //       return (plan == o.plan);
-      return true;
+      return open_set == o.open_set && state_to_heap == o.state_to_heap && closed_set == o.closed_set && came_from == o.came_from;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
-      //       assert(ps.plan.empty());
-      //       print(ps.plan, os);
       return os;
     }
   };
 
+  using SSListIndex_t = size_t;
+  using SSList_t = utils::StableStorage<SearchState, 1000>;
+  
   struct WindowPlannerState {
     Window window;
-    SearchState search_state;
+    SSListIndex_t ss_index;
+    SSList_t* ss_list;
 
     WindowPlannerState() = delete;
-    explicit WindowPlannerState(const Window& window)
-        : window(window), search_state() {}
-    WindowPlannerState(const Window& window, const SearchState* search_state)
-        : window(window), search_state(search_state) {}
+    WindowPlannerState(const Window& window, SSList_t* ss_list)
+        : window(window), ss_index(ss_list->add()), ss_list(ss_list) {}
 
     bool operator==(const WindowPlannerState& o) const {
-      return (window == o.window) && (search_state == o.search_state);
+      return (window == o.window) && (ss_index == o.ss_index) && (ss_list == o.ss_list);
     }
 
     WindowPlannerState merge(const WindowPlannerState& o) const {
-      return WindowPlannerState(window.merge(o.window));
+      return {window.merge(o.window), ss_list};
     }
 
     bool overlapping(const WindowPlannerState& other) const {
@@ -193,6 +251,10 @@ class XStar {
       exit(0);
       return false;
     }
+    
+    SearchState* getSearchState() {
+      return &(ss_list->at(ss_index));
+    }
 
     friend std::ostream& operator<<(std::ostream& os,
                                     const WindowPlannerState& ws) {
@@ -203,6 +265,7 @@ class XStar {
 
   using WPS_t = WindowPlannerState;
   using WPSList_t = std::vector<WindowPlannerState>;
+  
 
   void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution) {
     for (size_t i = 0; i < windows->size(); ++i) {
@@ -265,7 +328,7 @@ class XStar {
     windows->push_back(window);
   }
 
-  bool recWAMPF(WPSList_t* windows, JointPlan_t* solution) {
+  bool recWAMPF(WPSList_t* windows, SSList_t* search_states, JointPlan_t* solution) {
     std::cout << "Starting recWAMPF\n";
     growAndMergeExisting(windows, solution);
 
@@ -273,7 +336,7 @@ class XStar {
     while (m_env.getFirstConflict(*solution, result)) {
       std::cout << "Found first conflict\n";
       std::cout << "Conflict: " << result << std::endl;
-      WPS_t window = WindowPlannerState(m_env.createWindowFromConflict(result));
+      WPS_t window(m_env.createWindowFromConflict(result), search_states);
       integrateNewConflictWindow(window, windows, solution);
     }
 
@@ -315,46 +378,6 @@ class XStar {
                                const WPSList_t& windows) const {
     return true;
   }
-
-  struct Node {
-    Node(const JointState_t& state, const JointAction_t& action,
-         const Cost& fScore, const JointCost_t& gScore)
-        : state(state),
-          action(action),
-          f_score(fScore),
-          g_score_sum(utils::sum(gScore)),
-          g_score(gScore) {}
-
-    bool operator<(const Node& other) const {
-      // Sort order
-      // 1. lowest fScore
-      // 2. highest gScore
-
-      // Our heap is a maximum heap, so we invert the comperator function here
-      if (f_score != other.f_score) {
-        return f_score > other.f_score;
-      } else {
-        return g_score_sum < other.g_score_sum;
-      }
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const Node& node) {
-      os << "state: " << node.state << " fScore: " << node.f_score
-         << " gScore: " << node.g_score_sum;
-      return os;
-    }
-
-    JointState_t state;
-    JointAction_t action;
-
-    Cost f_score;
-    Cost g_score_sum;
-    JointCost_t g_score;
-
-    typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
-                                     boost::heap::mutable_<true>>::handle_type
-        handle;
-  };
 
   bool isColliding(const JointState_t& n, const JointState_t& c,
                    const JointAction_t& a) {
@@ -438,21 +461,6 @@ class XStar {
     *goals_costs = starts_goals.second.second;
     verifyPlanInEndpoints(*starts, *starts_costs, *goals, *goals_costs);
   }
-
-  using open_set_t =
-      typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
-                                       boost::heap::mutable_<true>>;
-  using open_set_handle_t = typename open_set_t::handle_type;
-
-  using state_to_heap_t =
-      std::unordered_map<JointState_t, open_set_handle_t, StateHasher>;
-
-  using closed_set_t = std::unordered_set<JointState_t, StateHasher>;
-
-  using came_from_t = std::unordered_map<
-      JointState_t,
-      std::tuple<JointState_t, JointAction_t, JointCost_t, JointCost_t>,
-      StateHasher>;
 
   JointPlan_t unwindPath(const JointState_t& starts,
                          const JointCost_t& starts_costs,
@@ -564,10 +572,11 @@ class XStar {
     getCollisionFreeStartsGoals(*solution, window, &starts, &starts_costs,
                                 &goals, &goals_costs);
 
-    open_set_t& open_set = global_open_set;
-    state_to_heap_t& state_to_heap = global_state_to_heap;
-    closed_set_t& closed_set = global_closed_set;
-    came_from_t& came_from = global_came_from;
+    auto* ss = window->getSearchState();
+    open_set_t& open_set = ss->open_set;
+    state_to_heap_t& state_to_heap = ss->state_to_heap;
+    closed_set_t& closed_set = ss->closed_set;
+    came_from_t& came_from = ss->came_from;
 
     open_set.clear();
     state_to_heap.clear();
@@ -750,8 +759,9 @@ class XStar {
     if (!planIndividually(initial_states, solution)) return false;
 
     WPSList_t windows;
+    SSList_t search_states;
     do {
-      recWAMPF(&windows, &solution);
+      recWAMPF(&windows, &search_states, &solution);
     } while (!shouldQuit());
 
     return true;
