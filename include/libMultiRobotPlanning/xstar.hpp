@@ -132,7 +132,7 @@ class XStar {
       os << " | ";
     }
   }
-  
+
   struct Node {
     Node(const JointState_t& state, const JointAction_t& action,
          const Cost& fScore, const JointCost_t& gScore)
@@ -173,7 +173,6 @@ class XStar {
         handle;
   };
 
-  
   using open_set_t =
       typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
                                        boost::heap::mutable_<true>>;
@@ -190,13 +189,25 @@ class XStar {
       StateHasher>;
 
   struct SearchState {
+    static constexpr Cost kDefaultCost = -1;
+    Cost min_cost;
+    Cost max_cost;
     open_set_t open_set;
     state_to_heap_t state_to_heap;
     closed_set_t closed_set;
     came_from_t came_from;
 
+    SearchState()
+        : min_cost(kDefaultCost),
+          max_cost(kDefaultCost),
+          open_set(),
+          state_to_heap(),
+          closed_set(),
+          came_from() {}
+
     bool operator==(const SearchState& o) const {
-      return open_set == o.open_set && state_to_heap == o.state_to_heap && closed_set == o.closed_set && came_from == o.came_from;
+      return open_set == o.open_set && state_to_heap == o.state_to_heap &&
+             closed_set == o.closed_set && came_from == o.came_from;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
@@ -206,7 +217,7 @@ class XStar {
 
   using SSListIndex_t = size_t;
   using SSList_t = utils::StableStorage<SearchState, 1000>;
-  
+
   struct WindowPlannerState {
     Window window;
     SSListIndex_t ss_index;
@@ -217,7 +228,8 @@ class XStar {
         : window(window), ss_index(ss_list->add()), ss_list(ss_list) {}
 
     bool operator==(const WindowPlannerState& o) const {
-      return (window == o.window) && (ss_index == o.ss_index) && (ss_list == o.ss_list);
+      return (window == o.window) && (ss_index == o.ss_index) &&
+             (ss_list == o.ss_list);
     }
 
     WindowPlannerState merge(const WindowPlannerState& o) const {
@@ -230,7 +242,26 @@ class XStar {
         return false;
       }
 
-      // TODO(kvedder): Add more intelligent overlap detection conditions.
+      const SearchState* ss = getSearchState();
+      const SearchState* oss = other.getSearchState();
+      assert(ss->min_cost != SearchState::kDefaultCost);
+      assert(ss->max_cost != SearchState::kDefaultCost);
+      assert(oss->min_cost != SearchState::kDefaultCost);
+      assert(oss->max_cost != SearchState::kDefaultCost);
+
+      bool oss_min_inside =
+          ss->min_cost <= oss->min_cost && ss->max_cost >= oss->min_cost;
+      bool oss_max_inside =
+          ss->min_cost <= oss->max_cost && ss->max_cost >= oss->max_cost;
+      bool ss_min_inside =
+          ss->min_cost >= oss->min_cost && ss->min_cost <= oss->max_cost;
+      bool ss_max_inside =
+          ss->max_cost >= oss->min_cost && ss->max_cost <= oss->max_cost;
+
+      if (!(oss_min_inside || oss_max_inside || ss_min_inside ||
+            ss_max_inside)) {
+        return false;
+      }
 
       // If they overlap in space and share agents, then they need to be merged.
       if (window.has_overlapping_agents(other.window)) {
@@ -238,34 +269,19 @@ class XStar {
       }
 
       return false;
-
-      // If they overlap in space but don't share agents and at least one
-      // doesn't have a path to collide with the other, then they do not need to
-      // be merged.
-      //       if (search_state.plan.empty() || other.search_state.plan.empty())
-      //       {
-      //         return false;
-      //       }
-
-      std::cerr << "Needs to check if plans collide!\n";
-      exit(0);
-      return false;
     }
-    
-    SearchState* getSearchState() {
-      return &(ss_list->at(ss_index));
-    }
+
+    SearchState* getSearchState() const { return &(ss_list->at(ss_index)); }
 
     friend std::ostream& operator<<(std::ostream& os,
                                     const WindowPlannerState& ws) {
       return os << "Window: " << ws.window
-                << " Search state: " << ws.search_state;
+                << " Search state index: " << ws.ss_index;
     }
   };
 
   using WPS_t = WindowPlannerState;
   using WPSList_t = std::vector<WindowPlannerState>;
-  
 
   void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution) {
     for (size_t i = 0; i < windows->size(); ++i) {
@@ -282,6 +298,8 @@ class XStar {
           const WPS_t& wj = windows->at(j);
           if (wi.overlapping(wj)) {
             found_overlapping = true;
+            std::cout << "Merging two existing windows " << wi << ", " << wj
+                      << std::endl;
             wi = wi.merge(wj);
             while (!planIn(&wi, solution)) {
               wi.window.grow();
@@ -328,7 +346,8 @@ class XStar {
     windows->push_back(window);
   }
 
-  bool recWAMPF(WPSList_t* windows, SSList_t* search_states, JointPlan_t* solution) {
+  bool recWAMPF(WPSList_t* windows, SSList_t* search_states,
+                JointPlan_t* solution) {
     std::cout << "Starting recWAMPF\n";
     growAndMergeExisting(windows, solution);
 
@@ -452,6 +471,7 @@ class XStar {
                                    JointCost_t* goals_costs) {
     auto starts_goals = window->window.getStartsAndGoals(solution);
     while (goalsCollide(starts_goals.second.first)) {
+      std::cout << "goals collide, expanding" << std::endl;
       window->window.grow();
       starts_goals = window->window.getStartsAndGoals(solution);
     }
@@ -556,13 +576,20 @@ class XStar {
     return (iterations > std::pow(100, window.window.agent_idxs.size()));
   }
 
-  open_set_t global_open_set;
-  state_to_heap_t global_state_to_heap;
-  closed_set_t global_closed_set;
-  came_from_t global_came_from;
+  std::pair<Cost, Cost> getMinMaxCostFromPlan(const JointPlan_t& joint_plan) {
+    Cost min_cost = std::numeric_limits<Cost>::max();
+    Cost max_cost = std::numeric_limits<Cost>::min();
+    for (const IndividualPlan_t& individual_plan : joint_plan) {
+      min_cost = std::min(individual_plan.states.front().second, min_cost);
+      max_cost = std::max(individual_plan.states.back().second, max_cost);
+    }
+
+    assert(min_cost != std::numeric_limits<Cost>::max());
+    assert(max_cost != std::numeric_limits<Cost>::min());
+    return {min_cost, max_cost};
+  }
 
   bool planIn(WPS_t* window, JointPlan_t* solution) {
-    std::cout << "Plan in: " << window->window << '\n';
     assert(!(window->window.agent_idxs.empty()));
 
     JointState_t starts;
@@ -571,6 +598,7 @@ class XStar {
     JointCost_t goals_costs;
     getCollisionFreeStartsGoals(*solution, window, &starts, &starts_costs,
                                 &goals, &goals_costs);
+    std::cout << "Plan in: " << window->window << '\n';
 
     auto* ss = window->getSearchState();
     open_set_t& open_set = ss->open_set;
@@ -599,6 +627,12 @@ class XStar {
       if (m_env.isJointSolution(current.state, goals)) {
         const auto window_solution =
             unwindPath(starts, starts_costs, current, came_from);
+        const auto min_max = getMinMaxCostFromPlan(window_solution);
+        for (const auto& e : starts_costs) {
+          assert(min_max.first == e);
+        }
+        ss->min_cost = min_max.first;
+        ss->max_cost = min_max.second;
         return insertWindowPath(window_solution, window->window, starts_costs,
                                 goals_costs, solution);
       }
