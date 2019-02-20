@@ -420,6 +420,17 @@ class XStar {
     return false;
   }
 
+  bool positionsCollide(const JointState_t& positions) const {
+    for (size_t i = 0; i < positions.size(); ++i) {
+      for (size_t j = i + 1; j < positions.size(); ++j) {
+        if (positions[i].equalExceptTime(positions[j])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   void verifyPlanInEndpoints(const JointState_t& start,
                              const JointCost_t& start_cost,
                              const JointState_t& goal,
@@ -451,17 +462,9 @@ class XStar {
       std::cout << s << " ";
     }
     std::cout << std::endl;
-  }
 
-  bool goalsCollide(const JointState_t& goals) {
-    for (size_t i = 0; i < goals.size(); ++i) {
-      for (size_t j = i + 1; j < goals.size(); ++j) {
-        if (goals[i].equalExceptTime(goals[j])) {
-          return true;
-        }
-      }
-    }
-    return false;
+    assert(!positionsCollide(start));
+    assert(!positionsCollide(goal));
   }
 
   void getCollisionFreeStartsGoals(const JointPlan_t& solution, WPS_t* window,
@@ -470,7 +473,7 @@ class XStar {
                                    JointState_t* goals,
                                    JointCost_t* goals_costs) {
     auto starts_goals = window->window.getStartsAndGoals(solution);
-    while (goalsCollide(starts_goals.second.first)) {
+    while (positionsCollide(starts_goals.second.first)) {
       std::cout << "goals collide, expanding" << std::endl;
       window->window.grow();
       starts_goals = window->window.getStartsAndGoals(solution);
