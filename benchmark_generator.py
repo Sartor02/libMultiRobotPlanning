@@ -7,16 +7,22 @@ import argparse
 from collections import namedtuple
 
 def generate_agents(num_agents, width, height):
-    start_x = [int(e) for e in np.random.random_integers(0, width, num_agents)]
-    start_y = [int(e) for e in  np.random.random_integers(0, height, num_agents)]
-    goal_x = [int(e) for e in np.random.random_integers(0, width, num_agents)]
-    goal_y = [int(e) for e in np.random.random_integers(0, height, num_agents)]
-
-    unified_starts = zip(start_x, start_y)
-    unified_goals = zip(goal_x, goal_y)
+    starts = []
+    goals = []
+    while len(starts) < num_agents:
+      sx = np.random.randint(0, width - 1)
+      sy = np.random.randint(0, height - 1)
+      sxy = [sx, sy]
+      gx = np.random.randint(0, width - 1)
+      gy = np.random.randint(0, height - 1)
+      gxy = [gx, gy]
+      if sxy in starts or gxy in goals:
+            continue
+      starts.append(sxy)
+      goals.append(gxy)
 
     Agent = namedtuple('Agent', 'name start goal')
-    return [ Agent('agent{}'.format(e[0]), e[1][0], e[1][1] ) for e in enumerate(zip(unified_starts, unified_goals))] 
+    return [ Agent('agent{}'.format(e[0]), e[1][0], e[1][1] ) for e in enumerate(zip(starts, goals))] 
 
 def generate_obstacles(num_obstacles, agents, width, height):
     starts = [a.start for a in agents]
@@ -24,7 +30,7 @@ def generate_obstacles(num_obstacles, agents, width, height):
     obs = []
     while len(obs) < num_obstacles:
         x = np.random.randint(0, width)
-        y = np.random.randint(0, width)
+        y = np.random.randint(0, height)
         xy = [x, y]
         if xy in starts or xy in goals:
             continue
@@ -54,7 +60,7 @@ print(agents)
 
 f = open(args.out_file, "w")
 def write_yaml(agents, obstacles, width, height, f):
-    f.write("agents\n")
+    f.write("agents:\n")
     for a in agents:
         rs = \
 """-   goal: [{}, {}]
