@@ -15,6 +15,7 @@ using libMultiRobotPlanning::PlanResult;
 using libMultiRobotPlanning::XStar;
 
 struct State {
+  State() : time(0), x(0), y(0) {}
   State(int time, int x, int y) : time(time), x(x), y(y) {}
 
   bool operator==(const State& s) const {
@@ -229,6 +230,22 @@ struct Window {
 
   bool contains(const State& s) const { return contains({s.x, s.y}); }
 
+  bool inWindowOrOnPath(
+      const std::vector<State>& ss,
+      const std::vector<PlanResult<State, Action, int>>& joint_plan) const {
+    assert(ss.size() == agent_idxs.size());
+    for (size_t i = 0; i < ss.size(); ++i) {
+      const State& s = ss[i];
+      const size_t& agend_idx = agent_idxs[i];
+      const PlanResult<State, Action, int>& agent_plan = joint_plan[agend_idx];
+      const State& plan_state = agent_plan.states[s.time].first;
+      if (!contains(s) && plan_state != s) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool intersects(const Window& o) const {
     Location off1(min_position.x, max_position.y);
     Location off2(max_position.x, min_position.y);
@@ -395,6 +412,36 @@ class Environment {
     return true;
   }
 
+  utils::CartesianProduct<std::pair<Neighbor<State, Action, int>, bool>>
+  getJointWindowNeighbors(
+      const std::vector<State>& states, const std::vector<Action>& actions,
+      const std::vector<State>& goals, const Window& window,
+      const std::vector<PlanResult<State, Action, int>>& joint_plan) {
+    std::vector<std::vector<std::pair<Neighbor<State, Action, int>, bool>>>
+        neighbor_list;
+    for (size_t i = 0; i < states.size(); ++i) {
+      const State& s = states[i];
+      const Action& a = actions[i];
+      const State& goal = goals[i];
+      const size_t agent_idx = window.agent_idxs[i];
+      std::vector<std::pair<Neighbor<State, Action, int>, bool>>
+          window_neighbors;
+      getWindowNeighbors(s, a, goal, agent_idx, window, joint_plan,
+                         window_neighbors);
+      neighbor_list.emplace_back(window_neighbors);
+      assert(!neighbor_list.back().empty());
+    }
+
+    for (const auto& l : neighbor_list) {
+      for (const auto& n : l) {
+        assert(n.first.cost <= 1);
+      }
+    }
+
+    return utils::CartesianProduct<
+        std::pair<Neighbor<State, Action, int>, bool>>(neighbor_list);
+  }
+
   utils::CartesianProduct<Neighbor<State, Action, int>>
   getInWindowJointWindowNeighbors(
       const std::vector<State>& states, const std::vector<Action>& actions,
@@ -413,7 +460,7 @@ class Environment {
                          in_window_neighbors, out_window_neighbors);
       assert(!in_window_neighbors.empty());
 
-      if (in_window_neighbors.size() > 1) {
+      if (in_window_neighbors.size() > 1) {  // Ignore case where follow path.
         for (const auto& n : in_window_neighbors) {
           if (!(window.contains(n.state))) {
             std::cout << n.state << std::endl;
@@ -432,6 +479,43 @@ class Environment {
     }
 
     return utils::CartesianProduct<Neighbor<State, Action, int>>(neighbor_list);
+  }
+
+  std::vector<Neighbor<State, Action, int>> getWindowNeighbors(
+      const State& s, const Action& a, const State& goal,
+      const size_t agent_idx, const Window& w,
+      const std::vector<PlanResult<State, Action, int>>& joint_plan) {
+    if (!w.contains({s.x, s.y}, agent_idx)) {
+      // If the given state is not in the window but it falls along the path
+      // into the window, add the next step in the path towards the window.
+      if (getState(agent_idx, joint_plan, s.time) == s) {
+        return {getStateAsNeighbor(agent_idx, joint_plan, s.time + 1)};
+      } else {
+        // Not in window but also not on path!
+        std::cerr << "Not in window but also not on path! Agent idx: "
+                  << agent_idx << " Window: " << w << " State: " << s
+                  << std::endl;
+        assert(false);
+        return {};
+      }
+    }
+
+    std::vector<Neighbor<State, Action, int>> neighbors;
+
+    if (s.equalExceptTime(goal)) {
+      const auto& n = getStateAsGoalNeighbor(s);
+      neighbors.emplace_back(n);
+      // If the planner elected to goal wait, it may not do anything else.
+      if (a == Action::GoalWait) {
+        return neighbors;
+      }
+    }
+
+    getNeighbors(s, neighbors);
+    for (const auto& n : neighbors) {
+      assert(n.cost <= 1);
+    }
+    return neighbors;
   }
 
   void getWindowNeighbors(
@@ -476,6 +560,47 @@ class Environment {
       } else {
         out_window_neighbors.emplace_back(n);
       }
+    }
+  }
+
+  void getWindowNeighbors(
+      const State& s, const Action& a, const State& goal,
+      const size_t agent_idx, const Window& w,
+      const std::vector<PlanResult<State, Action, int>>& joint_plan,
+      std::vector<std::pair<Neighbor<State, Action, int>, bool>>&
+          window_neighbors) {
+    if (!w.contains({s.x, s.y}, agent_idx)) {
+      // If the given state is not in the window but it falls along the path
+      // into the window, add the next step in the path towards the window.
+      if (getState(agent_idx, joint_plan, s.time) == s) {
+        window_neighbors.emplace_back(
+            getStateAsNeighbor(agent_idx, joint_plan, s.time + 1), true);
+      } else {
+        // Not in window but also not on path!
+        std::cerr << "Not in window but also not on path! Agent idx: "
+                  << agent_idx << " Window: " << w << " State: " << s
+                  << std::endl;
+        assert(false);
+      }
+      return;
+    }
+
+    assert(window_neighbors.empty());
+
+    if (s.equalExceptTime(goal)) {
+      const auto& n = getStateAsGoalNeighbor(s);
+      window_neighbors.emplace_back(n, true);
+      // If the planner elected to goal wait, it may not do anything else.
+      if (a == Action::GoalWait) {
+        return;
+      }
+    }
+
+    std::vector<Neighbor<State, Action, int>> neighbors;
+    getNeighbors(s, neighbors);
+    for (auto& n : neighbors) {
+      assert(n.cost <= 1);
+      window_neighbors.emplace_back(n, w.contains(n.state));
     }
   }
 

@@ -133,6 +133,12 @@ class XStar {
     }
   }
 
+  static void print(const JointState_t& ss, std::ostream& os = std::cout) {
+    for (const auto& s : ss) {
+      os << s << ' ';
+    }
+  }
+
   struct Node {
     Node(const JointState_t& state, const JointAction_t& action,
          const Cost& fScore, const JointCost_t& gScore)
@@ -188,6 +194,8 @@ class XStar {
       std::tuple<JointState_t, JointAction_t, JointCost_t, JointCost_t>,
       StateHasher>;
 
+  using out_of_window_t = std::unordered_set<JointState_t, StateHasher>;
+
   struct SearchState {
     static constexpr Cost kDefaultCost = -1;
     Cost min_cost;
@@ -196,6 +204,7 @@ class XStar {
     state_to_heap_t state_to_heap;
     closed_set_t closed_set;
     came_from_t came_from;
+    out_of_window_t out_of_window;
 
     SearchState()
         : min_cost(kDefaultCost),
@@ -519,10 +528,10 @@ class XStar {
   void processNeighbor(const JointState_t& starts, const JointState_t& goals,
                        const Node& current,
                        const JointNeighbor_t& joint_neighbor_info,
-                       const closed_set_t& closed_set,
+                       const bool& is_in_window, const closed_set_t& closed_set,
                        state_to_heap_t* state_to_heap, open_set_t* open_set,
-                       came_from_t* came_from) {
-    JointState_t neighbor_joint_state = starts;
+                       came_from_t* came_from, out_of_window_t* out_of_window) {
+    JointState_t neighbor_joint_state(starts.size());
     JointAction_t neighbor_joint_action(starts.size());
     JointCost_t neighbor_joint_cost(starts.size());
     JointCost_t neighbor_tenative_gscore = current.g_score;
@@ -536,6 +545,27 @@ class XStar {
     }
 
     // All variables initialized.
+
+    if (!is_in_window) {
+      auto it = came_from->find(neighbor_joint_state);
+      if (it != came_from->end()) {
+        assert(out_of_window->find(neighbor_joint_state) !=
+               out_of_window->end());
+        if (utils::sum(std::get<3>(it->second)) <=
+            utils::sum(neighbor_tenative_gscore)) {
+          return;
+        }
+      } else {
+        assert(out_of_window->find(neighbor_joint_state) ==
+               out_of_window->end());
+      }
+      (*came_from)[neighbor_joint_state] =
+          std::make_tuple<>(current.state, neighbor_joint_action,
+                            neighbor_joint_cost, neighbor_tenative_gscore);
+      out_of_window->insert(neighbor_joint_state);
+      return;
+    }
+
     if (closed_set.find(neighbor_joint_state) != closed_set.end()) {
       return;
     }
@@ -557,22 +587,21 @@ class XStar {
       state_to_heap->insert(std::make_pair<>(neighbor_joint_state, handle));
     } else {
       auto handle = it->second;
-      if (neighbor_tenative_gscore >= (*handle).g_score) {
+      if (utils::sum(neighbor_tenative_gscore) >=
+          utils::sum((*handle).g_score)) {
         return;
       }
       // Update f and g score.
       Cost delta = utils::diffSum((*handle).g_score, neighbor_tenative_gscore);
+      assert(delta > 0);
       (*handle).g_score = neighbor_tenative_gscore;
       (*handle).g_score_sum -= delta;
       (*handle).f_score -= delta;
       open_set->increase(handle);
     }
-
-    came_from->erase(neighbor_joint_state);
-    came_from->insert(std::make_pair<>(
-        neighbor_joint_state,
+    (*came_from)[neighbor_joint_state] =
         std::make_tuple<>(current.state, neighbor_joint_action,
-                          neighbor_joint_cost, neighbor_tenative_gscore)));
+                          neighbor_joint_cost, neighbor_tenative_gscore);
   }
 
   bool isTooManyIterations(const size_t& iterations, const WPS_t& window) {
@@ -608,11 +637,13 @@ class XStar {
     state_to_heap_t& state_to_heap = ss->state_to_heap;
     closed_set_t& closed_set = ss->closed_set;
     came_from_t& came_from = ss->came_from;
+    out_of_window_t& out_of_window = ss->out_of_window;
 
     open_set.clear();
     state_to_heap.clear();
     closed_set.clear();
     came_from.clear();
+    out_of_window.clear();
 
     auto handle = open_set.push(
         Node(starts, JointAction_t(starts.size(), Action::None),
@@ -624,7 +655,9 @@ class XStar {
       if (isTooManyIterations(expand_count, *window)) {
         return false;
       }
+
       Node current = open_set.top();
+
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
 
       if (m_env.isJointSolution(current.state, goals)) {
@@ -644,14 +677,22 @@ class XStar {
       state_to_heap.erase(current.state);
       closed_set.insert(current.state);
 
-      auto neighbor_generator = m_env.getInWindowJointWindowNeighbors(
+      auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, *solution);
 
+      JointNeighbor_t joint_neighbor_info(current.state.size());
       do {
-        const JointNeighbor_t& joint_neighbor_info =
-            neighbor_generator.getAndIncrement();
-        processNeighbor(starts, goals, current, joint_neighbor_info, closed_set,
-                        &state_to_heap, &open_set, &came_from);
+        const auto& generator_output = neighbor_generator.getAndIncrement();
+        bool joint_neighbor_in_window = true;
+        for (size_t i = 0; i < generator_output.size(); ++i) {
+          joint_neighbor_info[i] = std::move(generator_output[i].first);
+          joint_neighbor_in_window =
+              joint_neighbor_in_window && generator_output[i].second;
+        }
+        processNeighbor(starts, goals, current, joint_neighbor_info,
+                        joint_neighbor_in_window, closed_set, &state_to_heap,
+                        &open_set, &came_from, &out_of_window);
+
       } while (!neighbor_generator.atEnd());
     }
     return false;
