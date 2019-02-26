@@ -41,6 +41,10 @@ class StableStorage {
     return data_[idx];
   }
 
+  auto begin() const { return data_.begin(); }
+
+  auto end() const { return data_.end(); }
+
  private:
   std::array<T, Size> data_;
   size_t next_free_;

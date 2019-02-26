@@ -284,8 +284,8 @@ struct Window {
     return {{min_x, min_y}, {max_x, max_y}, joined_agent_idxs};
   }
 
-  std::pair<std::pair<std::vector<State>, std::vector<int>>,
-            std::pair<std::vector<State>, std::vector<int>>>
+  std::tuple<std::vector<State>, std::vector<int>, std::vector<State>,
+             std::vector<int>>
   getStartsAndGoals(
       const std::vector<PlanResult<State, Action, int>>& joint_plan) const {
     std::vector<State> starts;
@@ -342,7 +342,7 @@ struct Window {
       goals_cost.push_back(s.time);
     }
 
-    return {{starts, starts_cost}, {goals, goals_cost}};
+    return {starts, starts_cost, goals, goals_cost};
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Window& w) {
@@ -614,34 +614,34 @@ class Environment {
     neighbors.clear();
     {
       State n(s.time + 1, s.x, s.y);
-      if (stateValid(n) && transitionValid(s, n)) {
+      if (stateValid(n)) {
         neighbors.emplace_back(
             Neighbor<State, Action, int>(n, Action::Wait, 1));
       }
     }
     {
       State n(s.time + 1, s.x - 1, s.y);
-      if (stateValid(n) && transitionValid(s, n)) {
+      if (stateValid(n)) {
         neighbors.emplace_back(
             Neighbor<State, Action, int>(n, Action::Left, 1));
       }
     }
     {
       State n(s.time + 1, s.x + 1, s.y);
-      if (stateValid(n) && transitionValid(s, n)) {
+      if (stateValid(n)) {
         neighbors.emplace_back(
             Neighbor<State, Action, int>(n, Action::Right, 1));
       }
     }
     {
       State n(s.time + 1, s.x, s.y + 1);
-      if (stateValid(n) && transitionValid(s, n)) {
+      if (stateValid(n)) {
         neighbors.emplace_back(Neighbor<State, Action, int>(n, Action::Up, 1));
       }
     }
     {
       State n(s.time + 1, s.x, s.y - 1);
-      if (stateValid(n) && transitionValid(s, n)) {
+      if (stateValid(n)) {
         neighbors.emplace_back(
             Neighbor<State, Action, int>(n, Action::Down, 1));
       }
@@ -789,8 +789,6 @@ class Environment {
     return s.x >= 0 && s.x < m_dimx && s.y >= 0 && s.y < m_dimy &&
            m_obstacles.find(Location(s.x, s.y)) == m_obstacles.end();
   }
-
-  bool transitionValid(const State& s1, const State& s2) { return true; }
 
  private:
   int m_dimx;
