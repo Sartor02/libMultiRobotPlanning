@@ -53,13 +53,14 @@ class StableStorage {
 template <typename T>
 class CartesianProduct {
  public:
-  CartesianProduct() = delete;
+  CartesianProduct() : v_(), idxs_({0}), ends_({0}) {}
   explicit CartesianProduct(const std::vector<std::vector<T>>& v)
       : v_(v), idxs_(v.size(), 0), ends_(v.size(), 0) {
     for (size_t i = 0; i < v_.size(); ++i) {
       assert(!v_[i].empty());
       ends_[i] = v_[i].size() - 1;
     }
+    assert(!ends_.empty());
     ends_.back()++;
 
     //     std::cout << "idxs: ";
