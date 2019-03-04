@@ -126,8 +126,8 @@ class XStar {
   using JointPlan_t = std::vector<IndividualPlan_t>;
   using JointNeighbor_t = std::vector<Neighbor<State, Action, Cost>>;
 
-  
-  static void print(const JointPlan_t& p, std::ostream& os = std::cout, const std::string  end = "\n") {
+  static void print(const JointPlan_t& p, std::ostream& os = std::cout,
+                    const std::string end = "\n") {
     for (size_t i = 0; i < p.size(); ++i) {
       const auto& e = p[i];
       os << "i: " << i << " | ";
@@ -143,8 +143,9 @@ class XStar {
     os << end;
   }
 
-  template<typename T>
-  static void print(const std::vector<T>& ss, std::ostream& os = std::cout, const std::string end = "\n") {
+  template <typename T>
+  static void print(const std::vector<T>& ss, std::ostream& os = std::cout,
+                    const std::string end = "\n") {
     for (const T& s : ss) {
       os << s << ' ';
     }
@@ -153,12 +154,15 @@ class XStar {
 
   struct Node {
     Node(const JointState_t& state, const JointAction_t& action,
-         const Cost& fScore, const JointCost_t& gScore)
+         const JointCost_t& action_cost, const JointState_t& prev_state,
+         const Cost& f_score, const JointCost_t& g_score)
         : state(state),
           action(action),
-          f_score(fScore),
-          g_score_sum(utils::sum(gScore)),
-          g_score(gScore) {}
+          action_cost(action_cost),
+          prev_state(prev_state),
+          f_score(f_score),
+          g_score_sum(utils::sum(g_score)),
+          g_score(g_score) {}
 
     bool operator<(const Node& other) const {
       // Sort order
@@ -186,6 +190,8 @@ class XStar {
 
     JointState_t state;
     JointAction_t action;
+    JointCost_t action_cost;
+    JointState_t prev_state;
 
     Cost f_score;
     Cost g_score_sum;
@@ -194,6 +200,40 @@ class XStar {
     typename boost::heap::d_ary_heap<Node, boost::heap::arity<2>,
                                      boost::heap::mutable_<true>>::handle_type
         handle;
+  };
+
+  struct came_from_value_t {
+    JointState_t previous_state;
+    JointAction_t action_out_of_previous_state;
+    JointCost_t cost_out_of_previous_state;
+    JointCost_t g_score_previous_state;
+
+    came_from_value_t() = default;
+    came_from_value_t(const JointState_t& previous_state,
+                      const JointAction_t& action_out_of_previous_state,
+                      const JointCost_t& cost_out_of_previous_state,
+                      const JointCost_t& g_score_previous_state)
+        : previous_state(previous_state),
+          action_out_of_previous_state(action_out_of_previous_state),
+          cost_out_of_previous_state(cost_out_of_previous_state),
+          g_score_previous_state(g_score_previous_state) {}
+  };
+
+  struct ParentValue_t {
+    JointState_t previous_state;
+    JointAction_t action_out_of_previous_state;
+    JointCost_t cost_out_of_previous_state;
+    JointCost_t g_score_previous_state;
+
+    ParentValue_t() = default;
+    ParentValue_t(const JointState_t& previous_state,
+                  const JointAction_t& action_out_of_previous_state,
+                  const JointCost_t& cost_out_of_previous_state,
+                  const JointCost_t& g_score_previous_state)
+        : previous_state(previous_state),
+          action_out_of_previous_state(action_out_of_previous_state),
+          cost_out_of_previous_state(cost_out_of_previous_state),
+          g_score_previous_state(g_score_previous_state) {}
   };
 
   using open_set_t =
@@ -207,12 +247,13 @@ class XStar {
   using closed_set_t =
       std::unordered_map<JointState_t, JointCost_t, StateHasher>;
 
-  using came_from_value_t =
-      std::tuple<JointState_t, JointAction_t, JointCost_t, JointCost_t>;
   using came_from_t =
       std::unordered_map<JointState_t, came_from_value_t, StateHasher>;
 
-  using out_of_window_t = std::unordered_set<JointState_t, StateHasher>;
+  using ParentMap_t =
+      std::unordered_map<JointState_t, ParentValue_t, StateHasher>;
+
+  using out_of_window_t = std::unordered_map<JointState_t, Node, StateHasher>;
 
   struct SearchState {
     static constexpr Cost kDefaultCost = -1;
@@ -223,6 +264,7 @@ class XStar {
     state_to_heap_t state_to_heap;
     closed_set_t closed_set;
     came_from_t came_from;
+    ParentMap_t parent_map;
     out_of_window_t out_of_window;
 
     SearchState()
@@ -232,13 +274,16 @@ class XStar {
           open_set(),
           state_to_heap(),
           closed_set(),
-          came_from() {}
+          came_from(),
+          parent_map(),
+          out_of_window() {}
 
     bool operator==(const SearchState& o) const {
       return disabled == o.disabled && min_cost == o.min_cost &&
              max_cost == o.max_cost && open_set == o.open_set &&
              state_to_heap == o.state_to_heap && closed_set == o.closed_set &&
-             came_from == o.came_from && out_of_window == o.out_of_window;
+             came_from == o.came_from && parent_map == o.parent_map &&
+             out_of_window == o.out_of_window;
     }
 
     bool wasSearchRestricted() const {
@@ -425,7 +470,7 @@ class XStar {
 
     removeCompletedWindows(windows);
     if (kDebug) {
-      std::cout << "Finished all conflicts\n";     
+      std::cout << "Finished all conflicts\n";
       print(*solution);
     }
     return true;
@@ -451,6 +496,7 @@ class XStar {
     state_to_heap_t& state_to_heap = ss->state_to_heap;
     closed_set_t& closed_set = ss->closed_set;
     came_from_t& came_from = ss->came_from;
+    ParentMap_t& parent_map = ss->parent_map;
     out_of_window_t& out_of_window = ss->out_of_window;
 
     assert(!open_set.empty());
@@ -487,6 +533,8 @@ class XStar {
 
       assert(window->window.agent_idxs.size() == current.state.size());
 
+      insertParentMap(&parent_map, current);
+
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
 
       open_set.pop();
@@ -516,10 +564,15 @@ class XStar {
         //         }
         //         std::cout << std::endl;
 
-        processNeighbor(starts, goals, current.state, current.g_score,
-                        joint_neighbor_info, joint_neighbor_in_window,
-                        closed_set, &state_to_heap, &open_set, &came_from,
-                        &out_of_window);
+        for (size_t i = 0; i < current.action.size(); ++i) {
+          const auto& n = joint_neighbor_info.at(i);
+          if (current.action.at(i) == Action::GoalWait) {
+            assert(n.action == Action::GoalWait);
+          }
+        }
+        processNeighbor(starts, goals, current, joint_neighbor_info,
+                        joint_neighbor_in_window, closed_set, &state_to_heap,
+                        &open_set, &came_from, &out_of_window);
       }
     }
   }
@@ -536,7 +589,8 @@ class XStar {
     SearchState* ss = window->getSearchState();
 
     out_of_window_t new_out_of_window;
-    for (const JointState_t& s : ss->out_of_window) {
+    for (const std::pair<JointState_t, Node>& sp : ss->out_of_window) {
+      const JointState_t& s = sp.first;
       assert(s.size() == window->window.agent_idxs.size());
       if (!window->window.inWindowOrOnPath(s, solution)) {
         std::cout << "Adding state ";
@@ -551,11 +605,13 @@ class XStar {
 
       auto it = ss->came_from.find(s);
       assert(it != ss->came_from.end());
-      const JointAction_t& a = std::get<1>(it->second);
-      const JointCost_t& g_score = std::get<3>(it->second);
+
+      const JointAction_t& a = it->second.action_out_of_previous_state;
+      const JointCost_t& g_score = it->second.g_score_previous_state;
 
       const auto result = ss->closed_set.insert({s, g_score});
       assert(result.second);
+      insertParentMap(&(ss->parent_map), sp.second);
 
       auto neighbor_generator =
           m_env.getJointWindowNeighbors(s, a, goals, window->window, solution);
@@ -566,7 +622,15 @@ class XStar {
         const auto& generator_output = neighbor_generator.getAndIncrement();
         extractJointNeighborInfo(&joint_neighbor_info,
                                  &joint_neighbor_in_window, generator_output);
-        processNeighbor(starts, goals, s, g_score, joint_neighbor_info,
+
+        for (size_t i = 0; i < a.size(); ++i) {
+          const auto& n = joint_neighbor_info.at(i);
+          if (a.at(i) == Action::GoalWait) {
+            assert(n.action == Action::GoalWait);
+          }
+        }
+
+        processNeighbor(starts, goals, sp.second, joint_neighbor_info,
                         joint_neighbor_in_window, ss->closed_set,
                         &(ss->state_to_heap), &(ss->open_set), &(ss->came_from),
                         &new_out_of_window);
@@ -598,7 +662,8 @@ class XStar {
     std::vector<Node> nodes;
     std::vector<std::pair<JointState_t, came_from_value_t>> came_from_values;
 
-    void verify(const WPS_t& window, const JointState_t& old_starts, const JointState_t& new_starts) const {
+    void verify(const WPS_t& window, const JointState_t& old_starts,
+                const JointState_t& new_starts) const {
       static constexpr bool kDebug = true;
       assert(nodes.size() == (came_from_values.size() + 1));
       assert(!cost_between_starts.empty());
@@ -610,12 +675,77 @@ class XStar {
           print(n.state);
         }
       }
-      
+
       assert(nodes.size() >= 2);
       assert(nodes.front().state == new_starts);
       assert(nodes.back().state == old_starts);
     }
   };
+
+  void verifyDeepCameFromMap(const came_from_t& came_from) {
+    for (const std::pair<JointState_t, came_from_value_t>& kv : came_from) {
+      JointState_t previous_state = kv.first;
+      came_from_value_t previous_came_from_value = kv.second;
+      for (auto iter = came_from.find(kv.second.previous_state);
+           iter != came_from.end();
+           iter = came_from.find(iter->second.previous_state)) {
+        const JointState_t& current_state = iter->first;
+        const came_from_value_t& current_came_from_value = iter->second;
+        assert(current_came_from_value.action_out_of_previous_state.size() ==
+               previous_came_from_value.action_out_of_previous_state.size());
+        for (size_t i = 0;
+             i < current_came_from_value.action_out_of_previous_state.size();
+             ++i) {
+          const auto& prev_action =
+              previous_came_from_value.action_out_of_previous_state.at(i);
+          const auto& curr_action =
+              current_came_from_value.action_out_of_previous_state.at(i);
+
+          assert(previous_came_from_value.previous_state == current_state);
+
+          if (curr_action == Action::GoalWait) {
+            if (prev_action != Action::GoalWait) {
+              std::cout << "Previous state:\n";
+              print(current_came_from_value.previous_state);
+              print(current_came_from_value.action_out_of_previous_state);
+              print(current_state);
+              print(previous_came_from_value.previous_state);
+              print(previous_came_from_value.action_out_of_previous_state);
+              print(previous_state);
+            }
+            assert(prev_action == Action::GoalWait);
+          }
+        }
+        previous_state = current_state;
+        previous_came_from_value = current_came_from_value;
+      }
+    }
+  }
+
+  void verifyGoalWaitConsisitency(const came_from_t& came_from,
+                                  const JointState_t& current_state,
+                                  const came_from_value_t& value) {
+    const JointState_t& prev_state = value.previous_state;
+    const JointAction_t& current_action = value.action_out_of_previous_state;
+    const auto it = came_from.find(prev_state);
+    if (it != came_from.end()) {
+      const JointAction_t& prev_action =
+          it->second.action_out_of_previous_state;
+      assert(prev_action.size() == current_action.size());
+      for (size_t i = 0; i < prev_action.size(); ++i) {
+        if (prev_action.at(i) == Action::GoalWait) {
+          if (current_action.at(i) != Action::GoalWait) {
+            std::cout << "action => prev state => action => current state:\n";
+            print(prev_action);
+            print(prev_state);
+            print(current_action);
+            print(current_state);
+          }
+          assert(current_action.at(i) == Action::GoalWait);
+        }
+      }
+    }
+  }
 
   void Stage2(WPS_t* window, const NodeAndCameFromValues_t& info_between_starts,
               const JointState_t& starts, const JointState_t& goals,
@@ -650,9 +780,10 @@ class XStar {
 
     // Update came_from list.
     for (auto& kv : ss->came_from) {
-      assert(std::get<3>(kv.second).size() == cost_between_starts.size());
+      assert(kv.second.g_score_previous_state.size() ==
+             cost_between_starts.size());
       for (size_t i = 0; i < cost_between_starts.size(); ++i) {
-        std::get<3>(kv.second)[i] += cost_between_starts[i];
+        kv.second.g_score_previous_state[i] += cost_between_starts[i];
       }
     }
 
@@ -668,12 +799,18 @@ class XStar {
       auto handle = ss->open_set.push(node);
       (*handle).handle = handle;
       ss->state_to_heap[node.state] = handle;
-      ss->came_from[came_from_info.first] = came_from_info.second;
+      verifyDeepCameFromMap(ss->came_from);
+      insertIntoCameFrom(&(ss->came_from), came_from_info.first,
+                         came_from_info.second);
+      verifyDeepCameFromMap(ss->came_from);
+      verifyGoalWaitConsisitency(ss->came_from, came_from_info.first,
+                                 came_from_info.second);
     }
+    std::cout << "Path between starts is consistent!\n";
 
     //     std::cout << "After insert path" << std::endl;
     verifyOpenSet(window);
-
+    std::cout << "Astar search until\n";
     AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue);
   }
 
@@ -734,6 +871,7 @@ class XStar {
 
     auto handle = open_set.push(
         Node(starts, JointAction_t(starts.size(), Action::None),
+             JointCost_t(starts.size(), 0), starts,
              m_env.admissibleJointHeuristic(starts, goals), starts_costs));
     state_to_heap.insert(std::make_pair<>(starts, handle));
     (*handle).handle = handle;
@@ -780,11 +918,17 @@ class XStar {
         const auto& generator_output = neighbor_generator.getAndIncrement();
         extractJointNeighborInfo(&joint_neighbor_info,
                                  &joint_neighbor_in_window, generator_output);
-        processNeighbor(starts, goals, current.state, current.g_score,
-                        joint_neighbor_info, joint_neighbor_in_window,
-                        closed_set, &state_to_heap, &open_set, &came_from,
-                        &out_of_window);
 
+        for (size_t i = 0; i < current.action.size(); ++i) {
+          const auto& n = joint_neighbor_info.at(i);
+          if (current.action.at(i) == Action::GoalWait) {
+            assert(n.action == Action::GoalWait);
+          }
+        }
+
+        processNeighbor(starts, goals, current, joint_neighbor_info,
+                        joint_neighbor_in_window, closed_set, &state_to_heap,
+                        &open_set, &came_from, &out_of_window);
       }
     }
     // Emptied openlist!
@@ -934,52 +1078,56 @@ class XStar {
         trimPlanBetweenCosts(window, solution, before_starts,
                              before_starts_costs, after_starts,
                              after_starts_costs);
-        
+
     verifySolutionValid(between_starts_solution);
-        
+
     std::cout << "Plan between starts\n";
     for (const auto& p : between_starts_solution) {
       assert(p.states.size() == p.actions.size() + 1);
       for (size_t i = 0; i < p.actions.size(); ++i) {
         const auto& s = p.states.at(i);
-        std::cout << "(" << s.first << ' ' << s.second << ") " << p.actions.at(i).first << " ";
+        std::cout << "(" << s.first << ' ' << s.second << ") "
+                  << p.actions.at(i).first << " ";
       }
-      std::cout << "(" << p.states.back().first << ' ' << p.states.back().second << ")" << std::endl;
+      std::cout << "(" << p.states.back().first << ' ' << p.states.back().second
+                << ")" << std::endl;
     }
 
     const size_t num_steps = between_starts_solution.front().states.size();
     std::cout << "Num steps: " << num_steps << std::endl;
 
     assert(num_steps > 0);
-    
+
     const std::pair<JointState_t, JointCost_t> first_state =
         getIthState(between_starts_solution, 0, window.window.agent_idxs);
     const JointAction_t first_action(first_state.first.size(), Action::None);
-    nodes_and_came_from.nodes.push_back(
-        Node(first_state.first, first_action,
-             utils::sum(first_state.second), first_state.second));
-    
+    const JointCost_t first_action_cost(first_state.first.size(), 0);
+    nodes_and_came_from.nodes.push_back(Node(
+        first_state.first, first_action, first_action_cost, first_state.first,
+        utils::sum(first_state.second), first_state.second));
+
     for (size_t step = 1; step < num_steps; ++step) {
       const std::pair<JointState_t, JointCost_t> current_state =
           getIthState(between_starts_solution, step, window.window.agent_idxs);
-      const std::pair<JointAction_t, JointCost_t> current_action =
-          getIthAction(between_starts_solution, step - 1, window.window.agent_idxs);
+      const std::pair<JointAction_t, JointCost_t> current_action = getIthAction(
+          between_starts_solution, step - 1, window.window.agent_idxs);
 
-      const std::pair<JointState_t, JointCost_t> previous_state =
-          getIthState(between_starts_solution, step - 1, window.window.agent_idxs);
-          
+      const std::pair<JointState_t, JointCost_t> previous_state = getIthState(
+          between_starts_solution, step - 1, window.window.agent_idxs);
+
       std::cout << "Current state: ";
       print(current_state.first);
-          
+
       std::cout << "Previous state: ";
       print(previous_state.first);
-      
+
       std::cout << "Current action: ";
       print(current_action.first);
 
       nodes_and_came_from.nodes.push_back(
-          Node(current_state.first, current_action.first,
-               utils::sum(current_state.second), current_state.second));
+          Node(current_state.first, current_action.first, current_action.second,
+               previous_state.first, utils::sum(current_state.second),
+               current_state.second));
 
       nodes_and_came_from.came_from_values.push_back(
           {current_state.first,
@@ -1013,16 +1161,16 @@ class XStar {
 
     std::cout << "Old starts: ";
     print(old_starts);
-    
+
     std::cout << "New starts: ";
     print(new_starts);
-        
+
     verifyStartCostDifference(old_starts_costs, new_starts_costs);
     const NodeAndCameFromValues_t info_between_starts =
         extractPathBetweenStarts(*window, *solution, old_starts,
                                  old_starts_costs, new_starts,
                                  new_starts_costs);
-        
+
     info_between_starts.verify(*window, old_starts, new_starts);
 
     std::cout << "Nodes!\n";
@@ -1031,14 +1179,14 @@ class XStar {
       print(n.state);
       print(n.action);
     }
-    
+
     for (const auto& e : info_between_starts.came_from_values) {
       std::cout << "Came from value: ";
       print(e.first, std::cout, " -> ");
-      print(std::get<0>(e.second), std::cout, " via ");
-      print(std::get<1>(e.second), std::cout, " via ");
+      print(e.second.previous_state, std::cout, " via ");
+      print(e.second.action_out_of_previous_state, std::cout);
     }
-        
+
     verifySolutionValid(*solution);
     const Cost old_goal_g_score_sum =
         window->getSearchState()->open_set.top().g_score_sum;
@@ -1167,27 +1315,27 @@ class XStar {
                          const Node& unwind_start_node,
                          const came_from_t& came_from) {
     JointPlan_t window_solution(starts.size());
-    auto iter = came_from.find(unwind_start_node.state);
-    while (iter != came_from.end()) {
+    for (auto iter = came_from.find(unwind_start_node.state);
+         iter != came_from.end();
+         iter = came_from.find(iter->second.previous_state)) {
       std::cout << "State: ";
       for (size_t i = 0; i < iter->first.size(); ++i) {
         auto& i_solution = window_solution.at(i);
         const State& s_i = iter->first.at(i);
-        const Action& a_i = std::get<1>(iter->second).at(i);
-        const Cost& c_i = std::get<2>(iter->second).at(i);
-        const Cost& g_i = std::get<3>(iter->second).at(i);
+        const Action& a_i = iter->second.action_out_of_previous_state.at(i);
+        const Cost& c_i = iter->second.cost_out_of_previous_state.at(i);
+        const Cost& g_i = iter->second.g_score_previous_state.at(i);
 
         if (!i_solution.states.empty()) {
           assert(i_solution.states.back().first.time >= s_i.time);
         }
-        
+
         std::cout << s_i << ' ' << a_i << ' ';
-        
+
         i_solution.states.push_back({s_i, g_i});
         i_solution.actions.push_back({a_i, c_i});
       }
       std::cout << std::endl;
-      iter = came_from.find(std::get<0>(iter->second));
     }
     for (size_t i = 0; i < window_solution.size(); ++i) {
       auto& solution = window_solution[i];
@@ -1210,8 +1358,10 @@ class XStar {
   }
 
   bool insertStateIntoOpen(const JointState_t& goals,
+                           const JointState_t& current_state,
                            const JointState_t& neighbor_joint_state,
                            const JointAction_t& neighbor_joint_action,
+                           const JointCost_t& neighbor_joint_action_cost,
                            const JointCost_t& neighbor_tenative_gscore,
                            state_to_heap_t* state_to_heap,
                            open_set_t* open_set) {
@@ -1222,6 +1372,7 @@ class XStar {
           m_env.admissibleJointHeuristic(neighbor_joint_state, goals);
       auto handle =
           open_set->push(Node(neighbor_joint_state, neighbor_joint_action,
+                              neighbor_joint_action_cost, current_state,
                               f_score, neighbor_tenative_gscore));
       (*handle).handle = handle;
       state_to_heap->insert(std::make_pair<>(neighbor_joint_state, handle));
@@ -1251,13 +1402,56 @@ class XStar {
     }
   }
 
+  bool containsGoalWait(const JointAction_t& ja) {
+    for (const auto& a : ja) {
+      if (a == Action::GoalWait) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void insertIntoCameFrom(came_from_t* came_from, const JointState_t& key,
+                          const came_from_value_t& value) {
+    auto result = came_from->insert({key, value});
+    if (result.second) {
+      return;
+    }
+
+    const bool existing_goal_wait =
+        containsGoalWait(result.first->second.action_out_of_previous_state);
+    const bool prospective_goal_wait =
+        containsGoalWait(value.action_out_of_previous_state);
+
+    if (existing_goal_wait && prospective_goal_wait) {
+      //       (*came_from)[key] = value;
+      return;
+    }
+
+    if (!existing_goal_wait && !prospective_goal_wait) {
+      (*came_from)[key] = value;
+      return;
+    }
+
+    if (existing_goal_wait && !prospective_goal_wait) {
+      (*came_from)[key] = value;
+      return;
+    }
+
+    if (!existing_goal_wait && prospective_goal_wait) {
+      return;
+    }
+  }
+
   void processNeighbor(const JointState_t& starts, const JointState_t& goals,
-                       const JointState_t& current_state,
-                       const JointCost_t& current_g_score,
+                       const Node& current,
                        const JointNeighbor_t& joint_neighbor_info,
                        const bool& is_in_window, const closed_set_t& closed_set,
                        state_to_heap_t* state_to_heap, open_set_t* open_set,
                        came_from_t* came_from, out_of_window_t* out_of_window) {
+    const JointState_t& current_state = current.state;
+    const JointCost_t& current_g_score = current.g_score;
+
     assert(starts.size() == goals.size());
     assert(current_state.size() == starts.size());
     assert(current_g_score.size() == starts.size());
@@ -1287,7 +1481,7 @@ class XStar {
       if (it != came_from->end()) {
         assert(out_of_window->find(neighbor_joint_state) !=
                out_of_window->end());
-        if (utils::sum(std::get<3>(it->second)) <=
+        if (utils::sum(it->second.g_score_previous_state) <=
             utils::sum(neighbor_tenative_gscore)) {
           return;
         }
@@ -1295,10 +1489,17 @@ class XStar {
         assert(out_of_window->find(neighbor_joint_state) ==
                out_of_window->end());
       }
-      (*came_from)[neighbor_joint_state] =
-          std::make_tuple<>(current_state, neighbor_joint_action,
-                            neighbor_joint_cost, neighbor_tenative_gscore);
-      out_of_window->insert(neighbor_joint_state);
+      verifyDeepCameFromMap(*came_from);
+      insertIntoCameFrom(came_from, neighbor_joint_state,
+                         {current_state, neighbor_joint_action,
+                          neighbor_joint_cost, neighbor_tenative_gscore});
+      //             std::cout << "Verifying not in window neighbor\n";
+      verifyDeepCameFromMap(*came_from);
+      verifyGoalWaitConsisitency(
+          *came_from, neighbor_joint_state,
+          {current_state, neighbor_joint_action, neighbor_joint_cost,
+           neighbor_tenative_gscore});
+      out_of_window->insert({neighbor_joint_state, current});
       return;
     }
 
@@ -1306,15 +1507,22 @@ class XStar {
       return;
     }
 
-    if (insertStateIntoOpen(goals, neighbor_joint_state, neighbor_joint_action,
+    if (insertStateIntoOpen(goals, current_state, neighbor_joint_state,
+                            neighbor_joint_action, neighbor_joint_cost,
                             neighbor_tenative_gscore, state_to_heap,
                             open_set)) {
       return;
     }
 
-    (*came_from)[neighbor_joint_state] =
-        std::make_tuple<>(current_state, neighbor_joint_action,
-                          neighbor_joint_cost, neighbor_tenative_gscore);
+    verifyDeepCameFromMap(*came_from);
+    insertIntoCameFrom(came_from, neighbor_joint_state,
+                       {current_state, neighbor_joint_action,
+                        neighbor_joint_cost, neighbor_tenative_gscore});
+    //         std::cout << "Verifying actual neighbor!\n";
+    verifyDeepCameFromMap(*came_from);
+    verifyGoalWaitConsisitency(*came_from, neighbor_joint_state,
+                               {current_state, neighbor_joint_action,
+                                neighbor_joint_cost, neighbor_tenative_gscore});
   }
 
   bool isTooManyIterations(const size_t& iterations, const WPS_t& window) {
@@ -1346,6 +1554,11 @@ class XStar {
     }
   }
 
+  void insertParentMap(ParentMap_t* parent_map, const Node& n) {
+    ParentValue_t value(n.prev_state, n.action, n.action_cost, n.g_score);
+    parent_map->insert({n.state, value});
+  }
+
   bool planIn(WPS_t* window, JointPlan_t* solution) {
     assert(!(window->window.agent_idxs.empty()));
 
@@ -1364,16 +1577,19 @@ class XStar {
     state_to_heap_t& state_to_heap = ss->state_to_heap;
     closed_set_t& closed_set = ss->closed_set;
     came_from_t& came_from = ss->came_from;
+    ParentMap_t& parent_map = ss->parent_map;
     out_of_window_t& out_of_window = ss->out_of_window;
 
     open_set.clear();
     state_to_heap.clear();
     closed_set.clear();
     came_from.clear();
+    parent_map.clear();
     out_of_window.clear();
 
     auto handle = open_set.push(
         Node(starts, JointAction_t(starts.size(), Action::None),
+             JointCost_t(starts.size(), 0), starts,
              m_env.admissibleJointHeuristic(starts, goals), starts_costs));
     state_to_heap.insert(std::make_pair<>(starts, handle));
     (*handle).handle = handle;
@@ -1386,6 +1602,7 @@ class XStar {
       Node current = open_set.top();
 
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
+      insertParentMap(&parent_map, current);
 
       if (m_env.isJointSolution(current.state, goals)) {
         const auto window_solution =
@@ -1413,11 +1630,17 @@ class XStar {
         const auto& generator_output = neighbor_generator.getAndIncrement();
         extractJointNeighborInfo(&joint_neighbor_info,
                                  &joint_neighbor_in_window, generator_output);
-        processNeighbor(starts, goals, current.state, current.g_score,
-                        joint_neighbor_info, joint_neighbor_in_window,
-                        closed_set, &state_to_heap, &open_set, &came_from,
-                        &out_of_window);
 
+        for (size_t i = 0; i < current.action.size(); ++i) {
+          const auto& n = joint_neighbor_info.at(i);
+          if (current.action.at(i) == Action::GoalWait) {
+            assert(n.action == Action::GoalWait);
+          }
+        }
+
+        processNeighbor(starts, goals, current, joint_neighbor_info,
+                        joint_neighbor_in_window, closed_set, &state_to_heap,
+                        &open_set, &came_from, &out_of_window);
       }
     }
     return false;
@@ -1558,7 +1781,7 @@ class XStar {
  public:
   XStar(Environment& environment) : m_env(environment) {}
 
-  bool search(const JointState_t& initial_states, JointPlan_t& solution) {    
+  bool search(const JointState_t& initial_states, JointPlan_t& solution) {
     Timer individual_timer;
     if (!planIndividually(initial_states, solution)) return false;
     individual_timer.stop();

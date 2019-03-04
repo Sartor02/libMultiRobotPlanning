@@ -441,11 +441,11 @@ class Environment {
           window_neighbors;
       getWindowNeighbors(s, a, goal, agent_idx, window, joint_plan,
                          window_neighbors);
-      
+
       if (window_neighbors.empty()) {
-         return {};
+        return {};
       }
-      
+
       neighbor_list.emplace_back(window_neighbors);
       assert(!neighbor_list.back().empty());
     }
@@ -488,8 +488,10 @@ class Environment {
       const auto& n = getStateAsGoalNeighbor(s);
       window_neighbors.emplace_back(n, true);
     }
-    
+
     // If the planner elected to goal wait, it may not do anything else.
+    // If it's also not already at the goal, then there are no neighbors to
+    // select.
     if (a == Action::GoalWait) {
       return;
     }
