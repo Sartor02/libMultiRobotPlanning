@@ -678,6 +678,14 @@ class Environment {
                  size_t t) {
     assert(agentIdx < solution.size());
     if (t < solution[agentIdx].states.size()) {
+      if (!(solution[agentIdx].states[t].first.time == static_cast<int>(t))) {
+        for (const auto& s : solution[agentIdx].states) {
+          std::cout << s.first << ", " << s.second << std::endl;
+        }
+        std::cout << "solution[agentIdx].states[t].first: "
+                  << solution[agentIdx].states[t].first << std::endl;
+        std::cout << "t: " << t << std::endl;
+      }
       assert(solution[agentIdx].states[t].first.time == static_cast<int>(t));
       return solution[agentIdx].states[t].first;
     }
