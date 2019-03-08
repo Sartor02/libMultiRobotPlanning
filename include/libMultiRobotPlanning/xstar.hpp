@@ -704,8 +704,18 @@ class XStar {
 
       for (size_t i = 1; i < p.states.size(); ++i) {
         const auto& prev_s = p.states.at(i - 1).first;
+        const Cost& prev_c = p.states.at(i - 1).second;
         const auto& curr_s = p.states.at(i).first;
+        const Cost& curr_c = p.states.at(i).second;
         assert(prev_s.time <= curr_s.time);
+        assert(prev_s.time + 1 == curr_s.time);
+        if (!(prev_c + 1 == curr_c || prev_c == curr_c)) {
+          std::cout << "Current s: " << curr_s << " Current c: " << curr_c
+                    << std::endl;
+          std::cout << "Prev s: " << prev_s << " Previous c: " << prev_c
+                    << std::endl;
+        }
+        assert(prev_c + 1 == curr_c || prev_c == curr_c);
       }
 
       for (size_t i = 1; i < p.actions.size(); ++i) {
