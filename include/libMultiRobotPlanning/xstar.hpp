@@ -626,47 +626,10 @@ class XStar {
               const JointState_t& goals, const JointPlan_t& solution,
               const Cost& goal_node_fvalue) {
     SearchState* ss = window->getSearchState();
-    const auto& cost_between_starts = info_between_starts.cost_between_starts;
 
     verifyOpenSet(window);
 
-    // Update openlist.
-    for (auto& kv : ss->state_to_heap) {
-      auto& handle = kv.second;
-      assert((*handle).g_score.size() == cost_between_starts.size());
-      for (size_t i = 0; i < cost_between_starts.size(); ++i) {
-        (*handle).g_score[i] += cost_between_starts[i];
-        (*handle).g_score_sum += cost_between_starts[i];
-        (*handle).f_score += cost_between_starts[i];
-      }
-      ss->open_set.decrease(handle);
-    }
-
-    verifyOpenSet(window);
-
-    // Update closedlist.
-    for (auto& kv : ss->closed_set) {
-      JointCost_t& g_value = kv.second;
-      assert(g_value.size() == cost_between_starts.size());
-      for (size_t i = 0; i < cost_between_starts.size(); ++i) {
-        g_value[i] += cost_between_starts[i];
-      }
-    }
-
-    auto old_start_it = ss->parent_map.find(old_starts);
-    assert(old_start_it != ss->parent_map.end());
-    ss->parent_map.erase(old_start_it);
-
-    // Update parent map.
-    for (auto& kv : ss->parent_map) {
-      assert(kv.second.g_score_previous_state.size() ==
-             cost_between_starts.size());
-      for (size_t i = 0; i < cost_between_starts.size(); ++i) {
-        kv.second.g_score_previous_state[i] += cost_between_starts[i];
-      }
-    }
-
-    verifyOpenSet(window);
+    eraseParentMap(&(ss->parent_map), old_starts);
 
     // Insert path into openlist.
     for (const Node& node : info_between_starts.nodes) {
@@ -677,6 +640,8 @@ class XStar {
       auto handle = ss->open_set.push(node_copy);
       (*handle).handle = handle;
       ss->state_to_heap[node_copy.state] = handle;
+      std::cout << "Node state pushed: ";
+      print(node_copy.state);
     }
 
     verifyOpenSet(window);
@@ -703,9 +668,9 @@ class XStar {
       }
 
       for (size_t i = 1; i < p.states.size(); ++i) {
-        const auto& prev_s = p.states.at(i - 1).first;
+        const State& prev_s = p.states.at(i - 1).first;
         const Cost& prev_c = p.states.at(i - 1).second;
-        const auto& curr_s = p.states.at(i).first;
+        const State& curr_s = p.states.at(i).first;
         const Cost& curr_c = p.states.at(i).second;
         assert(prev_s.time <= curr_s.time);
         assert(prev_s.time + 1 == curr_s.time);
@@ -1383,8 +1348,47 @@ class XStar {
   }
 
   void insertParentMap(ParentMap_t* parent_map, const Node& n) {
+    static constexpr bool kDebug = true;
+    if (kDebug) {
+      print(n.state, std::cout, " ");
+      print(n.g_score, std::cout, " => ");
+      print(n.prev_state);
+    }
+
+    assert(n.state.size() == n.prev_state.size());
+    assert(n.state.size() == n.action.size());
+    assert(n.state.size() == n.action_cost.size());
+    assert(n.state.size() == n.g_score.size());
+
+    for (size_t i = 0; i < n.g_score.size(); ++i) {
+      const State& i_state = n.state.at(i);
+      const Cost& i_g_score = n.g_score.at(i);
+      const Cost& i_time = n.state.at(i).time;
+      const Action& i_action = n.action.at(i);
+      if (i_time != i_g_score) {
+        if (i_action != Action::GoalWait) {
+          std::cout << "i_state: " << i_state << " i_g_score: " << i_g_score
+                    << " i_time: " << i_time << " i_action: " << i_action
+                    << std::endl;
+        }
+        assert(i_action == Action::GoalWait);
+      }
+    }
+
     ParentValue_t value(n.prev_state, n.action, n.action_cost, n.g_score);
     parent_map->insert({n.state, value});
+  }
+
+  void eraseParentMap(ParentMap_t* parent_map, const JointState_t& key) {
+    std::cout << "Erasing old parent ";
+    print(key, std::cout, " ");
+    const auto result = parent_map->find(key);
+    assert(result != parent_map->end());
+    assert(key == result->first);
+    const ParentValue_t& v = result->second;
+    print(v.g_score_previous_state, std::cout, " => ");
+    print(v.previous_state, std::cout, "\n");
+    parent_map->erase(key);
   }
 
   bool planIn(WPS_t* window, JointPlan_t* solution) {
@@ -1413,10 +1417,13 @@ class XStar {
     parent_map.clear();
     out_of_window.clear();
 
-    auto handle = open_set.push(
-        Node(starts, JointAction_t(starts.size(), Action::None),
-             JointCost_t(starts.size(), 0), starts,
-             m_env.admissibleJointHeuristic(starts, goals), starts_costs));
+    const Node initial_start_node(
+        starts, JointAction_t(starts.size(), Action::None),
+        JointCost_t(starts.size(), 0), starts,
+        m_env.admissibleJointHeuristic(starts, goals), starts_costs);
+    std::cout << "Initial start node g_value: ";
+    print(initial_start_node.g_score);
+    auto handle = open_set.push(initial_start_node);
     state_to_heap.insert(std::make_pair<>(starts, handle));
     (*handle).handle = handle;
 
