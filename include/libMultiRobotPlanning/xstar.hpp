@@ -465,6 +465,11 @@ class XStar {
     return false;
   }
 
+  void popOpenSetTop(open_set_t* open_set, state_to_heap_t* state_to_heap) {
+    state_to_heap->erase(open_set->top().state);
+    open_set->pop();
+  }
+
   void AStarSearchUntil(WPS_t* window, const JointState_t& starts,
                         const JointState_t& goals, const JointPlan_t& solution,
                         const Cost& fmax) {
@@ -511,12 +516,9 @@ class XStar {
 
       assert(window->window.agent_idxs.size() == current.state.size());
 
-      insertParentMap(&parent_map, current);
-
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
 
-      open_set.pop();
-      state_to_heap.erase(current.state);
+      popOpenSetTop(&open_set, &state_to_heap);
 
       auto it = closed_set.find(current.state);
       if (it != closed_set.end() &&
@@ -524,6 +526,10 @@ class XStar {
         continue;
       }
       closed_set[current.state] = current.g_score;
+
+      std::cout << "Expanding node at state ";
+      print(current.state);
+      insertParentMap(&parent_map, current);
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, solution);
@@ -630,6 +636,7 @@ class XStar {
     verifyOpenSet(window);
 
     eraseParentMap(&(ss->parent_map), old_starts);
+    eraseClosedSet(&(ss->closed_set), old_starts);
 
     // Insert path into openlist.
     for (const Node& node : info_between_starts.nodes) {
@@ -746,9 +753,13 @@ class XStar {
         return;
       }
 
-      open_set.pop();
-      state_to_heap.erase(current.state);
-      closed_set.insert({current.state, current.g_score});
+      popOpenSetTop(&open_set, &state_to_heap);
+
+      const auto closed_set_insert_result =
+          closed_set.insert({current.state, current.g_score});
+      if (!closed_set_insert_result.second) {
+        continue;
+      }
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, *solution);
@@ -1351,6 +1362,7 @@ class XStar {
     static constexpr bool kDebug = true;
     if (kDebug) {
       print(n.state, std::cout, " ");
+      print(n.action, std::cout, " ");
       print(n.g_score, std::cout, " => ");
       print(n.prev_state);
     }
@@ -1389,6 +1401,10 @@ class XStar {
     print(v.g_score_previous_state, std::cout, " => ");
     print(v.previous_state, std::cout, "\n");
     parent_map->erase(key);
+  }
+
+  void eraseClosedSet(closed_set_t* closed_set, const JointState_t& key) {
+    closed_set->erase(key);
   }
 
   bool planIn(WPS_t* window, JointPlan_t* solution) {
@@ -1452,7 +1468,11 @@ class XStar {
 
       open_set.pop();
       state_to_heap.erase(current.state);
-      closed_set.insert({current.state, current.g_score});
+      const auto closed_set_insert_result =
+          closed_set.insert({current.state, current.g_score});
+      if (!closed_set_insert_result.second) {
+        continue;
+      }
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, *solution);
