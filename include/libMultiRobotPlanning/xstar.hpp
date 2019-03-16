@@ -431,7 +431,7 @@ class XStar {
 
   bool recWAMPF(WPSList_t* windows, SSList_t* search_states,
                 JointPlan_t* solution) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Starting recWAMPF\n";
     }
@@ -630,6 +630,7 @@ class XStar {
               const JointState_t& old_starts, const JointState_t& starts,
               const JointState_t& goals, const JointPlan_t& solution,
               const Cost& goal_node_fvalue) {
+    static constexpr bool kDebug = false;
     SearchState* ss = window->getSearchState();
 
     verifyOpenSet(window);
@@ -646,8 +647,10 @@ class XStar {
       auto handle = ss->open_set.push(node_copy);
       (*handle).handle = handle;
       ss->state_to_heap[node_copy.state] = handle;
-      std::cout << "Node state pushed: ";
-      print(node_copy.state);
+      if (kDebug) {
+        std::cout << "Node state pushed: ";
+        print(node_copy.state);
+      }
     }
 
     verifyOpenSet(window);
@@ -889,6 +892,18 @@ class XStar {
     return {between_starts_solution, between_starts_cost};
   }
 
+  std::pair<JointState_t, JointCost_t> getIthFullState(
+      const JointPlan_t& joint_plan, const size_t i) {
+    JointState_t s;
+    JointCost_t c;
+    for (const auto& p : joint_plan) {
+      assert(i < p.states.size());
+      s.push_back(p.states[i].first);
+      c.push_back(p.states[i].second);
+    }
+    return {s, c};
+  }
+
   std::pair<JointState_t, JointCost_t> getIthState(
       const JointPlan_t& joint_plan, const size_t i,
       const AgentIdxs_t& agent_idxs) {
@@ -902,6 +917,18 @@ class XStar {
       c.push_back(p.states[i].second);
     }
     return {s, c};
+  }
+
+  std::pair<JointAction_t, JointCost_t> getIthFullAction(
+      const JointPlan_t& joint_plan, const size_t i) {
+    JointAction_t a;
+    JointCost_t c;
+    for (const auto& p : joint_plan) {
+      assert(i < p.actions.size());
+      a.push_back(p.actions[i].first);
+      c.push_back(p.actions[i].second);
+    }
+    return {a, c};
   }
 
   std::pair<JointAction_t, JointCost_t> getIthAction(
@@ -950,7 +977,7 @@ class XStar {
     assert(num_steps > 0);
 
     const std::pair<JointState_t, JointCost_t> first_state =
-        getIthState(between_starts_solution, 0, window.window.agent_idxs);
+        getIthFullState(between_starts_solution, 0);
     const JointAction_t first_action(first_state.first.size(), Action::None);
     const JointCost_t first_action_cost(first_state.first.size(), 0);
     nodes_and_came_from.nodes.push_back(Node(
@@ -959,12 +986,12 @@ class XStar {
 
     for (size_t step = 1; step < num_steps; ++step) {
       const std::pair<JointState_t, JointCost_t> current_state =
-          getIthState(between_starts_solution, step, window.window.agent_idxs);
-      const std::pair<JointAction_t, JointCost_t> current_action = getIthAction(
-          between_starts_solution, step - 1, window.window.agent_idxs);
+          getIthFullState(between_starts_solution, step);
+      const std::pair<JointAction_t, JointCost_t> current_action =
+          getIthFullAction(between_starts_solution, step - 1);
 
-      const std::pair<JointState_t, JointCost_t> previous_state = getIthState(
-          between_starts_solution, step - 1, window.window.agent_idxs);
+      const std::pair<JointState_t, JointCost_t> previous_state =
+          getIthFullState(between_starts_solution, step - 1);
 
       std::cout << "Current state: ";
       print(current_state.first);
@@ -1044,7 +1071,7 @@ class XStar {
     Stage3(window, solution, new_starts, new_starts_costs, new_goals,
            new_goals_costs);
     std::cout << "Stage 3 done" << std::endl;
-    print(*solution);
+    //     print(*solution);
     verifySolutionValid(*solution);
     std::cout << "Solution is valid!" << std::endl;
   }
@@ -1394,14 +1421,19 @@ class XStar {
   }
 
   void eraseParentMap(ParentMap_t* parent_map, const JointState_t& key) {
-    std::cout << "Erasing old parent ";
-    print(key, std::cout, " ");
+    static constexpr bool kDebug = false;
+    if (kDebug) {
+      std::cout << "Erasing old parent ";
+      print(key, std::cout, " ");
+    }
     const auto result = parent_map->find(key);
     assert(result != parent_map->end());
     assert(key == result->first);
-    const ParentValue_t& v = result->second;
-    print(v.g_score_previous_state, std::cout, " => ");
-    print(v.previous_state, std::cout, "\n");
+    if (kDebug) {
+      const ParentValue_t& v = result->second;
+      print(v.g_score_previous_state, std::cout, " => ");
+      print(v.previous_state, std::cout, "\n");
+    }
     parent_map->erase(key);
   }
 
