@@ -527,8 +527,8 @@ class XStar {
       }
       closed_set[current.state] = current.g_score;
 
-      std::cout << "Expanding node at state ";
-      print(current.state);
+      //       std::cout << "Expanding node at state ";
+      //       print(current.state);
       insertParentMap(&parent_map, current);
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
@@ -621,7 +621,6 @@ class XStar {
         }
       }
 
-      assert(nodes.size() >= 2);
       assert(nodes.front().state == new_starts);
       assert(nodes.back().state == old_starts);
     }
@@ -1256,6 +1255,8 @@ class XStar {
       (*handle).g_score = neighbor_tenative_gscore;
       (*handle).g_score_sum -= delta;
       (*handle).f_score -= delta;
+      (*handle).action_cost = neighbor_joint_action_cost;
+      (*handle).action = neighbor_joint_action;
       open_set->increase(handle);
     }
 
@@ -1359,8 +1360,9 @@ class XStar {
   }
 
   void insertParentMap(ParentMap_t* parent_map, const Node& n) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     if (kDebug) {
+      std::cout << "p-map insert: ";
       print(n.state, std::cout, " ");
       print(n.action, std::cout, " ");
       print(n.g_score, std::cout, " => ");
