@@ -746,7 +746,8 @@ class XStar {
     }
   }
 
-  void removeGoalWaitMovesClosed(closed_set_t* closed_set, ParentMap_t* parent_map) {
+  void removeGoalWaitMovesClosed(closed_set_t* closed_set,
+                                 ParentMap_t* parent_map) {
     for (auto it = parent_map->begin(); it != parent_map->end();) {
       std::pair<const JointState_t, ParentValue_t>& pair = *it;
       const JointState_t& s = pair.first;
@@ -766,9 +767,10 @@ class XStar {
       }
     }
   }
-  
-  void removeGoalWaitMovesOpen(open_set_t* open_set, state_to_heap_t* state_to_heap) {
-    for (auto it = state_to_heap->begin(); it != state_to_heap->end(); ) {
+
+  void removeGoalWaitMovesOpen(open_set_t* open_set,
+                               state_to_heap_t* state_to_heap) {
+    for (auto it = state_to_heap->begin(); it != state_to_heap->end();) {
       auto& handle = it->second;
       if (containsGoalWait((*handle).action)) {
         open_set->erase(handle);
@@ -778,18 +780,10 @@ class XStar {
       }
     }
   }
-  
-  void removeOldGoalNodeState(open_set_t* open_set, state_to_heap_t* state_to_heap, const JointState_t& old_goal_node_state) {
-    auto it = state_to_heap->find(old_goal_node_state);
-    if(it != state_to_heap->end()) {
-      auto& handle = it->second;
-      open_set->erase(handle);
-      state_to_heap->erase(it);
-    }
-  }
 
   void readdGoalWaitNodes(open_set_t* open_set, state_to_heap_t* state_to_heap,
-                          goal_wait_nodes_t* goal_wait_nodes, closed_set_t* closed_set) {
+                          goal_wait_nodes_t* goal_wait_nodes,
+                          closed_set_t* closed_set) {
     for (Node& n : *goal_wait_nodes) {
       if (containsGoalWait(n.action)) {
         continue;
@@ -798,7 +792,7 @@ class XStar {
       auto handle = open_set->push(n);
       (*handle).handle = handle;
       state_to_heap->insert(std::make_pair<>(n.state, handle));
-      
+
       auto it = closed_set->find(n.state);
       if (it != closed_set->end()) {
         closed_set->erase(it);
@@ -809,7 +803,7 @@ class XStar {
 
   void Stage3(WPS_t* window, JointPlan_t* solution, const JointState_t& starts,
               const JointCost_t& starts_costs, const JointState_t& goals,
-              const JointCost_t& goals_costs, const JointState_t& old_goal_node_state) {
+              const JointCost_t& goals_costs) {
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
     if (kDebug) {
@@ -831,10 +825,10 @@ class XStar {
 
     verifyParentMap(parent_map, ss->previous_start);
 
+    readdGoalWaitNodes(&open_set, &state_to_heap, &goal_wait_nodes,
+                       &closed_set);
     removeGoalWaitMovesClosed(&closed_set, &parent_map);
     removeGoalWaitMovesOpen(&open_set, &state_to_heap);
-    removeOldGoalNodeState(&open_set, &state_to_heap, old_goal_node_state);
-    readdGoalWaitNodes(&open_set, &state_to_heap, &goal_wait_nodes, &closed_set);
     recomputeHeuristic(&open_set, &state_to_heap, goals);
 
     assert(parent_map.find(starts) != parent_map.end());
@@ -1213,7 +1207,6 @@ class XStar {
     if (window->getSearchState()->previous_start != old_starts) {
       std::cout << "!!!!!!!!!!! Start misalignment!\n";
     }
-    const JointState_t& old_goal_node_state = window->getSearchState()->open_set.top().state;
     std::cout << "Stage 1 start" << std::endl;
     Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum);
     verifySolutionValid(*solution);
@@ -1223,7 +1216,7 @@ class XStar {
     verifySolutionValid(*solution);
     std::cout << "Stage 3 start" << std::endl;
     Stage3(window, solution, new_starts, new_starts_costs, new_goals,
-           new_goals_costs, old_goal_node_state);
+           new_goals_costs);
     std::cout << "Stage 3 done" << std::endl;
     //         print(*solution);
     verifySolutionValid(*solution);
@@ -1758,7 +1751,8 @@ class XStar {
           break;
         }
       }
-      assert(ignore_wait_command_count < individual_window_plan.actions.size());
+      assert(ignore_wait_command_count <=
+             individual_window_plan.actions.size());
 
       individual_window_plan.states.resize(
           individual_window_plan.states.size() - ignore_wait_command_count);
@@ -1880,7 +1874,9 @@ class XStar {
       time_so_far += timer.elapsedSeconds();
       const Cost current_solution_cost = getSolutionCost(solution);
       std::cout << "Time so far: " << time_so_far << std::endl;
-      std::cout << "Solution cost: " << current_solution_cost << std::endl;
+      std::cout << "Solution cost: " << current_solution_cost
+                << " vs old solution cost: " << prior_solution_cost
+                << std::endl;
       std::cout << "Optimality bound: "
                 << static_cast<float>(current_solution_cost) /
                        static_cast<float>(optimal_solution_lower_bound)
