@@ -5,6 +5,7 @@ import yaml
 import matplotlib
 import argparse
 from collections import namedtuple
+import time
 def generate_agents(num_agents, width, height):
     starts = []
     goals = []
@@ -53,6 +54,10 @@ args = get_args();
 
 if args.seed is not None:
     np.random.seed(args.seed)
+else:
+    seed_value = int(time.time());
+    print("Seed:", seed_value)
+    np.random.seed(seed_value)
 
 agents = generate_agents(args.agents, args.width, args.height)
 num_obstacles = int(args.obs_density * args.width * args.height)
