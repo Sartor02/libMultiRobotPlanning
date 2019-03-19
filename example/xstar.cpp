@@ -466,6 +466,7 @@ class Environment {
       const std::vector<PlanResult<State, Action, int>>& joint_plan,
       std::vector<std::pair<Neighbor<State, Action, int>, bool>>&
           window_neighbors) {
+    static constexpr bool kDebug = false;
     if (!w.contains({s.x, s.y}, agent_idx)) {
       // If the given state is not in the window but it falls along the path
       // into the window, add the next step in the path towards the window.
@@ -474,9 +475,11 @@ class Environment {
             getStateAsNeighbor(agent_idx, joint_plan, s.time + 1), true);
       } else {
         // Not in window but also not on path!
-        std::cerr << "Not in window but also not on path! Agent idx: "
-                  << agent_idx << " Window: " << w << " State: " << s
-                  << std::endl;
+        if (kDebug) {
+          std::cerr << "Not in window but also not on path! Agent idx: "
+                    << agent_idx << " Window: " << w << " State: " << s
+                    << std::endl;
+        }
         assert(false);
       }
       return;

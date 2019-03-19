@@ -55,7 +55,7 @@ args = get_args();
 if args.seed is not None:
     np.random.seed(args.seed)
 else:
-    seed_value = int(time.time());
+    seed_value = int((time.time() * 1000) % (2**32-1));
     print("Seed:", seed_value)
     np.random.seed(seed_value)
 

@@ -875,8 +875,8 @@ class XStar {
 
         if (kDebug) {
           std::cout << "Inserting path into window" << std::endl;
+          std::cout << "Goal f_score: " << current.f_score << std::endl;
         }
-        std::cout << "Goal f_score: " << current.f_score << std::endl;
         bool insert_result =
             insertWindowPath(&window_solution, window->window, starts_costs,
                              goals_costs, solution);
@@ -1645,8 +1645,8 @@ class XStar {
     static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Erasing ";
+      print(key);
     }
-    print(key);
     closed_set->erase(key);
   }
 
