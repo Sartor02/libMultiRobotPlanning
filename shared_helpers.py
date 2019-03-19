@@ -21,12 +21,12 @@ def args_to_str(args):
   return string.replace(' ' , '')
 
 def save_to_file(name, data):
-  f = open("../{}.datasave".format(name), "w")
+  f = open("../datasave/{}.datasave".format(name), "w")
   f.write(str(data))
   f.close()
   
 def read_from_file(name):  
-  f = open("../{}.datasave".format(name), 'r')
+  f = open("../datasave/{}.datasave".format(name), 'r')
   data = eval(f.read())
   f.close()
   return data
