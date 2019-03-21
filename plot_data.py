@@ -55,7 +55,7 @@ plt.title("First solution for {} agents, on {}x{} grid with {}% obstacle density
 plt.hist(get_95_percent_slice(first_ratios), bins=compute_bins(get_95_percent_slice(first_ratios), n_bins))
 plt.axvline(x=1, color="red", alpha = 0.4, linestyle='--')
 plt.gca().set_xscale("log")
-plt.xlabel("Middle 95% of data for CBS Runtime / X* Runtime (larger is better for X*)\nPercent X* same or better runtime: {}%".format(percent_first_1_or_more * 100))
+plt.xlabel("Middle 95% of data for CBS Runtime / X* Runtime (larger is better for X*) Percent X* same or better runtime: {}%".format(percent_first_1_or_more * 100))
 plt.ylabel("# occurrences")
 
 plt.subplot(212)
@@ -63,7 +63,7 @@ plt.title("Optimal solution for {} agents, on {}x{} grid with {}% obstacle densi
 plt.hist(get_95_percent_slice(optimal_ratios), bins=compute_bins(get_95_percent_slice(optimal_ratios), n_bins))
 plt.axvline(x=1, color="red", alpha = 0.4, linestyle='--')
 plt.gca().set_xscale("log")
-plt.xlabel("Middle 95% of data for CBS Runtime / X* Runtime (larger is better for X*)\nPercent X* same or better runtime: {}%".format(percent_optimal_1_or_more * 100))
+plt.xlabel("Middle 95% of data for CBS Runtime / X* Runtime (larger is better for X*) Percent X* same or better runtime: {}%".format(percent_optimal_1_or_more * 100))
 plt.ylabel("# occurrences")
 
 plt.show()
