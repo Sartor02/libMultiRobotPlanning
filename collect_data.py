@@ -57,7 +57,8 @@ cbs_data_lst = []
 
 for i in range(args.num_trials):
   print(Fore.BLUE + Style.BRIGHT + "Trial {}:==============================================".format(i) + Style.RESET_ALL)
-  generate_new_scenario(args.agents, args.width, args.height, args.obs_density, i)
+  seed = (i + args.width) * args.agents
+  generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
   
   print(Fore.GREEN + "X*"+ Style.RESET_ALL)  
   xstar_runtimes = []
