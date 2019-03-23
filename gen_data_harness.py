@@ -24,6 +24,7 @@ for wh in wh_data:
     for agents in agents_data:
         for density in density_data:
             print("Percent:", (iter / total_iterations) * 100, "Agents:", agents, "Width/Height:", wh, "Density:", density)
-            subprocess.call("../collect_data.py {} {} {} {} {} {}".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout), shell=True)
+            print("../collect_data.py {} {} {} {} {} {} {}".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout))
+            subprocess.call("../collect_data.py {} {} {} {} {} {} {}".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout), shell=True)
 
     
