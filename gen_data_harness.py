@@ -19,12 +19,17 @@ density_data = np.linspace(0.01, 0.3, 15)
 
 total_iterations = len(wh_data) * len(agents_data) * len(density_data)
 
+f = open("gen_data_harness.result", 'w')
+f.write("Beginning, writing current to 'current_run.output'\n")
+f.close()
+
 iter = 0
 for wh in wh_data:
     for agents in agents_data:
         for density in density_data:
-            print("Percent:", (iter / total_iterations) * 100, "Agents:", agents, "Width/Height:", wh, "Density:", density)
-            print("../collect_data.py {} {} {} {} {} {} {}".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout))
-            subprocess.call("../collect_data.py {} {} {} {} {} {} {}".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout), shell=True)
+            f = open("gen_data_harness.result", 'w+')
+            f.write("Percent:", (iter / total_iterations) * 100, "Agents:", agents, "Width/Height:", wh, "Density:", density, '\n')
+            f.close()
+            subprocess.call("../collect_data.py {} {} {} {} {} {} {} > current_run.output".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout), shell=True)
 
     
