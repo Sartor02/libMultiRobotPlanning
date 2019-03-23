@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import subprocess
-from colorama import Fore, Style
 from matplotlib import pyplot as plt
 
 from shared_helpers import *
@@ -70,7 +69,7 @@ for i in range(args.num_trials):
   seed = (i + args.width) * args.agents
   generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
   
-  print(Fore.GREEN + "X*"+ Style.RESET_ALL)  
+  print("X*")  
   xstar_runtimes = []
   xstar_bounds = []
   for j in range(args.iter_per_trial):
@@ -83,7 +82,7 @@ for i in range(args.num_trials):
     xstar_runtimes.append(Runtime(times))
   xstar_data_lst.append(XStarData(args.obs_density, args.width, args.height, args.agents, args.timeout, xstar_bounds, xstar_runtimes))
   
-  print(Fore.YELLOW + "AFS"+ Style.RESET_ALL)  
+  print("AFS")  
   afs_runtimes = []
   afs_bounds = []
   for j in range(args.iter_per_trial):
@@ -96,7 +95,7 @@ for i in range(args.num_trials):
     afs_runtimes.append(Runtime(times))
   afs_data_lst.append(AFSData(args.obs_density, args.width, args.height, args.agents, args.timeout, afs_bounds, afs_runtimes))
   
-  print(Fore.RED + "CBS"+ Style.RESET_ALL)
+  print("CBS")
   cbs_runtimes = []
   for j in range(args.iter_per_trial):
     runtime = run_cbs(args.timeout)
