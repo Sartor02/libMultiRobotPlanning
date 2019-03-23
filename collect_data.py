@@ -65,7 +65,7 @@ afs_data_lst = []
 cbs_data_lst = []
 
 for i in range(args.num_trials):
-  print(Fore.BLUE + Style.BRIGHT + "Trial {}:==============================================".format(i) + Style.RESET_ALL)
+  print("Trial {}:==============================================".format(i))
   seed = (i + args.width) * args.agents
   generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
   
