@@ -28,7 +28,7 @@ for wh in wh_data:
     for agents in agents_data:
         for density in density_data:
             f = open("gen_data_harness.result", 'w+')
-            f.write("Percent:", (iter / total_iterations) * 100, "Agents:", agents, "Width/Height:", wh, "Density:", density, '\n')
+            f.write("Percent: " + str((iter / total_iterations) * 100) + " Agents: " + str(agents) + " Width/Height: " + str(wh) + " Density: " + str(density) + '\n')
             f.close()
             subprocess.call("../collect_data.py {} {} {} {} {} {} {} > current_run.output".format(agents, wh, wh, density, kNumIterations, kNumTrials, kTimeout), shell=True)
 
