@@ -28,7 +28,7 @@ def run_xstar(timeout):
   except:
     print("X* timeout")
     killall()
-    subprocess.call("sed -i '$ d' tmp.out", shell=True)
+    subprocess.call("sed -i '$ d' xstar_tmp.out", shell=True)
   f = open("xstar_tmp.out")
   content = [x.strip() for x in f.readlines()]
   bounds = [float(e.replace("Optimality bound:", "")) for e in content if "Optimality" in e]
@@ -40,7 +40,14 @@ def run_xstar(timeout):
   return (bounds, times)
 
 def run_afs(timeout):
-  return_code = subprocess.call("../afs/AnytimeMAPF/driver --map afs_map_file.map --agents afs_agents_file.agents --export_results afs_results.out --time_limit {} > /dev/null".format(timeout), shell=True)
+  try:
+    return_code = subprocess.call("../afs/AnytimeMAPF/driver --map afs_map_file.map --agents afs_agents_file.agents --export_results afs_results.out --time_limit {} > /dev/null".format(timeout), shell=True, timeout=(timeout + 2))
+    if return_code != 0:
+      return ([2], [timeout])
+  except:
+    print("AFS timeout")
+    killall()
+    return ([2], [timeout])
   f = open("afs_results.out")
   lines = f.readlines()[1:]
   csv = [e.split(',') for e in lines]
