@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import subprocess
-from colorama import Fore, Style
 from matplotlib import pyplot as plt
 
 from shared_helpers import *
@@ -12,11 +11,11 @@ args = get_args();
 
 def killall():
   print("Killing all")
-  subprocess.call("killall -9 cbs; killall -9 xstar", shell=True)
+  subprocess.call("killall -9 cbs; killall -9 xstar; killall -9 driver", shell=True)
   
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
-  ret_val = subprocess.call("../benchmark_generator.py {} {} {} {} ../simple_test.yaml afs_map_file afs_agents_file --seed {}".format(agents, width, height, obs_density, seed), shell=True)
+  ret_val = subprocess.call("../benchmark_generator.py {} {} {} {} ../simple_test.yaml afs_map_file.map afs_agents_file.agents --seed {}".format(agents, width, height, obs_density, seed), shell=True)
   if ret_val != 0:
     print("Genrate failed")
     exit(-1)
@@ -39,6 +38,15 @@ def run_xstar(timeout):
   if (len(bounds) <= 0):
     bounds.append(2)
   return (bounds, times)
+
+def run_afs(timeout):
+  return_code = subprocess.call("../afs/AnytimeMAPF/driver --map afs_map_file.map --agents afs_agents_file.agents --export_results afs_results.out --time_limit {} > /dev/null".format(timeout), shell=True)
+  f = open("afs_results.out")
+  lines = f.readlines()[1:]
+  csv = [e.split(',') for e in lines]
+  times = [float(e[1]) for e in csv]
+  bounds = [float(e[3]) for e in csv]
+  return (bounds, times)
   
 def run_cbs(timeout):
   try:
@@ -53,6 +61,7 @@ def run_cbs(timeout):
   return runtime
 
 xstar_data_lst = []
+afs_data_lst = []
 cbs_data_lst = []
 
 for i in range(args.num_trials):
@@ -73,6 +82,19 @@ for i in range(args.num_trials):
     xstar_runtimes.append(Runtime(times))
   xstar_data_lst.append(XStarData(args.obs_density, args.width, args.height, args.agents, args.timeout, xstar_bounds, xstar_runtimes))
   
+  print(Fore.YELLOW + "AFS"+ Style.RESET_ALL)  
+  afs_runtimes = []
+  afs_bounds = []
+  for j in range(args.iter_per_trial):
+    bounds, times  = run_afs(args.timeout)
+    assert(type(times) == list)
+    assert(type(bounds) == list)
+    assert(len(times) > 0)
+    assert(len(bounds) > 0)
+    afs_bounds = bounds
+    afs_runtimes.append(Runtime(times))
+  afs_data_lst.append(AFSData(args.obs_density, args.width, args.height, args.agents, args.timeout, afs_bounds, afs_runtimes))
+  
   print(Fore.RED + "CBS"+ Style.RESET_ALL)
   cbs_runtimes = []
   for j in range(args.iter_per_trial):
@@ -82,10 +104,12 @@ for i in range(args.num_trials):
   
 save_to_file("xstar_data_lst_{}".format(args_to_str(args)), xstar_data_lst)
 save_to_file("cbs_data_lst_{}".format(args_to_str(args)), cbs_data_lst)
+save_to_file("afs_data_lst_{}".format(args_to_str(args)), afs_data_lst)
 
 # Ensures data can be reloaded properly
 xstar_data_lst = read_from_file("xstar_data_lst_{}".format(args_to_str(args)))
 cbs_data_lst = read_from_file("cbs_data_lst_{}".format(args_to_str(args)))
+afs_data_lst = read_from_file("afs_data_lst_{}".format(args_to_str(args)))
 
     
     

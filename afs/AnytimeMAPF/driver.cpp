@@ -121,9 +121,9 @@ int main(int argc, char** argv) {
 
   if (results_fname.compare("NONE") != 0 ) {
     ofstream res_f;
-    res_f.open(results_fname, ios::app);  // append the results file.
+    res_f.open(results_fname, ios::trunc);  // append the results file.
     res_f << "IT,TIME,COST,SUBOPT,EXP(LL)\n";  // add header.
-    for (int i=1; i<=ecbs.search_iterations-1; i++) {
+    for (int i=1; i<=ecbs.search_iterations; i++) {
       res_f << i << "," << durations[i] << "," << ecbs.cost_iterations[i]
       << "," << ecbs.solution_subopt_bounds[i] << "," << total_ll_exp[i] << "\n";
     }
