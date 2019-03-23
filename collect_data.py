@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import subprocess
+from colorama import Fore, Style
 from matplotlib import pyplot as plt
 
 from shared_helpers import *
