@@ -9,8 +9,8 @@ from shared_helpers import *
 import signal
 import sys
 
-kTimeout = 60
-kNumTrials = 1000
+kTimeout = 30
+kNumTrials = 500
 kNumIterations = 3
 
 wh_data = range(100, 501, 100)
