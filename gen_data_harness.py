@@ -19,8 +19,6 @@ density_data = [0.01, 0.1, 0.2, 0.3]
 
 total_iterations = len(wh_data) * len(agents_data) * len(density_data)
 
-subprocess.call("./collect_data.py {} {} {} {} {} {} {}".format(10, 100, 100, 0.01, 3, 5, 10), shell=True)
-exit(0)
 
 f = open("gen_data_harness.result", 'w')
 f.write("Beginning, writing current to 'current_run.output'\n")
