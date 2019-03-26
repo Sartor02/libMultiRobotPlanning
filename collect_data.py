@@ -6,6 +6,12 @@ from shared_helpers import *
 
 import signal
 import sys
+import os
+cwd = os.getcwd()
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+print(cwd)
+print(dir_path)
 
 args = get_args();
 
@@ -15,14 +21,14 @@ def killall():
   
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
-  ret_val = subprocess.call("../benchmark_generator.py {} {} {} {} ../simple_test.yaml afs_map_file.map afs_agents_file.agents --seed {}".format(agents, width, height, obs_density, seed), shell=True)
+  ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} simple_test.yaml afs_map_file.map afs_agents_file.agents --seed {}".format(agents, width, height, obs_density, seed), shell=True)
   if ret_val != 0:
     print("Genrate failed")
     exit(-1)
 
 def run_xstar(timeout):
   try:
-    return_code = subprocess.call("./xstar -i ../simple_test.yaml -o simple_test.result > xstar_tmp.out", shell=True, timeout=timeout)
+    return_code = subprocess.call("release/xstar -i simple_test.yaml -o simple_test.result > xstar_tmp.out", shell=True, timeout=timeout)
     if return_code != 0:
       return ([2], [timeout])
   except:
@@ -41,7 +47,7 @@ def run_xstar(timeout):
 
 def run_afs(timeout):
   try:
-    return_code = subprocess.call("../afs/AnytimeMAPF/driver --map afs_map_file.map --agents afs_agents_file.agents --export_results afs_results.out --time_limit {} > /dev/null".format(timeout), shell=True, timeout=(timeout + 2))
+    return_code = subprocess.call("afs/AnytimeMAPF/driver --map afs_map_file.map --agents afs_agents_file.agents --export_results afs_results.out --time_limit {} > /dev/null".format(timeout), shell=True, timeout=(timeout + 2))
     if return_code != 0:
       return ([2], [timeout])
   except:
@@ -57,7 +63,7 @@ def run_afs(timeout):
   
 def run_cbs(timeout):
   try:
-    if subprocess.call("./cbs -i ../simple_test.yaml -o simple_test.result > cbs_tmp.out", shell=True, timeout=timeout) != 0:
+    if subprocess.call("release/cbs -i simple_test.yaml -o simple_test.result > cbs_tmp.out", shell=True, timeout=timeout) != 0:
       return timeout
   except:
     print("CBS timeout")
