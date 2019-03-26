@@ -1031,7 +1031,7 @@ class XStar {
              before_starts.at(i));
     }
 
-    return {between_starts_solution, between_starts_cost};
+    return std::make_tuple(between_starts_solution, between_starts_cost);
   }
 
   std::pair<JointState_t, JointCost_t> getIthFullState(
@@ -1344,7 +1344,7 @@ class XStar {
                             sg_goals_costs);
     }
 
-    return {sg_starts, sg_starts_costs, sg_goals, sg_goals_costs};
+    return std::make_tuple(sg_starts, sg_starts_costs, sg_goals, sg_goals_costs);
   }
 
   JointPlan_t unwindPath(const JointState_t& starts,

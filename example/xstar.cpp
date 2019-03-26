@@ -342,7 +342,7 @@ struct Window {
       goals_cost.push_back(s.time);
     }
 
-    return {starts, starts_cost, goals, goals_cost};
+    return std::make_tuple(starts, starts_cost, goals, goals_cost);
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Window& w) {
