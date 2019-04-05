@@ -28,7 +28,7 @@ def generate_new_scenario(agents, width, height, obs_density, seed):
 
 def run_mstar(timeout):
   try:
-    if subprocess.call("../mstar_public/cpp/main -i simple_test.yaml -o simple_test.result > mstar_tmp.out", shell=True, timeout=timeout) != 0:
+    if subprocess.call("mstar_public/cpp/main -i simple_test.yaml -o simple_test.result > mstar_tmp.out", shell=True, timeout=timeout) != 0:
       return timeout
   except:
     print("M* timeout")
