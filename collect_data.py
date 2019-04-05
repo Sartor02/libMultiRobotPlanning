@@ -26,6 +26,18 @@ def generate_new_scenario(agents, width, height, obs_density, seed):
     print("Genrate failed")
     exit(-1)
 
+def run_mstar(timeout):
+  try:
+    if subprocess.call("../mstar_public/cpp/main -i simple_test.yaml -o simple_test.result > mstar_tmp.out", shell=True, timeout=timeout) != 0:
+      return timeout
+  except:
+    print("M* timeout")
+    killall()
+    return timeout
+  f = open("simple_test.result")
+  runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
+  return runtime
+
 def run_xstar(timeout):
   try:
     return_code = subprocess.call("release/xstar -i simple_test.yaml -o simple_test.result > xstar_tmp.out", shell=True, timeout=timeout)
@@ -74,6 +86,7 @@ def run_cbs(timeout):
   return runtime
 
 xstar_data_lst = []
+mstar_data_lst = []
 afs_data_lst = []
 cbs_data_lst = []
 
@@ -114,15 +127,24 @@ for i in range(args.num_trials):
     runtime = run_cbs(args.timeout)
     cbs_runtimes.append(Runtime([runtime]))
   cbs_data_lst.append(CBSData(args.obs_density, args.width, args.height, args.agents, args.timeout, cbs_runtimes))
+
+  print("M*")
+  mstar_runtimes = []
+  for j in range(args.iter_per_trial):
+    runtime = run_mstar(args.timeout)
+    mstar_runtimes.append(Runtime([runtime]))
+  mstar_data_lst.append(MStarData(args.obs_density, args.width, args.height, args.agents, args.timeout, cbs_runtimes))
   
 save_to_file("xstar_data_lst_{}".format(args_to_str(args)), xstar_data_lst)
 save_to_file("cbs_data_lst_{}".format(args_to_str(args)), cbs_data_lst)
 save_to_file("afs_data_lst_{}".format(args_to_str(args)), afs_data_lst)
+save_to_file("mstar_data_lst_{}".format(args_to_str(args)), mstar_data_lst)
 
 # Ensures data can be reloaded properly
 xstar_data_lst = read_from_file("xstar_data_lst_{}".format(args_to_str(args)))
 cbs_data_lst = read_from_file("cbs_data_lst_{}".format(args_to_str(args)))
 afs_data_lst = read_from_file("afs_data_lst_{}".format(args_to_str(args)))
+mstar_data_lst = read_from_file("mstar_data_lst_{}".format(args_to_str(args)))
 
     
     
