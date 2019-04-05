@@ -9,14 +9,30 @@ from shared_helpers import *
 
 import signal
 import sys
+import argparse
 
-kTimeout = 30
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("split", type=str, help="Split of agents [lower | upper]")
+    return parser.parse_args()
+
+args = parse_args()
+
+if (args.split != "lower" and args.split != upper):
+    print("Invalid split")
+    exit(-1)
+
+is_lower = (args.split == "lower")
+
+kTimeout = 240
 kNumTrials = 300
 kNumIterations = 3
 
 wh_data = [100]
-agents_data = range(10, 201, 10)
-density_data = [0.01, 0.1, 0.2, 0.3]
+lower_agents_data = [10, 20, 30, 50, 70, 90]
+upper_agents_data = [100, 120, 140, 160, 180, 200]
+agents_data = lower_agents_data if is_lower else upper_agents_data
+density_data = [0.01, 0.05, 0.1]
 
 total_iterations = len(wh_data) * len(agents_data) * len(density_data)
 
