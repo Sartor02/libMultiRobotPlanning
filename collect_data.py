@@ -15,39 +15,46 @@ print(dir_path)
 
 args = get_args();
 
+def args_to_string(args):
+  return str(args).replace('(', '').replace(')', '').replace(' ', '').replace('=', '')
+
+generic_map = "simple_test{}.yaml".format(args_to_string(args))
+afs_map = "afs_map_file{}.map".format(args_to_string(args))
+afs_agents = "afs_agents_file{}.agents".format(args_to_string(args))
+
 def killall():
   print("Killing all")
   subprocess.call("killall -9 cbs; killall -9 xstar; killall -9 driver; killall -9 main", shell=True)
   
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
-  ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} simple_test.yaml afs_map_file.map afs_agents_file.agents --seed {}".format(agents, width, height, obs_density, seed), shell=True)
+  ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} {} {} {} --seed {}".format(agents, width, height, obs_density, generic_map, afs_map, afs_agents, seed), shell=True)
   if ret_val != 0:
     print("Genrate failed")
     exit(-1)
 
 def run_mstar(timeout):
   try:
-    if subprocess.call("mstar_public/cpp/main -i simple_test.yaml -o simple_test.result > mstar_tmp.out", shell=True, timeout=timeout) != 0:
+    if subprocess.call("mstar_public/cpp/main -i {} -o simple_test{}.result".format(generic_map, args_to_string(args)), shell=True, timeout=timeout) != 0:
       return timeout
   except:
     print("M* timeout")
     killall()
     return timeout
-  f = open("simple_test.result")
+  f = open("simple_test{}.result".format(args_to_string(args)))
   runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
   return runtime
 
 def run_xstar(timeout):
   try:
-    return_code = subprocess.call("release/xstar -i simple_test.yaml -o simple_test.result > xstar_tmp.out", shell=True, timeout=timeout)
+    return_code = subprocess.call("release/xstar -i {} -o simple_test.result > xstar_tmp{}.out".format(generic_map, args_to_string(args)), shell=True, timeout=timeout)
     if return_code != 0:
       return ([2], [timeout])
   except:
     print("X* timeout")
     killall()
-    subprocess.call("sed -i '$ d' xstar_tmp.out", shell=True)
-  f = open("xstar_tmp.out")
+    subprocess.call("sed -i '$ d' xstar_tmp{}.out".format(args_to_string(args)), shell=True)
+  f = open("xstar_tmp{}.out".format(args_to_string(args)))
   content = [x.strip() for x in f.readlines()]
   bounds = [float(e.replace("Optimality bound:", "")) for e in content if "Optimality" in e]
   times = [float(e.replace("Time so far:", "")) for e in content if "Time so far" in e]
@@ -59,14 +66,14 @@ def run_xstar(timeout):
 
 def run_afs(timeout):
   try:
-    return_code = subprocess.call("afs/AnytimeMAPF/driver --map afs_map_file.map --agents afs_agents_file.agents --export_results afs_results.out --time_limit {} > /dev/null".format(timeout), shell=True, timeout=(timeout + 2))
+    return_code = subprocess.call("afs/AnytimeMAPF/driver --map {} --agents {} --export_results afs_results{}.out --time_limit {} > /dev/null".format(afs_map, afs_agents, args_to_string(args), timeout), shell=True, timeout=(timeout + 2))
     if return_code != 0:
       return ([2], [timeout])
   except:
     print("AFS timeout")
     killall()
     return ([2], [timeout])
-  f = open("afs_results.out")
+  f = open("afs_results{}.out".format(args_to_string(args)))
   lines = f.readlines()[1:]
   csv = [e.split(',') for e in lines]
   times = [float(e[1]) for e in csv]
@@ -75,13 +82,13 @@ def run_afs(timeout):
   
 def run_cbs(timeout):
   try:
-    if subprocess.call("release/cbs -i simple_test.yaml -o simple_test.result > cbs_tmp.out", shell=True, timeout=timeout) != 0:
+    if subprocess.call("release/cbs -i {} -o simple_test{}.result".format(generic_map, args_to_string(args)), shell=True, timeout=timeout) != 0:
       return timeout
   except:
     print("CBS timeout")
     killall()
     return timeout
-  f = open("simple_test.result")
+  f = open("simple_test{}.result".format(args_to_string(args)))
   runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
   return runtime
 
