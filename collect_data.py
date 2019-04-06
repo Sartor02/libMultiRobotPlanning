@@ -17,7 +17,7 @@ args = get_args();
 
 def killall():
   print("Killing all")
-  subprocess.call("killall -9 cbs; killall -9 xstar; killall -9 driver", shell=True)
+  subprocess.call("killall -9 cbs; killall -9 xstar; killall -9 driver; killall -9 main", shell=True)
   
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
