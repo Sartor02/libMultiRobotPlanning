@@ -140,7 +140,7 @@ for i in range(args.num_trials):
   for j in range(args.iter_per_trial):
     runtime = run_mstar(args.timeout)
     mstar_runtimes.append(Runtime([runtime]))
-  mstar_data_lst.append(MStarData(args.obs_density, args.width, args.height, args.agents, args.timeout, cbs_runtimes))
+  mstar_data_lst.append(MStarData(args.obs_density, args.width, args.height, args.agents, args.timeout, mstar_runtimes))
   
 save_to_file("xstar_data_lst_{}".format(args_to_str(args)), xstar_data_lst)
 save_to_file("cbs_data_lst_{}".format(args_to_str(args)), cbs_data_lst)
