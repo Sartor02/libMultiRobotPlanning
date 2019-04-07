@@ -41,6 +41,7 @@ def fraction_not_timeouts(runtimes):
 xstar_data_lst = read_from_file("xstar_data_lst_{}".format(args_to_str(args)))
 cbs_data_lst = read_from_file("cbs_data_lst_{}".format(args_to_str(args)))
 afs_data_lst = read_from_file("afs_data_lst_{}".format(args_to_str(args)))
+mstar_data_lst = read_from_file("mstar_data_lst_{}".format(args_to_str(args)))
 
 num_agents = xstar_data_lst[0].num_agents
 width = xstar_data_lst[0].width
@@ -60,7 +61,8 @@ afs_first_failures = len([e for e in afs_first_runtimes if e == timeout])
 afs_final_failures = len([e for e in afs_final_runtimes if e == timeout])
 cbs_final_runtimes = [mean_runtime_at_idx(-1, e) for e in cbs_data_lst]
 cbs_final_failures = len([e for e in cbs_final_runtimes if e == timeout])
-
+mstar_final_runtimes = [mean_runtime_at_idx(-1, e) for e in mstar_data_lst]
+mstar_final_failures = len([e for e in cbs_final_runtimes if e == timeout])
 
 
 cbs_optimal_ratios = [c/x for c, x in zip(cbs_final_runtimes, xstar_final_runtimes)]
@@ -138,3 +140,24 @@ plt.hist(xstar_final_runtimes, bins=120)
 plt.xlabel("X* time to optimal solution (seconds) Green: 50%, Blue: 75%, Red: 90%; Dotted: with timeout, Dashed: without timeout\nPercentage not timed out: {:3.3f}".format(fraction_not_timeouts(xstar_final_runtimes) * 100))
 
 plt.show()
+
+plt.subplot(211)
+
+def get_95_max(lsts):
+  return max([max(get_95_percent_slice(lst)) for lst in lsts])
+
+max_val = get_95_max([xstar_first_runtimes, mstar_final_runtimes, cbs_final_runtimes, afs_first_runtimes])
+print(max_val)
+bin_size = 2
+
+bins = np.linspace(0, max_val, int(max_val / bin_size))
+
+plt.hist(get_95_percent_slice(xstar_first_runtimes), bins=bins, alpha=0.5, color='red')
+plt.hist(get_95_percent_slice(mstar_final_runtimes), bins=bins, alpha=0.5, color='green')
+plt.hist(get_95_percent_slice(cbs_final_runtimes), bins=bins, alpha=0.5, color='blue')
+plt.hist(get_95_percent_slice(afs_first_runtimes), bins=bins, alpha=0.5, color='purple')
+
+plt.subplot(212)
+
+plt.show()
+

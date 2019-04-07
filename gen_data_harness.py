@@ -10,18 +10,31 @@ from shared_helpers import *
 import signal
 import sys
 
-kTimeout = 240
-kNumTrials = 300
+def get_gen_data_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("loru", type=str, help="Lower or upper [l | u]")
+    return parser.parse_args()
+
+def is_lower(gen_args):
+    assert(gen_args.loru == 'l' or gen_args.loru == 'u')
+    return (gen_args.loru == 'l')
+
+gen_args = get_gen_data_args()
+
+kTimeout = 300
+kNumTrials = 200
 kNumIterations = 3
 
 wh_data = [100]
-agents_data = [10, 20, 30, 50, 70, 90, 100, 120, 140, 160, 180, 200]
+l_agents = [10, 20, 30, 40]
+u_agents = [50, 60, 80, 100]
+agents_data = l_agents if is_lower(gen_args) else u_agents
 density_data = [0.01, 0.05, 0.1]
 
 total_iterations = len(wh_data) * len(agents_data) * len(density_data)
 
 
-f = open("gen_data_harness.result", 'w')
+f = open("gen_data_harness_{}.status".format(gen_args.loru), 'w')
 f.write("Beginning! Time: {}\n".format(str(datetime.datetime.now())))
 f.close()
 
