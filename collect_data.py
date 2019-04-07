@@ -20,12 +20,7 @@ def args_to_string(args):
 
 generic_map = "simple_test{}.yaml".format(args_to_string(args))
 afs_map = "afs_map_file{}.map".format(args_to_string(args))
-afs_agents = "afs_agents_file{}.agents".format(args_to_string(args))
-
-def killall():
-  print("Killing all")
-  subprocess.call("killall -9 cbs; killall -9 xstar; killall -9 driver; killall -9 main", shell=True)
-  
+afs_agents = "afs_agents_file{}.agents".format(args_to_string(args))  
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
   ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} {} {} {} --seed {}".format(agents, width, height, obs_density, generic_map, afs_map, afs_agents, seed), shell=True)
@@ -34,59 +29,49 @@ def generate_new_scenario(agents, width, height, obs_density, seed):
     exit(-1)
 
 def run_mstar(timeout):
-  try:
-    if subprocess.call("mstar_public/cpp/main -i {} -o simple_test{}.result".format(generic_map, args_to_string(args)), shell=True, timeout=timeout) != 0:
-      return timeout
-  except:
+  if subprocess.call("timeout {} mstar_public/cpp/main -i {} -o simple_test{}.result".format(timeout, generic_map, args_to_string(args)), shell=True) != 0:
     print("M* timeout")
-    killall()
     return timeout
   f = open("simple_test{}.result".format(args_to_string(args)))
   runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
   return runtime
 
 def run_xstar(timeout):
-  try:
-    return_code = subprocess.call("release/xstar -i {} -o simple_test.result > xstar_tmp{}.out".format(generic_map, args_to_string(args)), shell=True, timeout=timeout)
-    if return_code != 0:
-      return ([2], [timeout])
-  except:
+  return_code = subprocess.call("timeout {} release/xstar -i {} -o simple_test.result > xstar_tmp{}.out".format(timeout, generic_map, args_to_string(args)), shell=True)
+  if return_code != 0:
     print("X* timeout")
-    killall()
+    # Strip potential rubbish.
     subprocess.call("sed -i '$ d' xstar_tmp{}.out".format(args_to_string(args)), shell=True)
   f = open("xstar_tmp{}.out".format(args_to_string(args)))
   content = [x.strip() for x in f.readlines()]
   bounds = [float(e.replace("Optimality bound:", "")) for e in content if "Optimality" in e]
   times = [float(e.replace("Time so far:", "")) for e in content if "Time so far" in e]
-  if (len(times) <= 0):
+  if (return_code != 0 or len(times) <= 0):
     times.append(timeout)
-  if (len(bounds) <= 0):
+  if (return_code != 0 or len(bounds) <= 0):
     bounds.append(2)
   return (bounds, times)
 
 def run_afs(timeout):
-  try:
-    return_code = subprocess.call("afs/AnytimeMAPF/driver --map {} --agents {} --export_results afs_results{}.out --time_limit {} > /dev/null".format(afs_map, afs_agents, args_to_string(args), timeout), shell=True, timeout=(timeout + 2))
-    if return_code != 0:
-      return ([2], [timeout])
-  except:
+  return_code = subprocess.call("timeout {} afs/AnytimeMAPF/driver --map {} --agents {} --export_results afs_results{}.out --time_limit {} > /dev/null".format(timeout + 2, afs_map, afs_agents, args_to_string(args), timeout), shell=True)
+  if return_code != 0:
     print("AFS timeout")
-    killall()
+    # AFS dumps the file at the end; if it timed out, that mean AFS died and we have no data.
     return ([2], [timeout])
   f = open("afs_results{}.out".format(args_to_string(args)))
   lines = f.readlines()[1:]
   csv = [e.split(',') for e in lines]
   times = [float(e[1]) for e in csv]
   bounds = [float(e[3]) for e in csv]
+  # If optimal solution was not found, add max time.
+  if (len(bounds) == 0 or bounds[-1] != 1.0):
+    times.append(timeout)
+    bounds.append(1.0)
   return (bounds, times)
   
 def run_cbs(timeout):
-  try:
-    if subprocess.call("release/cbs -i {} -o simple_test{}.result".format(generic_map, args_to_string(args)), shell=True, timeout=timeout) != 0:
-      return timeout
-  except:
+  if subprocess.call("timeout {} release/cbs -i {} -o simple_test{}.result".format(timeout, generic_map, args_to_string(args)), shell=True) != 0:
     print("CBS timeout")
-    killall()
     return timeout
   f = open("simple_test{}.result".format(args_to_string(args)))
   runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
