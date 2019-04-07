@@ -41,7 +41,7 @@ density_data = [0.01, 0.05, 0.1]
 total_iterations = len(wh_data) * len(agents_data) * len(density_data)
 
 
-status_file = "gen_data_harness_{}.status".format(gen_args.loru)
+status_file = "gen_data_harness_{}.status".format(gen_args.agents_section)
 
 f = open(status_file, 'w')
 f.write("Beginning! Time: {}\n".format(str(datetime.datetime.now())))
