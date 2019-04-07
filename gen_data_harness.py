@@ -12,23 +12,30 @@ import sys
 
 def get_gen_data_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("loru", type=str, help="Lower or upper [l | u]")
+    parser.add_argument("agents_section", type=int, help="Section of total agents")
     return parser.parse_args()
 
-def is_lower(gen_args):
-    assert(gen_args.loru == 'l' or gen_args.loru == 'u')
-    return (gen_args.loru == 'l')
-
 gen_args = get_gen_data_args()
+
+def get_agents(gen_args):
+    assert(gen_args.agents_section < 4)
+    if gen_args.agents_section == 0:
+        return [10, 20]
+    elif gen_args.agents_section == 1:
+        return [30, 40]
+    elif gen_args.agents_section == 2:
+        return [50, 60]
+    elif gen_args.agents_section == 3:
+        return [80, 100]
+
+
 
 kTimeout = 300
 kNumTrials = 200
 kNumIterations = 3
 
 wh_data = [100]
-l_agents = [10, 20, 30, 40]
-u_agents = [50, 60, 80, 100]
-agents_data = l_agents if is_lower(gen_args) else u_agents
+agents_data = get_agents(gen_args)
 density_data = [0.01, 0.05, 0.1]
 
 total_iterations = len(wh_data) * len(agents_data) * len(density_data)
