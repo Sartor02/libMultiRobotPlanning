@@ -16,6 +16,8 @@
 #include "utils.hpp"
 
 namespace libMultiRobotPlanning {
+  
+static constexpr bool kTiming = true;
 
 /*!
   \example cbs.cpp Example that solves the Multi-Agent Path-Finding (MAPF)
@@ -82,6 +84,195 @@ template <typename State, typename Action, typename Cost, typename Conflict,
           typename StateHasher = std::hash<std::vector<State>>>
 class XStar {
  private:
+   
+  struct TimingASUExp {
+    Timer total_ASUExp;
+    Timer time_top_o;
+    Timer time_check_in_c;
+    Timer time_add_parent;
+    size_t num_neighbors = 0;
+    Timer time_add_neighbors_to_o;
+  };
+  
+  struct TimingAStarSearchUntil {
+    Timer total_astar_search_until;
+    size_t num_values_f_less_fmax;
+    TimingASUExp timing_ASUExp;
+  };
+  
+  struct TimingStage1 {
+    Timer total_Stage1;
+    Timer time_add_x_to_o;
+    Timer time_clear_x;
+    TimingAStarSearchUntil timing_AStarSearchUntil;
+  };
+  
+  struct TimingStage2 {
+    Timer total_Stage2;
+    size_t num_len_path;
+    Timer time_expanding_s;
+    TimingAStarSearchUntil timing_AStarSearchUntil;
+  };
+  
+  struct TimingS3Exp {
+    Timer total_S3Exp;
+    Timer time_top_o;
+    Timer time_check_in_c;
+    Timer time_add_parent;
+    size_t num_neighbors = 0;
+    Timer time_add_neighbors_to_o;
+  };
+  
+  struct TimingStage3 {
+    Timer total_Stage3;
+    size_t num_until_goal_expanded = 0;
+    TimingS3Exp timing_S3Exp;
+  };
+  
+  struct TimingGARI {
+    Timer total_GARI;
+    Timer time_path_btw_starts;
+    TimingStage1 timing_stage1;
+    TimingStage2 timing_stage2;
+    TimingStage3 timing_stage3;
+  };
+  
+  struct TimingPlanIn{ 
+    Timer total_PlanIn;
+    size_t num_until_goal_expanded = 0;
+    TimingS3Exp timing_expansions;
+  };
+  
+  struct TimingPIOW {
+    Timer total_PIOW;
+    size_t num_windows = 0;
+    Timer time_check_overlap;
+    size_t num_overlapping_windows = 0;
+    Timer time_merge_windows;
+    Timer time_remove_window;
+    TimingPlanIn timing_PlanIn;
+    Timer time_add_to_windows;
+  };
+  
+  struct TimingRecWAMPF {
+    Timer total_RecWAMPF;
+    size_t num_windows = 0;
+    TimingGARI timing_gari;
+    TimingPIOW timing_PIOW_overlapping;
+    size_t num_new_collisions = 0;
+    TimingPIOW timing_PIOW_new_collisions;
+    size_t num_windows_should_quit = 0;
+    Timer time_should_quit;
+    size_t num_quitting_windows = 0;
+    Timer time_remove_window;
+    
+  };
+  
+  struct TimingWAMPF {
+    Timer total_WAMPF;
+    size_t num_agents = 0;
+    Timer time_individual_plan;
+    Timer time_first_plan;
+    size_t num_recWAMPF = 0;
+    TimingRecWAMPF timing_recWAMPF;
+    
+    friend std::ostream& operator<<(std::ostream& os, const TimingWAMPF& t) {
+      os << "Total time: " << t.total_WAMPF << "\n"
+      "Num agents: " << t.num_agents << "\n"
+      "time_individual_plan: " << t.time_individual_plan << "\n"
+      "time_first_plan: " << t.time_first_plan << "\n"
+      "num_recWAMPF: " << t.num_recWAMPF<< "\n"
+      "timing_recWAMPF:\n"
+      "    total_RecWAMPF: " << t.timing_recWAMPF.total_RecWAMPF<< "\n"
+      "    num_windows: " << t.timing_recWAMPF.num_windows<< "\n"
+      "    timing_gari:\n"
+      "        total_GARI: " << t.timing_recWAMPF.timing_gari.total_GARI<< "\n"
+      "        time_path_btw_starts: " << t.timing_recWAMPF.timing_gari.time_path_btw_starts<< "\n"
+      "        Stage1:\n"
+      "            total_Stage1:" << t.timing_recWAMPF.timing_gari.timing_stage1.total_Stage1<< "\n"
+      "            time_add_x_to_o: " << t.timing_recWAMPF.timing_gari.timing_stage1.time_add_x_to_o<< "\n"
+      "            time_clear_x: " << t.timing_recWAMPF.timing_gari.timing_stage1.time_clear_x<< "\n"
+      "            timing_AStarSearchUntil:\n"
+      "                total_astar_search_until:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.total_astar_search_until<< "\n"
+      "                num_values_f_less_fmax:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.num_values_f_less_fmax<< "\n"
+      "                ASU Exp:\n"
+      "                    total_ASUExp:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.timing_ASUExp.total_ASUExp << "\n"
+      "                    time_top_o:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.timing_ASUExp.time_top_o<< "\n"
+      "                    time_check_in_c:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.timing_ASUExp.time_check_in_c << "\n"
+      "                    time_add_parent:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.timing_ASUExp.time_add_parent<< "\n"
+      "                    num_neighbors:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.timing_ASUExp.num_neighbors << "\n"
+      "                    time_add_neighbors_to_o:" << t.timing_recWAMPF.timing_gari.timing_stage1.timing_AStarSearchUntil.timing_ASUExp.time_add_neighbors_to_o << "\n"
+      "        Stage2:\n"
+      "            total_Stage2:" << t.timing_recWAMPF.timing_gari.timing_stage2.total_Stage2<< "\n"
+      "            num_len_path:" << t.timing_recWAMPF.timing_gari.timing_stage2.num_len_path<< "\n"
+      "            time_expanding_s:" << t.timing_recWAMPF.timing_gari.timing_stage2.time_expanding_s<< "\n"
+      "            timing_AStarSearchUntil:\n"
+      "                total_astar_search_until:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.total_astar_search_until<< "\n"
+      "                num_values_f_less_fmax:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.num_values_f_less_fmax<< "\n"
+      "                ASU Exp:\n"
+      "                    total_ASUExp:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.timing_ASUExp.total_ASUExp << "\n"
+      "                    time_top_o:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.timing_ASUExp.time_top_o<< "\n"
+      "                    time_check_in_c:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.timing_ASUExp.time_check_in_c << "\n"
+      "                    time_add_parent:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.timing_ASUExp.time_add_parent<< "\n"
+      "                    num_neighbors:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.timing_ASUExp.num_neighbors << "\n"
+      "                    time_add_neighbors_to_o:" << t.timing_recWAMPF.timing_gari.timing_stage2.timing_AStarSearchUntil.timing_ASUExp.time_add_neighbors_to_o << "\n"
+      "        Stage3:\n"
+      "            total_Stage3:" << t.timing_recWAMPF.timing_gari.timing_stage3.total_Stage3<< "\n"
+      "            num_until_goal_expanded:" << t.timing_recWAMPF.timing_gari.timing_stage3.num_until_goal_expanded<< "\n"
+      "            timing_S3Exp:\n"
+      "                total_S3Exp: " << t.timing_recWAMPF.timing_gari.timing_stage3.timing_S3Exp.total_S3Exp<< "\n"
+      "                time_top_o: " << t.timing_recWAMPF.timing_gari.timing_stage3.timing_S3Exp.time_top_o<< "\n"
+      "                time_check_in_c: " << t.timing_recWAMPF.timing_gari.timing_stage3.timing_S3Exp.time_check_in_c<< "\n"
+      "                time_add_parent: " << t.timing_recWAMPF.timing_gari.timing_stage3.timing_S3Exp.time_add_parent<< "\n"
+      "                num_neighbors: " << t.timing_recWAMPF.timing_gari.timing_stage3.timing_S3Exp.num_neighbors<< "\n"
+      "                time_add_neighbors_to_o: " << t.timing_recWAMPF.timing_gari.timing_stage3.timing_S3Exp.time_add_neighbors_to_o<< "\n"
+      "    timing_PIOW_overlapping:\n"
+      "        total_PIOW: " << t.timing_recWAMPF.timing_PIOW_overlapping.total_PIOW<< "\n"
+      "        num_windows: " << t.timing_recWAMPF.timing_PIOW_overlapping.num_windows<< "\n"
+      "        time_check_overlap: " << t.timing_recWAMPF.timing_PIOW_overlapping.time_check_overlap<< "\n"
+      "        num_overlapping_windows: " << t.timing_recWAMPF.timing_PIOW_overlapping.num_overlapping_windows<< "\n"
+      "        time_merge_windows: " << t.timing_recWAMPF.timing_PIOW_overlapping.time_merge_windows<< "\n"
+      "        time_remove_window: " << t.timing_recWAMPF.timing_PIOW_overlapping.time_remove_window<< "\n"
+      "        timing_PlanIn:\n"
+      "            total_PlanIn:" << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.total_PlanIn << "\n"
+      "            num_until_goal_expanded:" <<
+      t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.num_until_goal_expanded << "\n"
+      "            timing_expansions:\n"
+      "                total_S3Exp: " << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.timing_expansions.total_S3Exp<< "\n"
+      "                time_top_o: " << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.timing_expansions.time_top_o<< "\n"
+      "                time_check_in_c: " << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.timing_expansions.time_check_in_c<< "\n"
+      "                time_add_parent: " << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.timing_expansions.time_add_parent<< "\n"
+      "                num_neighbors: " << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.timing_expansions.num_neighbors<< "\n"
+      "                time_add_neighbors_to_o: " << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.timing_expansions.time_add_neighbors_to_o<< "\n"
+      "    num_new_collisions: " << t.timing_recWAMPF.num_new_collisions<< "\n"
+      "    timing_PIOW_new_collisions:\n"
+      "        total_PIOW: " << t.timing_recWAMPF.timing_PIOW_new_collisions.total_PIOW<< "\n"
+      "        num_windows: " << t.timing_recWAMPF.timing_PIOW_new_collisions.num_windows<< "\n"
+      "        time_check_overlap: " << t.timing_recWAMPF.timing_PIOW_new_collisions.time_check_overlap<< "\n"
+      "        num_overlapping_windows: " << t.timing_recWAMPF.timing_PIOW_new_collisions.num_overlapping_windows<< "\n"
+      "        time_merge_windows: " << t.timing_recWAMPF.timing_PIOW_new_collisions.time_merge_windows<< "\n"
+      "        time_remove_window: " << t.timing_recWAMPF.timing_PIOW_new_collisions.time_remove_window<< "\n"
+      "        timing_PlanIn:\n"
+      "            total_PlanIn:" << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.total_PlanIn << "\n"
+      "            num_until_goal_expanded:" <<
+      t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.num_until_goal_expanded << "\n"
+      "            timing_expansions:\n"
+      "                total_S3Exp: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.total_S3Exp<< "\n"
+      "                time_top_o: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.time_top_o<< "\n"
+      "                time_check_in_c: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.time_check_in_c<< "\n"
+      "                time_add_parent: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.time_add_parent<< "\n"
+      "                num_neighbors: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.num_neighbors<< "\n"
+      "                time_add_neighbors_to_o: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.time_add_neighbors_to_o<< "\n"
+      "    num_windows_should_quit: " << t.timing_recWAMPF.num_windows_should_quit << "\n"
+      "    time_should_quit: " << t.timing_recWAMPF.time_should_quit << "\n"
+      "    num_quitting_windows: " << t.timing_recWAMPF.num_quitting_windows << "\n"
+      "    time_remove_window: " << t.timing_recWAMPF.time_remove_window << "\n"
+      ;
+      return os;
+    }
+    
+  };
+   
   struct LowLevelEnvironment {
     LowLevelEnvironment(Environment& env, size_t agentIdx) : m_env(env) {
       m_env.setLowLevelContext(agentIdx);
@@ -284,6 +475,16 @@ class XStar {
       }
       return (!out_of_window.empty());
     }
+    
+    void disable() {
+      disabled = true;
+      open_set.clear();
+      closed_set.clear();
+      state_to_heap.clear();
+      parent_map.clear();
+      out_of_window.clear();
+      goal_wait_nodes.clear();
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
       os << "Enabled: " << (ps.enabled ? "true" : "false");
@@ -359,35 +560,49 @@ class XStar {
   using WPS_t = WindowPlannerState;
   using WPSList_t = std::vector<WindowPlannerState>;
 
-  void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution) {
+  void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution, 
+                            TimingRecWAMPF* timing_recWAMPF) {
     static constexpr bool kDebug = false;
     for (size_t i = 0; i < windows->size(); ++i) {
+      timing_recWAMPF->num_windows++;
       WPS_t& wi = windows->at(i);
-      growAndReplanIn(&wi, solution);
+      growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
 
+      
+      timing_recWAMPF->timing_PIOW_overlapping.total_PIOW.start();
       bool found_overlapping = false;
       do {
         found_overlapping = false;
+        timing_recWAMPF->timing_PIOW_overlapping.num_windows += windows->size();
         for (size_t j = 0; j < windows->size(); ++j) {
           if (i == j) {
             continue;
           }
           const WPS_t& wj = windows->at(j);
-          if (wi.overlapping(wj)) {
+          timing_recWAMPF->timing_PIOW_overlapping.time_check_overlap.start();
+          const bool is_overlapping = wi.overlapping(wj);
+          timing_recWAMPF->timing_PIOW_overlapping.time_check_overlap.stop();
+          if (is_overlapping) {
             found_overlapping = true;
             if (kDebug) {
               std::cout << "Merging two existing windows " << wi << ", " << wj
                         << std::endl;
             }
-            wi.getSearchState()->disabled = true;
-            wj.getSearchState()->disabled = true;
+            timing_recWAMPF->timing_PIOW_overlapping.num_overlapping_windows++;
+            timing_recWAMPF->timing_PIOW_overlapping.time_merge_windows.start();
+            wi.getSearchState()->disable();
+            wj.getSearchState()->disable();
             wi = wi.merge(wj);
-            while (!planIn(&wi, solution)) {
+            timing_recWAMPF->timing_PIOW_overlapping.time_merge_windows.stop();
+            while (!planIn(&wi, solution, 
+              &(timing_recWAMPF->timing_PIOW_overlapping.timing_PlanIn))) {
               wi.window.grow();
             }
 
+            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.start();
             // Erase wj.
             windows->erase(windows->begin() + j);
+            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.stop();
 
             // If j < i, then erasing j will cause i to be shifted back by 1, so
             // the reference and the index need to be updated.
@@ -400,12 +615,14 @@ class XStar {
           }
         }
       } while (found_overlapping);
+      timing_recWAMPF->timing_PIOW_overlapping.total_PIOW.stop();
     }
   }
 
   void integrateNewConflictWindow(WPS_t window, WPSList_t* windows,
-                                  JointPlan_t* solution) {
-    while (!planIn(&window, solution)) {
+                                  JointPlan_t* solution, TimingPIOW* timing_PIOW) {
+    timing_PIOW->total_PIOW.start();
+    while (!planIn(&window, solution, &(timing_PIOW->timing_PlanIn))) {
       window.window.grow();
     }
     bool found_overlapping = false;
@@ -413,20 +630,31 @@ class XStar {
       found_overlapping = false;
       for (size_t i = 0; i < windows->size(); ++i) {
         const WPS_t& wi = windows->at(i);
-        if (window.overlapping(wi)) {
+        timing_PIOW->time_check_overlap.start();
+        const bool is_overlapping = window.overlapping(wi);
+        timing_PIOW->time_check_overlap.stop();
+        if (is_overlapping) {
           found_overlapping = true;
-          window.getSearchState()->disabled = true;
-          wi.getSearchState()->disabled = true;
+          timing_PIOW->num_overlapping_windows++;
+          timing_PIOW->time_merge_windows.start();
+          window.getSearchState()->disable();
+          wi.getSearchState()->disable();
           window = window.merge(wi);
-          while (!planIn(&window, solution)) {
+          timing_PIOW->time_merge_windows.stop();
+          while (!planIn(&window, solution, &(timing_PIOW->timing_PlanIn))) {
             window.window.grow();
           }
+          timing_PIOW->time_remove_window.start();
           windows->erase(windows->begin() + i);
+          timing_PIOW->time_remove_window.stop();
           break;
         }
       }
     } while (found_overlapping);
+    timing_PIOW->time_add_to_windows.start();
     windows->push_back(window);
+    timing_PIOW->time_add_to_windows.stop();
+    timing_PIOW->total_PIOW.stop();
   }
 
   void removeCompletedWindows(WPSList_t* windows) {
@@ -441,21 +669,24 @@ class XStar {
   }
 
   bool recWAMPF(WPSList_t* windows, SSList_t* search_states,
-                JointPlan_t* solution) {
+                JointPlan_t* solution, TimingRecWAMPF* timing_recWAMPF) {
+    timing_recWAMPF->total_RecWAMPF.start();
     static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Starting recWAMPF\n";
     }
-    growAndMergeExisting(windows, solution);
+    growAndMergeExisting(windows, solution, timing_recWAMPF);
 
     Conflict result;
     while (m_env.getFirstConflict(*solution, result)) {
+      timing_recWAMPF->num_new_collisions++;
       if (kDebug) {
         std::cout << "Found first conflict\n";
         std::cout << "Conflict: " << result << std::endl;
       }
       WPS_t window(m_env.createWindowFromConflict(result), search_states);
-      integrateNewConflictWindow(window, windows, solution);
+      integrateNewConflictWindow(window, windows, solution, 
+                                 &timing_recWAMPF->timing_PIOW_new_collisions);
     }
 
     removeCompletedWindows(windows);
@@ -463,6 +694,7 @@ class XStar {
       std::cout << "Finished all conflicts\n";
       print(*solution);
     }
+    timing_recWAMPF->total_RecWAMPF.stop();
     return true;
   }
 
@@ -483,7 +715,8 @@ class XStar {
 
   void AStarSearchUntil(WPS_t* window, const JointState_t& starts,
                         const JointState_t& goals, const JointPlan_t& solution,
-                        const Cost& fmax) {
+                        const Cost& fmax, TimingAStarSearchUntil* timing_AStarSearchUntil) {
+    timing_AStarSearchUntil->total_astar_search_until.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
 
@@ -509,9 +742,11 @@ class XStar {
     //     }
     //     std::cout << std::endl;
 
+    timing_AStarSearchUntil->timing_ASUExp.total_ASUExp.start();
     for (size_t expand_count = 0;
          !open_set.empty() && open_set.top().f_score < fmax; ++expand_count) {
       assert(!isTooManyIterations(expand_count, *window));
+      timing_AStarSearchUntil->num_values_f_less_fmax++;
 
       Node current = open_set.top();
       if (kDebug) {
@@ -532,22 +767,30 @@ class XStar {
 
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
 
+      timing_AStarSearchUntil->timing_ASUExp.time_top_o.start();
       popOpenSetTop(&open_set, &state_to_heap);
+      timing_AStarSearchUntil->timing_ASUExp.time_top_o.stop();
 
+      timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.start();
       auto it = closed_set.find(current.state);
       if (it != closed_set.end() &&
           utils::sum(it->second) <= current.g_score_sum) {
         if (kDebug) {
           std::cout << "Closed, skipping " << current << std::endl;
         }
+        timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.stop();
         continue;
       }
       closed_set[current.state] = current.g_score;
+      timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.stop();
 
       if (kDebug) {
         std::cout << "Inserting " << current << std::endl;
       }
+      
+      timing_AStarSearchUntil->timing_ASUExp.time_add_parent.start();
       insertParentMap(&parent_map, current);
+      timing_AStarSearchUntil->timing_ASUExp.time_add_parent.stop();
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, solution);
@@ -555,7 +798,9 @@ class XStar {
       JointNeighbor_t joint_neighbor_info(current.state.size());
       bool joint_neighbor_in_window = true;
       bool neighbor_has_goal_wait = false;
+      timing_AStarSearchUntil->timing_ASUExp.time_add_neighbors_to_o.start();
       while (!neighbor_generator.atEnd()) {
+        timing_AStarSearchUntil->timing_ASUExp.num_neighbors++;
         const auto& generator_output = neighbor_generator.getAndIncrement();
         extractJointNeighborInfo(&joint_neighbor_info,
                                  &joint_neighbor_in_window, generator_output);
@@ -581,10 +826,14 @@ class XStar {
                         &open_set, &out_of_window);
       }
 
+      timing_AStarSearchUntil->timing_ASUExp.time_add_neighbors_to_o.stop();
+      
       if (neighbor_has_goal_wait) {
         goal_wait_nodes.push_back(current);
       }
     }
+    timing_AStarSearchUntil->timing_ASUExp.total_ASUExp.stop();
+    timing_AStarSearchUntil->total_astar_search_until.stop();
   }
 
   void verifyOpenSet(WPS_t* window) {
@@ -601,11 +850,13 @@ class XStar {
 
   void Stage1(WPS_t* window, const JointState_t& starts,
               const JointState_t& goals, const JointPlan_t& solution,
-              const Cost& goal_node_fvalue) {
+              const Cost& goal_node_fvalue, TimingStage1* timing_stage1) {
+    timing_stage1->total_Stage1.start();
     SearchState* ss = window->getSearchState();
 
     verifyParentMap(ss->parent_map, ss->previous_start);
 
+    timing_stage1->time_add_x_to_o.start();
     for (const std::pair<JointState_t, Node>& sn : ss->out_of_window) {
       const Node& n = sn.second;
       const JointState_t& current_state = n.prev_state;
@@ -617,11 +868,16 @@ class XStar {
                           neighbor_action_cost, neighbor_g_score,
                           &(ss->state_to_heap), &(ss->open_set));
     }
+    timing_stage1->time_add_x_to_o.stop();
+    timing_stage1->time_clear_x.start();
     ss->out_of_window.clear();
+    timing_stage1->time_clear_x.stop();
 
     verifyOpenSet(window);
 
-    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue);
+    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue, 
+                     &timing_stage1->timing_AStarSearchUntil);
+    timing_stage1->total_Stage1.stop();
   }
 
   std::pair<JointState_t, JointAction_t> getStateAction(
@@ -662,7 +918,9 @@ class XStar {
 
   void Stage2(WPS_t* window, const NodeAndCameFromValues_t& info_between_starts,
               const JointState_t& starts, const JointState_t& goals,
-              const JointPlan_t& solution, const Cost& goal_node_fvalue) {
+              const JointPlan_t& solution, const Cost& goal_node_fvalue, 
+              TimingStage2* timing_stage2) {
+    timing_stage2->total_Stage2.start();
     static constexpr bool kDebug = false;
     SearchState* ss = window->getSearchState();
 
@@ -674,7 +932,9 @@ class XStar {
     ss->previous_start = starts;
 
     // Insert path into openlist.
+    timing_stage2->time_expanding_s.start();
     for (const Node& node : info_between_starts.nodes) {
+      timing_stage2->num_len_path++;
       assert(node.state.size() == window->window.agent_idxs.size());
       Node node_copy = node;
       // Hack to make sure that the node is expanded before any other nodes.
@@ -687,12 +947,15 @@ class XStar {
         print(node_copy.state);
       }
     }
+    timing_stage2->time_expanding_s.stop();
 
     verifyOpenSet(window);
     if (kDebug) {
       std::cout << "Astar search until " << goal_node_fvalue << "\n";
     }
-    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue);
+    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue, 
+                     &timing_stage2->timing_AStarSearchUntil);
+    timing_stage2->total_Stage2.stop();
   }
 
   void verifySolutionValid(const JointPlan_t& solution) {
@@ -817,7 +1080,8 @@ class XStar {
 
   void Stage3(WPS_t* window, JointPlan_t* solution, const JointState_t& starts,
               const JointCost_t& starts_costs, const JointState_t& goals,
-              const JointCost_t& goals_costs) {
+              const JointCost_t& goals_costs, TimingStage3* timing_stage3) {
+    timing_stage3->total_Stage3.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
     if (kDebug) {
@@ -847,7 +1111,9 @@ class XStar {
 
     assert(parent_map.find(starts) != parent_map.end());
 
+    timing_stage3->timing_S3Exp.total_S3Exp.start();
     for (size_t expand_count = 0; !open_set.empty(); ++expand_count) {
+      timing_stage3->num_until_goal_expanded++;
       assert(!isTooManyIterations(expand_count, *window));
 
       Node current = open_set.top();
@@ -881,21 +1147,30 @@ class XStar {
             insertWindowPath(&window_solution, window->window, starts_costs,
                              goals_costs, solution);
         assert(insert_result);
+        timing_stage3->timing_S3Exp.total_S3Exp.stop();
+        timing_stage3->total_Stage3.stop();
         return;
       }
 
+      timing_stage3->timing_S3Exp.time_top_o.start();
       popOpenSetTop(&open_set, &state_to_heap);
+      timing_stage3->timing_S3Exp.time_top_o.stop();
 
+      timing_stage3->timing_S3Exp.time_check_in_c.start();
       const auto closed_set_insert_result =
           closed_set.insert({current.state, current.g_score});
       if (!closed_set_insert_result.second) {
         if (kDebug) {
           std::cout << "Closed, skipping " << current << std::endl;
         }
+        timing_stage3->timing_S3Exp.time_check_in_c.stop();
         continue;
       }
+      timing_stage3->timing_S3Exp.time_check_in_c.stop();
 
+      timing_stage3->timing_S3Exp.time_add_parent.start();
       insertParentMap(&parent_map, current);
+      timing_stage3->timing_S3Exp.time_add_parent.stop();
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, *solution);
@@ -903,7 +1178,9 @@ class XStar {
       JointNeighbor_t joint_neighbor_info(current.state.size());
       bool joint_neighbor_in_window = true;
       bool neighbor_has_goal_wait = false;
+      timing_stage3->timing_S3Exp.time_add_neighbors_to_o.start();
       while (!neighbor_generator.atEnd()) {
+        timing_stage3->timing_S3Exp.num_neighbors++;
         const auto& generator_output = neighbor_generator.getAndIncrement();
         extractJointNeighborInfo(&joint_neighbor_info,
                                  &joint_neighbor_in_window, generator_output);
@@ -922,6 +1199,7 @@ class XStar {
                         joint_neighbor_in_window, closed_set, &state_to_heap,
                         &open_set, &out_of_window);
       }
+      timing_stage3->timing_S3Exp.time_add_neighbors_to_o.stop();
 
       if (neighbor_has_goal_wait) {
         goal_wait_nodes.push_back(current);
@@ -929,6 +1207,8 @@ class XStar {
     }
     // Emptied openlist!
     assert(false);
+    timing_stage3->timing_S3Exp.total_S3Exp.stop();
+    timing_stage3->total_Stage3.stop();
   }
 
   void verifyStartCostDifference(const JointCost_t& before_starts_costs,
@@ -1159,12 +1439,15 @@ class XStar {
     return nodes_and_came_from;
   }
 
-  void growAndReplanIn(WPS_t* window, JointPlan_t* solution) {
+  void growAndReplanIn(WPS_t* window, JointPlan_t* solution, TimingGARI* timing_gari) {
+    timing_gari->total_GARI.start();
     static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Grow and replan in" << std::endl;
     }
 
+    timing_gari->time_path_btw_starts.start();
+    
     JointState_t old_starts;
     JointCost_t old_starts_costs;
     JointState_t old_goals;
@@ -1203,6 +1486,8 @@ class XStar {
 
     info_between_starts.verify(*window, old_starts, new_starts);
 
+    timing_gari->time_path_btw_starts.stop();
+    
     if (kDebug) {
       std::cout << "Between Starts Nodes!\n";
       for (const Node& n : info_between_starts.nodes) {
@@ -1215,34 +1500,31 @@ class XStar {
 
     verifySolutionValid(*solution);
     if (window->getSearchState()->previous_start != old_starts) {
-      std::cout << "!!!!!!!!!!! Start misalignment!\n";
-      planIn(window, solution);
+      TimingPlanIn tpi;
+      planIn(window, solution, &tpi);
       verifySolutionValid(*solution);
+      timing_gari->total_GARI.stop();
       return;
     }
     const Cost old_goal_g_score_sum =
         window->getSearchState()->open_set.top().g_score_sum;
-    std::cout << "Stage 1 start" << std::endl;
-    Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum);
+    Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum, &(timing_gari->timing_stage1));
     verifySolutionValid(*solution);
-    std::cout << "Stage 2 start" << std::endl;
     Stage2(window, info_between_starts, new_starts, old_goals, *solution,
-           old_goal_g_score_sum);
+           old_goal_g_score_sum, &(timing_gari->timing_stage2));
     verifySolutionValid(*solution);
-    std::cout << "Stage 3 start" << std::endl;
     Stage3(window, solution, new_starts, new_starts_costs, new_goals,
-           new_goals_costs);
-    std::cout << "Stage 3 done" << std::endl;
+           new_goals_costs, &(timing_gari->timing_stage3));
     //         print(*solution);
     verifySolutionValid(*solution);
-    std::cout << "Solution is valid!" << std::endl;
+    timing_gari->total_GARI.stop();
   }
 
   bool shouldQuit(const WPSList_t& windows, const Cost& min_cost,
                   const Cost& current_cost) {
     static int iter = 0;
     std::cout
-        << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ITERATION:"
+        << ">>> ITERATION:"
         << iter++ << std::endl;
     if (min_cost >= current_cost) {
       return true;
@@ -1650,7 +1932,8 @@ class XStar {
     closed_set->erase(key);
   }
 
-  bool planIn(WPS_t* window, JointPlan_t* solution) {
+  bool planIn(WPS_t* window, JointPlan_t* solution, TimingPlanIn* timing_PlanIn) {
+    timing_PlanIn->total_PlanIn.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
 
@@ -1695,9 +1978,12 @@ class XStar {
     auto handle = open_set.push(initial_start_node);
     state_to_heap.insert(std::make_pair<>(starts, handle));
     (*handle).handle = handle;
-
+    
+    timing_PlanIn->timing_expansions.total_S3Exp.start();
     for (size_t expand_count = 0; !open_set.empty(); ++expand_count) {
+      timing_PlanIn->num_until_goal_expanded++;
       if (isTooManyIterations(expand_count, *window)) {
+        timing_PlanIn->total_PlanIn.stop();
         return false;
       }
 
@@ -1716,19 +2002,28 @@ class XStar {
         }
         ss->min_cost = min_max.first;
         ss->max_cost = min_max.second;
+        timing_PlanIn->timing_expansions.total_S3Exp.stop();
+        timing_PlanIn->total_PlanIn.stop();
         return insertWindowPath(&window_solution, window->window, starts_costs,
                                 goals_costs, solution);
       }
 
+      timing_PlanIn->timing_expansions.time_top_o.start();
       open_set.pop();
       state_to_heap.erase(current.state);
+      timing_PlanIn->timing_expansions.time_top_o.stop();
+      timing_PlanIn->timing_expansions.time_check_in_c.start();
       const auto closed_set_insert_result =
           closed_set.insert({current.state, current.g_score});
       if (!closed_set_insert_result.second) {
+        timing_PlanIn->timing_expansions.time_check_in_c.stop();
         continue;
       }
+      timing_PlanIn->timing_expansions.time_check_in_c.stop();
 
+      timing_PlanIn->timing_expansions.time_add_parent.start();
       insertParentMap(&parent_map, current);
+      timing_PlanIn->timing_expansions.time_add_parent.stop();
 
       auto neighbor_generator = m_env.getJointWindowNeighbors(
           current.state, current.action, goals, window->window, *solution);
@@ -1737,6 +2032,8 @@ class XStar {
       bool joint_neighbor_in_window = true;
       bool neighbor_has_goal_wait = false;
       while (!neighbor_generator.atEnd()) {
+        timing_PlanIn->timing_expansions.num_neighbors++;
+        timing_PlanIn->timing_expansions.time_add_neighbors_to_o.start();
         const auto& generator_output = neighbor_generator.getAndIncrement();
         extractJointNeighborInfo(&joint_neighbor_info,
                                  &joint_neighbor_in_window, generator_output);
@@ -1752,12 +2049,15 @@ class XStar {
         processNeighbor(starts, goals, current, joint_neighbor_info,
                         joint_neighbor_in_window, closed_set, &state_to_heap,
                         &open_set, &out_of_window);
+        timing_PlanIn->timing_expansions.time_add_neighbors_to_o.stop();
       }
 
       if (neighbor_has_goal_wait) {
         goal_wait_nodes.push_back(current);
       }
     }
+    timing_PlanIn->timing_expansions.total_S3Exp.stop();
+    timing_PlanIn->total_PlanIn.stop();
     return false;
   }
 
@@ -1869,15 +2169,19 @@ class XStar {
   }
 
   bool planIndividually(const JointState_t& initial_states,
-                        JointPlan_t& solution) {
+                        JointPlan_t& solution, TimingWAMPF* timing) {
+    timing->num_agents = initial_states.size();
     solution.resize(initial_states.size());
+    timing->time_individual_plan.start();
     for (size_t i = 0; i < initial_states.size(); ++i) {
       LowLevelEnvironment llenv(m_env, i);
       LowLevelSearch_t lowLevel(llenv);
       if (!lowLevel.search(initial_states[i], solution[i])) {
+        timing->time_individual_plan.stop();
         return false;
       }
     }
+    timing->time_individual_plan.stop();
     return true;
   }
 
@@ -1895,37 +2199,34 @@ class XStar {
   XStar(Environment& environment) : m_env(environment) {}
 
   bool search(const JointState_t& initial_states, JointPlan_t& solution) {
-    Timer individual_timer;
-    if (!planIndividually(initial_states, solution)) return false;
-    individual_timer.stop();
-
-    std::cout << "Initial time: " << individual_timer.elapsedSeconds()
-              << std::endl;
-    auto time_so_far = individual_timer.elapsedSeconds();
+    TimingWAMPF timing;
+    timing.total_WAMPF.start();
+    if (!planIndividually(initial_states, solution, &timing)) {
+      timing.total_WAMPF.stop();
+      return false;
+    }
 
     const Cost optimal_solution_lower_bound = getSolutionCost(solution);
     Cost prior_solution_cost = std::numeric_limits<Cost>::max();
     WPSList_t windows;
     SSList_t search_states;
     do {
-      Timer timer;
-      recWAMPF(&windows, &search_states, &solution);
-      timer.stop();
-      time_so_far += timer.elapsedSeconds();
+      timing.num_recWAMPF++;
+      if (timing.num_recWAMPF == 1) {
+        timing.time_first_plan.start();
+      }
+      recWAMPF(&windows, &search_states, &solution, &timing.timing_recWAMPF);
       const Cost current_solution_cost = getSolutionCost(solution);
-      std::cout << "Time so far: " << time_so_far << std::endl;
-      std::cout << "Solution cost: " << current_solution_cost
-                << " vs old solution cost: " << prior_solution_cost
-                << std::endl;
-      std::cout << "Optimality bound: "
-                << static_cast<float>(current_solution_cost) /
-                       static_cast<float>(optimal_solution_lower_bound)
-                << std::endl;
-      assert(prior_solution_cost >= current_solution_cost);
       prior_solution_cost = current_solution_cost;
+      if (timing.num_recWAMPF == 1) {
+        timing.time_first_plan.stop();
+      }
     } while (!shouldQuit(windows, optimal_solution_lower_bound,
                          prior_solution_cost));
 
+    timing.total_WAMPF.stop();
+    
+    std::cout << timing << std::endl;
     return true;
   }
 };  // namespace libMultiRobotPlanning
