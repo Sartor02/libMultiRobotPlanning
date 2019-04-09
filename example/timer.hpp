@@ -7,35 +7,30 @@ class Timer {
  public:
   Timer()
       : start_(std::chrono::high_resolution_clock::now()),
-        end_(std::chrono::high_resolution_clock::now()), total_(0) {}
+        end_(std::chrono::high_resolution_clock::now()),
+        total_(0) {}
 
-  void reset() { 
+  void reset() {
     total_ = 0;
     start();
   }
-  
-  void start() {
-    start_ = std::chrono::high_resolution_clock::now(); 
-  }
 
-  void stop() { 
-    end_ = std::chrono::high_resolution_clock::now(); 
+  void start() { start_ = std::chrono::high_resolution_clock::now(); }
+
+  void stop() {
+    end_ = std::chrono::high_resolution_clock::now();
     auto timeSpan = std::chrono::duration_cast<std::chrono::duration<double>>(
         end_ - start_);
     total_ += timeSpan.count();
   }
 
-  inline double get() const {
-    return elapsedSeconds();
-  }
-  
-  double elapsedSeconds() const {
-    return total_;
-  }
-  
+  inline double get() const { return elapsedSeconds(); }
+
+  double elapsedSeconds() const { return total_; }
+
   friend std::ostream& operator<<(std::ostream& os, const Timer& t) {
-      os << t.elapsedSeconds();
-      return os;
+    os << t.elapsedSeconds();
+    return os;
   }
 
  private:

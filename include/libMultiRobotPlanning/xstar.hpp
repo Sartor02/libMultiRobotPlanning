@@ -12,12 +12,12 @@
 #include <boost/heap/d_ary_heap.hpp>
 #include <unordered_map>
 #include <unordered_set>
-#include "../example/timer.hpp"
 #include "../example/fake_timer.hpp"
+#include "../example/timer.hpp"
 #include "utils.hpp"
 
 namespace libMultiRobotPlanning {
-  
+
 static constexpr bool kTiming = true;
 
 /*!
@@ -85,7 +85,6 @@ template <typename State, typename Action, typename Cost, typename Conflict,
           typename StateHasher = std::hash<std::vector<State>>>
 class XStar {
  private:
-   
   template <class Timer>
   struct TimingASUExp_t {
     Timer total_ASUExp;
@@ -96,7 +95,7 @@ class XStar {
     Timer time_add_neighbors_to_o;
   };
   using TimingASUExp = TimingASUExp_t<Timer>;
-  
+
   template <class Timer>
   struct TimingAStarSearchUntil_t {
     Timer total_astar_search_until;
@@ -104,7 +103,7 @@ class XStar {
     TimingASUExp timing_ASUExp;
   };
   using TimingAStarSearchUntil = TimingAStarSearchUntil_t<Timer>;
-  
+
   template <class Timer>
   struct TimingStage1_t {
     Timer total_Stage1;
@@ -113,7 +112,7 @@ class XStar {
     TimingAStarSearchUntil timing_AStarSearchUntil;
   };
   using TimingStage1 = TimingStage1_t<Timer>;
-  
+
   template <class Timer>
   struct TimingStage2_t {
     Timer total_Stage2;
@@ -122,7 +121,7 @@ class XStar {
     TimingAStarSearchUntil timing_AStarSearchUntil;
   };
   using TimingStage2 = TimingStage2_t<Timer>;
-  
+
   template <class Timer>
   struct TimingS3Exp_t {
     Timer total_S3Exp;
@@ -133,7 +132,7 @@ class XStar {
     Timer time_add_neighbors_to_o;
   };
   using TimingS3Exp = TimingS3Exp_t<Timer>;
-  
+
   template <class Timer>
   struct TimingStage3_t {
     Timer total_Stage3;
@@ -141,7 +140,7 @@ class XStar {
     TimingS3Exp timing_S3Exp;
   };
   using TimingStage3 = TimingStage3_t<Timer>;
-  
+
   template <class Timer>
   struct TimingGARI_t {
     Timer total_GARI;
@@ -151,15 +150,15 @@ class XStar {
     TimingStage3 timing_stage3;
   };
   using TimingGARI = TimingGARI_t<Timer>;
-  
+
   template <class Timer>
-  struct TimingPlanIn_t { 
+  struct TimingPlanIn_t {
     Timer total_PlanIn;
     size_t num_until_goal_expanded = 0;
     TimingS3Exp timing_expansions;
   };
   using TimingPlanIn = TimingPlanIn_t<Timer>;
-  
+
   template <class Timer>
   struct TimingPIOW_t {
     Timer total_PIOW;
@@ -172,7 +171,7 @@ class XStar {
     TimingPlanIn timing_PlanIn;
   };
   using TimingPIOW = TimingPIOW_t<Timer>;
-  
+
   template <class Timer>
   struct TimingRecWAMPF_t {
     Timer total_RecWAMPF;
@@ -185,10 +184,9 @@ class XStar {
     size_t num_windows_should_quit = 0;
     Timer time_should_quit;
     Timer time_remove_window;
-    
   };
   using TimingRecWAMPF = TimingRecWAMPF_t<Timer>;
-  
+
   template <class Timer>
   struct TimingWAMPF_t {
     Timer total_WAMPF;
@@ -299,10 +297,9 @@ class XStar {
       return os;
     }
     // clang-format on
-    
   };
   using TimingWAMPF = TimingWAMPF_t<Timer>;
-   
+
   struct LowLevelEnvironment {
     LowLevelEnvironment(Environment& env, size_t agentIdx) : m_env(env) {
       m_env.setLowLevelContext(agentIdx);
@@ -505,10 +502,8 @@ class XStar {
       }
       return (!out_of_window.empty());
     }
-    
-    void disable() {
-      disabled = true;
-    }
+
+    void disable() { disabled = true; }
 
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
       os << "Enabled: " << (ps.enabled ? "true" : "false");
@@ -584,7 +579,7 @@ class XStar {
   using WPS_t = WindowPlannerState;
   using WPSList_t = std::vector<WindowPlannerState>;
 
-  void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution, 
+  void growAndMergeExisting(WPSList_t* windows, JointPlan_t* solution,
                             TimingRecWAMPF* timing_recWAMPF) {
     static constexpr bool kDebug = false;
     for (size_t i = 0; i < windows->size(); ++i) {
@@ -592,7 +587,6 @@ class XStar {
       WPS_t& wi = windows->at(i);
       growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
 
-      
       timing_recWAMPF->timing_PIOW_overlapping.total_PIOW.start();
       bool found_overlapping = false;
       do {
@@ -616,12 +610,14 @@ class XStar {
             timing_recWAMPF->timing_PIOW_overlapping.time_merge_windows.start();
             wi.getSearchState()->disable();
             wj.getSearchState()->disable();
-            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.start();
+            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows
+                .start();
             wi = wi.merge(wj);
             timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.stop();
             timing_recWAMPF->timing_PIOW_overlapping.time_merge_windows.stop();
-            while (!planIn(&wi, solution, 
-              &(timing_recWAMPF->timing_PIOW_overlapping.timing_PlanIn))) {
+            while (!planIn(
+                &wi, solution,
+                &(timing_recWAMPF->timing_PIOW_overlapping.timing_PlanIn))) {
               wi.window.grow();
             }
 
@@ -646,7 +642,8 @@ class XStar {
   }
 
   void integrateNewConflictWindow(WPS_t window, WPSList_t* windows,
-                                  JointPlan_t* solution, TimingPIOW* timing_PIOW) {
+                                  JointPlan_t* solution,
+                                  TimingPIOW* timing_PIOW) {
     timing_PIOW->total_PIOW.start();
     while (!planIn(&window, solution, &(timing_PIOW->timing_PlanIn))) {
       window.window.grow();
@@ -685,7 +682,7 @@ class XStar {
     timing_PIOW->total_PIOW.stop();
   }
 
-  void removeCompletedWindows(WPSList_t* windows, 
+  void removeCompletedWindows(WPSList_t* windows,
                               TimingRecWAMPF* timing_recWAMPF) {
     for (size_t i = 0; i < windows->size();) {
       WPS_t& w = (*windows)[i];
@@ -720,16 +717,16 @@ class XStar {
         std::cout << "Conflict: " << result << std::endl;
       }
       WPS_t window(m_env.createWindowFromConflict(result), search_states);
-      integrateNewConflictWindow(window, windows, solution, 
+      integrateNewConflictWindow(window, windows, solution,
                                  &timing_recWAMPF->timing_PIOW_new_collisions);
     }
 
     for (const WPS_t& w : *windows) {
-      timing_recWAMPF->num_max_agents_in_window = 
-          std::max(timing_recWAMPF->num_max_agents_in_window, 
+      timing_recWAMPF->num_max_agents_in_window =
+          std::max(timing_recWAMPF->num_max_agents_in_window,
                    w.window.agent_idxs.size());
     }
-    
+
     removeCompletedWindows(windows, timing_recWAMPF);
     if (kDebug) {
       std::cout << "Finished all conflicts\n";
@@ -756,7 +753,8 @@ class XStar {
 
   void AStarSearchUntil(WPS_t* window, const JointState_t& starts,
                         const JointState_t& goals, const JointPlan_t& solution,
-                        const Cost& fmax, TimingAStarSearchUntil* timing_AStarSearchUntil) {
+                        const Cost& fmax,
+                        TimingAStarSearchUntil* timing_AStarSearchUntil) {
     timing_AStarSearchUntil->total_astar_search_until.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
@@ -828,7 +826,7 @@ class XStar {
       if (kDebug) {
         std::cout << "Inserting " << current << std::endl;
       }
-      
+
       timing_AStarSearchUntil->timing_ASUExp.time_add_parent.start();
       insertParentMap(&parent_map, current);
       timing_AStarSearchUntil->timing_ASUExp.time_add_parent.stop();
@@ -868,7 +866,7 @@ class XStar {
       }
 
       timing_AStarSearchUntil->timing_ASUExp.time_add_neighbors_to_o.stop();
-      
+
       if (neighbor_has_goal_wait) {
         goal_wait_nodes.push_back(current);
       }
@@ -916,7 +914,7 @@ class XStar {
 
     verifyOpenSet(window);
 
-    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue, 
+    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
                      &timing_stage1->timing_AStarSearchUntil);
     timing_stage1->total_Stage1.stop();
   }
@@ -959,7 +957,7 @@ class XStar {
 
   void Stage2(WPS_t* window, const NodeAndCameFromValues_t& info_between_starts,
               const JointState_t& starts, const JointState_t& goals,
-              const JointPlan_t& solution, const Cost& goal_node_fvalue, 
+              const JointPlan_t& solution, const Cost& goal_node_fvalue,
               TimingStage2* timing_stage2) {
     timing_stage2->total_Stage2.start();
     static constexpr bool kDebug = false;
@@ -994,7 +992,7 @@ class XStar {
     if (kDebug) {
       std::cout << "Astar search until " << goal_node_fvalue << "\n";
     }
-    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue, 
+    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
                      &timing_stage2->timing_AStarSearchUntil);
     timing_stage2->total_Stage2.stop();
   }
@@ -1480,7 +1478,8 @@ class XStar {
     return nodes_and_came_from;
   }
 
-  void growAndReplanIn(WPS_t* window, JointPlan_t* solution, TimingGARI* timing_gari) {
+  void growAndReplanIn(WPS_t* window, JointPlan_t* solution,
+                       TimingGARI* timing_gari) {
     timing_gari->total_GARI.start();
     static constexpr bool kDebug = false;
     if (kDebug) {
@@ -1488,7 +1487,7 @@ class XStar {
     }
 
     timing_gari->time_path_btw_starts.start();
-    
+
     JointState_t old_starts;
     JointCost_t old_starts_costs;
     JointState_t old_goals;
@@ -1528,7 +1527,7 @@ class XStar {
     info_between_starts.verify(*window, old_starts, new_starts);
 
     timing_gari->time_path_btw_starts.stop();
-    
+
     if (kDebug) {
       std::cout << "Between Starts Nodes!\n";
       for (const Node& n : info_between_starts.nodes) {
@@ -1549,7 +1548,8 @@ class XStar {
     }
     const Cost old_goal_g_score_sum =
         window->getSearchState()->open_set.top().g_score_sum;
-    Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum, &(timing_gari->timing_stage1));
+    Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum,
+           &(timing_gari->timing_stage1));
     verifySolutionValid(*solution);
     Stage2(window, info_between_starts, new_starts, old_goals, *solution,
            old_goal_g_score_sum, &(timing_gari->timing_stage2));
@@ -1664,7 +1664,8 @@ class XStar {
                             sg_goals_costs);
     }
 
-    return std::make_tuple(sg_starts, sg_starts_costs, sg_goals, sg_goals_costs);
+    return std::make_tuple(sg_starts, sg_starts_costs, sg_goals,
+                           sg_goals_costs);
   }
 
   JointPlan_t unwindPath(const JointState_t& starts,
@@ -1970,7 +1971,8 @@ class XStar {
     closed_set->erase(key);
   }
 
-  bool planIn(WPS_t* window, JointPlan_t* solution, TimingPlanIn* timing_PlanIn) {
+  bool planIn(WPS_t* window, JointPlan_t* solution,
+              TimingPlanIn* timing_PlanIn) {
     timing_PlanIn->total_PlanIn.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
@@ -2016,7 +2018,7 @@ class XStar {
     auto handle = open_set.push(initial_start_node);
     state_to_heap.insert(std::make_pair<>(starts, handle));
     (*handle).handle = handle;
-    
+
     timing_PlanIn->timing_expansions.total_S3Exp.start();
     for (size_t expand_count = 0; !open_set.empty(); ++expand_count) {
       timing_PlanIn->num_until_goal_expanded++;
@@ -2232,10 +2234,12 @@ class XStar {
     }
     return total_cost;
   }
-  
+
   void SaveTimingData(const TimingWAMPF& timing, const bool is_final) const {
     size_t additive = (is_final ? 1 : 0);
-    std::string filename = "iteration_" + std::to_string(timing.num_recWAMPF + additive) + ".timing";
+    std::string filename = "iteration_" +
+                           std::to_string(timing.num_recWAMPF + additive) +
+                           ".timing";
     std::ofstream f(filename);
     f << timing << "\n";
     f.close();
@@ -2265,15 +2269,15 @@ class XStar {
       }
       recWAMPF(&windows, &search_states, &solution, &timing.timing_recWAMPF);
       solution_cost = getSolutionCost(solution);
-      timing.optimality_bound = static_cast<float>(solution_cost) / 
-                                   static_cast<float>(optimal_solution_lower_bound);
+      timing.optimality_bound =
+          static_cast<float>(solution_cost) /
+          static_cast<float>(optimal_solution_lower_bound);
       if (timing.num_recWAMPF == 1) {
         timing.time_first_plan.stop();
       }
       timing.total_WAMPF.stop();
       SaveTimingData(timing, false);
-    } while (!shouldQuit(windows, optimal_solution_lower_bound,
-                         solution_cost));
+    } while (!shouldQuit(windows, optimal_solution_lower_bound, solution_cost));
     timing.is_optimal = true;
     timing.optimality_bound = 1.0;
     SaveTimingData(timing, true);
