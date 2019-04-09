@@ -170,6 +170,7 @@ class XStar {
   
   struct TimingWAMPF {
     Timer total_WAMPF;
+    bool is_optimal = false;
     size_t num_agents = 0;
     Timer time_individual_plan;
     Timer time_first_plan;
@@ -178,6 +179,7 @@ class XStar {
     
     friend std::ostream& operator<<(std::ostream& os, const TimingWAMPF& t) {
       os << "Total time: " << t.total_WAMPF << "\n"
+      "is_optimal: " << (t.is_optimal ? "true" : "false") << "\n"
       "Num agents: " << t.num_agents << "\n"
       "time_individual_plan: " << t.time_individual_plan << "\n"
       "time_first_plan: " << t.time_first_plan << "\n"
@@ -2210,7 +2212,9 @@ class XStar {
     Cost prior_solution_cost = std::numeric_limits<Cost>::max();
     WPSList_t windows;
     SSList_t search_states;
+    timing.total_WAMPF.stop();
     do {
+      timing.total_WAMPF.start();
       timing.num_recWAMPF++;
       if (timing.num_recWAMPF == 1) {
         timing.time_first_plan.start();
@@ -2221,11 +2225,12 @@ class XStar {
       if (timing.num_recWAMPF == 1) {
         timing.time_first_plan.stop();
       }
+      timing.total_WAMPF.stop();
+      std::cout << timing << '\n';
     } while (!shouldQuit(windows, optimal_solution_lower_bound,
                          prior_solution_cost));
-
-    timing.total_WAMPF.stop();
-    
+    timing.is_optimal = true;
+    std::cout << "Final:\n";
     std::cout << timing << std::endl;
     return true;
   }
