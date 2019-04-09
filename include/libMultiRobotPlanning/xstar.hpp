@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "../example/timer.hpp"
+#include "../example/fake_timer.hpp"
 #include "utils.hpp"
 
 namespace libMultiRobotPlanning {
@@ -85,7 +86,8 @@ template <typename State, typename Action, typename Cost, typename Conflict,
 class XStar {
  private:
    
-  struct TimingASUExp {
+  template <class Timer>
+  struct TimingASUExp_t {
     Timer total_ASUExp;
     Timer time_top_o;
     Timer time_check_in_c;
@@ -93,28 +95,36 @@ class XStar {
     size_t num_neighbors = 0;
     Timer time_add_neighbors_to_o;
   };
+  using TimingASUExp = TimingASUExp_t<Timer>;
   
-  struct TimingAStarSearchUntil {
+  template <class Timer>
+  struct TimingAStarSearchUntil_t {
     Timer total_astar_search_until;
     size_t num_values_f_less_fmax;
     TimingASUExp timing_ASUExp;
   };
+  using TimingAStarSearchUntil = TimingAStarSearchUntil_t<Timer>;
   
-  struct TimingStage1 {
+  template <class Timer>
+  struct TimingStage1_t {
     Timer total_Stage1;
     Timer time_add_x_to_o;
     Timer time_clear_x;
     TimingAStarSearchUntil timing_AStarSearchUntil;
   };
+  using TimingStage1 = TimingStage1_t<Timer>;
   
-  struct TimingStage2 {
+  template <class Timer>
+  struct TimingStage2_t {
     Timer total_Stage2;
     size_t num_len_path;
     Timer time_expanding_s;
     TimingAStarSearchUntil timing_AStarSearchUntil;
   };
+  using TimingStage2 = TimingStage2_t<Timer>;
   
-  struct TimingS3Exp {
+  template <class Timer>
+  struct TimingS3Exp_t {
     Timer total_S3Exp;
     Timer time_top_o;
     Timer time_check_in_c;
@@ -122,71 +132,86 @@ class XStar {
     size_t num_neighbors = 0;
     Timer time_add_neighbors_to_o;
   };
+  using TimingS3Exp = TimingS3Exp_t<Timer>;
   
-  struct TimingStage3 {
+  template <class Timer>
+  struct TimingStage3_t {
     Timer total_Stage3;
     size_t num_until_goal_expanded = 0;
     TimingS3Exp timing_S3Exp;
   };
+  using TimingStage3 = TimingStage3_t<Timer>;
   
-  struct TimingGARI {
+  template <class Timer>
+  struct TimingGARI_t {
     Timer total_GARI;
     Timer time_path_btw_starts;
     TimingStage1 timing_stage1;
     TimingStage2 timing_stage2;
     TimingStage3 timing_stage3;
   };
+  using TimingGARI = TimingGARI_t<Timer>;
   
-  struct TimingPlanIn{ 
+  template <class Timer>
+  struct TimingPlanIn_t { 
     Timer total_PlanIn;
     size_t num_until_goal_expanded = 0;
     TimingS3Exp timing_expansions;
   };
+  using TimingPlanIn = TimingPlanIn_t<Timer>;
   
-  struct TimingPIOW {
+  template <class Timer>
+  struct TimingPIOW_t {
     Timer total_PIOW;
     size_t num_windows = 0;
     Timer time_check_overlap;
     size_t num_overlapping_windows = 0;
     Timer time_merge_windows;
     Timer time_remove_window;
-    TimingPlanIn timing_PlanIn;
     Timer time_add_to_windows;
+    TimingPlanIn timing_PlanIn;
   };
+  using TimingPIOW = TimingPIOW_t<Timer>;
   
-  struct TimingRecWAMPF {
+  template <class Timer>
+  struct TimingRecWAMPF_t {
     Timer total_RecWAMPF;
     size_t num_windows = 0;
+    size_t num_max_agents_in_window = 0;
     TimingGARI timing_gari;
     TimingPIOW timing_PIOW_overlapping;
     size_t num_new_collisions = 0;
     TimingPIOW timing_PIOW_new_collisions;
     size_t num_windows_should_quit = 0;
     Timer time_should_quit;
-    size_t num_quitting_windows = 0;
     Timer time_remove_window;
     
   };
+  using TimingRecWAMPF = TimingRecWAMPF_t<Timer>;
   
-  struct TimingWAMPF {
+  template <class Timer>
+  struct TimingWAMPF_t {
     Timer total_WAMPF;
     bool is_optimal = false;
+    float optimality_bound = 0;
     size_t num_agents = 0;
     Timer time_individual_plan;
     Timer time_first_plan;
     size_t num_recWAMPF = 0;
     TimingRecWAMPF timing_recWAMPF;
-    
-    friend std::ostream& operator<<(std::ostream& os, const TimingWAMPF& t) {
+    // clang-format off
+    friend std::ostream& operator<<(std::ostream& os, const TimingWAMPF_t& t) {
       os << "Total time: " << t.total_WAMPF << "\n"
       "is_optimal: " << (t.is_optimal ? "true" : "false") << "\n"
-      "Num agents: " << t.num_agents << "\n"
+      "optimality_bound: " << t.optimality_bound << "\n"
+      "num_agents: " << t.num_agents << "\n"
       "time_individual_plan: " << t.time_individual_plan << "\n"
       "time_first_plan: " << t.time_first_plan << "\n"
       "num_recWAMPF: " << t.num_recWAMPF<< "\n"
       "timing_recWAMPF:\n"
       "    total_RecWAMPF: " << t.timing_recWAMPF.total_RecWAMPF<< "\n"
       "    num_windows: " << t.timing_recWAMPF.num_windows<< "\n"
+      "    num_max_agents_in_window: " << t.timing_recWAMPF.num_max_agents_in_window << "\n"
       "    timing_gari:\n"
       "        total_GARI: " << t.timing_recWAMPF.timing_gari.total_GARI<< "\n"
       "        time_path_btw_starts: " << t.timing_recWAMPF.timing_gari.time_path_btw_starts<< "\n"
@@ -235,6 +260,7 @@ class XStar {
       "        num_overlapping_windows: " << t.timing_recWAMPF.timing_PIOW_overlapping.num_overlapping_windows<< "\n"
       "        time_merge_windows: " << t.timing_recWAMPF.timing_PIOW_overlapping.time_merge_windows<< "\n"
       "        time_remove_window: " << t.timing_recWAMPF.timing_PIOW_overlapping.time_remove_window<< "\n"
+      "        time_remove_window: " << t.timing_recWAMPF.timing_PIOW_overlapping.time_add_to_windows<< "\n"
       "        timing_PlanIn:\n"
       "            total_PlanIn:" << t.timing_recWAMPF.timing_PIOW_overlapping.timing_PlanIn.total_PlanIn << "\n"
       "            num_until_goal_expanded:" <<
@@ -254,6 +280,7 @@ class XStar {
       "        num_overlapping_windows: " << t.timing_recWAMPF.timing_PIOW_new_collisions.num_overlapping_windows<< "\n"
       "        time_merge_windows: " << t.timing_recWAMPF.timing_PIOW_new_collisions.time_merge_windows<< "\n"
       "        time_remove_window: " << t.timing_recWAMPF.timing_PIOW_new_collisions.time_remove_window<< "\n"
+      "        time_remove_window: " << t.timing_recWAMPF.timing_PIOW_new_collisions.time_add_to_windows << "\n"
       "        timing_PlanIn:\n"
       "            total_PlanIn:" << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.total_PlanIn << "\n"
       "            num_until_goal_expanded:" <<
@@ -267,13 +294,14 @@ class XStar {
       "                time_add_neighbors_to_o: " << t.timing_recWAMPF.timing_PIOW_new_collisions.timing_PlanIn.timing_expansions.time_add_neighbors_to_o<< "\n"
       "    num_windows_should_quit: " << t.timing_recWAMPF.num_windows_should_quit << "\n"
       "    time_should_quit: " << t.timing_recWAMPF.time_should_quit << "\n"
-      "    num_quitting_windows: " << t.timing_recWAMPF.num_quitting_windows << "\n"
-      "    time_remove_window: " << t.timing_recWAMPF.time_remove_window << "\n"
+      "    time_remove_window: " << t.timing_recWAMPF.time_remove_window << "\nComplete!"
       ;
       return os;
     }
+    // clang-format on
     
   };
+  using TimingWAMPF = TimingWAMPF_t<Timer>;
    
   struct LowLevelEnvironment {
     LowLevelEnvironment(Environment& env, size_t agentIdx) : m_env(env) {
@@ -480,12 +508,6 @@ class XStar {
     
     void disable() {
       disabled = true;
-      open_set.clear();
-      closed_set.clear();
-      state_to_heap.clear();
-      parent_map.clear();
-      out_of_window.clear();
-      goal_wait_nodes.clear();
     }
 
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
@@ -495,7 +517,7 @@ class XStar {
   };
 
   using SSListIndex_t = size_t;
-  using SSList_t = utils::StableStorage<SearchState, 1000>;
+  using SSList_t = utils::StableStorage<SearchState, 5000>;
 
   struct WindowPlannerState {
     Window window;
@@ -594,17 +616,19 @@ class XStar {
             timing_recWAMPF->timing_PIOW_overlapping.time_merge_windows.start();
             wi.getSearchState()->disable();
             wj.getSearchState()->disable();
+            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.start();
             wi = wi.merge(wj);
+            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.stop();
             timing_recWAMPF->timing_PIOW_overlapping.time_merge_windows.stop();
             while (!planIn(&wi, solution, 
               &(timing_recWAMPF->timing_PIOW_overlapping.timing_PlanIn))) {
               wi.window.grow();
             }
 
-            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.start();
+            timing_recWAMPF->timing_PIOW_overlapping.time_remove_window.start();
             // Erase wj.
             windows->erase(windows->begin() + j);
-            timing_recWAMPF->timing_PIOW_overlapping.time_add_to_windows.stop();
+            timing_recWAMPF->timing_PIOW_overlapping.time_remove_window.stop();
 
             // If j < i, then erasing j will cause i to be shifted back by 1, so
             // the reference and the index need to be updated.
@@ -631,6 +655,7 @@ class XStar {
     do {
       found_overlapping = false;
       for (size_t i = 0; i < windows->size(); ++i) {
+        timing_PIOW->num_windows++;
         const WPS_t& wi = windows->at(i);
         timing_PIOW->time_check_overlap.start();
         const bool is_overlapping = window.overlapping(wi);
@@ -647,6 +672,7 @@ class XStar {
             window.window.grow();
           }
           timing_PIOW->time_remove_window.start();
+          wi.getSearchState()->disable();
           windows->erase(windows->begin() + i);
           timing_PIOW->time_remove_window.stop();
           break;
@@ -659,11 +685,18 @@ class XStar {
     timing_PIOW->total_PIOW.stop();
   }
 
-  void removeCompletedWindows(WPSList_t* windows) {
+  void removeCompletedWindows(WPSList_t* windows, 
+                              TimingRecWAMPF* timing_recWAMPF) {
     for (size_t i = 0; i < windows->size();) {
-      auto& w = (*windows)[i];
-      if (!w.getSearchState()->wasSearchRestricted()) {
+      WPS_t& w = (*windows)[i];
+      timing_recWAMPF->time_should_quit.start();
+      const bool was_restricted = w.getSearchState()->wasSearchRestricted();
+      timing_recWAMPF->time_should_quit.stop();
+      if (!was_restricted) {
+        timing_recWAMPF->num_windows_should_quit++;
+        timing_recWAMPF->time_remove_window.start();
         windows->erase(windows->begin() + i);
+        timing_recWAMPF->time_remove_window.stop();
       } else {
         ++i;
       }
@@ -691,7 +724,13 @@ class XStar {
                                  &timing_recWAMPF->timing_PIOW_new_collisions);
     }
 
-    removeCompletedWindows(windows);
+    for (const WPS_t& w : *windows) {
+      timing_recWAMPF->num_max_agents_in_window = 
+          std::max(timing_recWAMPF->num_max_agents_in_window, 
+                   w.window.agent_idxs.size());
+    }
+    
+    removeCompletedWindows(windows, timing_recWAMPF);
     if (kDebug) {
       std::cout << "Finished all conflicts\n";
       print(*solution);
@@ -1525,9 +1564,6 @@ class XStar {
   bool shouldQuit(const WPSList_t& windows, const Cost& min_cost,
                   const Cost& current_cost) {
     static int iter = 0;
-    std::cout
-        << ">>> ITERATION:"
-        << iter++ << std::endl;
     if (min_cost >= current_cost) {
       return true;
     }
@@ -2196,6 +2232,14 @@ class XStar {
     }
     return total_cost;
   }
+  
+  void SaveTimingData(const TimingWAMPF& timing, const bool is_final) const {
+    size_t additive = (is_final ? 1 : 0);
+    std::string filename = "iteration_" + std::to_string(timing.num_recWAMPF + additive) + ".timing";
+    std::ofstream f(filename);
+    f << timing << "\n";
+    f.close();
+  }
 
  public:
   XStar(Environment& environment) : m_env(environment) {}
@@ -2209,7 +2253,7 @@ class XStar {
     }
 
     const Cost optimal_solution_lower_bound = getSolutionCost(solution);
-    Cost prior_solution_cost = std::numeric_limits<Cost>::max();
+    Cost solution_cost = std::numeric_limits<Cost>::max();
     WPSList_t windows;
     SSList_t search_states;
     timing.total_WAMPF.stop();
@@ -2220,18 +2264,19 @@ class XStar {
         timing.time_first_plan.start();
       }
       recWAMPF(&windows, &search_states, &solution, &timing.timing_recWAMPF);
-      const Cost current_solution_cost = getSolutionCost(solution);
-      prior_solution_cost = current_solution_cost;
+      solution_cost = getSolutionCost(solution);
+      timing.optimality_bound = static_cast<float>(solution_cost) / 
+                                   static_cast<float>(optimal_solution_lower_bound);
       if (timing.num_recWAMPF == 1) {
         timing.time_first_plan.stop();
       }
       timing.total_WAMPF.stop();
-      std::cout << timing << '\n';
+      SaveTimingData(timing, false);
     } while (!shouldQuit(windows, optimal_solution_lower_bound,
-                         prior_solution_cost));
+                         solution_cost));
     timing.is_optimal = true;
-    std::cout << "Final:\n";
-    std::cout << timing << std::endl;
+    timing.optimality_bound = 1.0;
+    SaveTimingData(timing, true);
     return true;
   }
 };  // namespace libMultiRobotPlanning
