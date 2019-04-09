@@ -727,6 +727,7 @@ class XStar {
                    w.window.agent_idxs.size());
     }
 
+    timing_recWAMPF->num_windows += windows->size();
     removeCompletedWindows(windows, timing_recWAMPF);
     if (kDebug) {
       std::cout << "Finished all conflicts\n";
@@ -2235,9 +2236,10 @@ class XStar {
     return total_cost;
   }
 
-  void SaveTimingData(const TimingWAMPF& timing, const bool is_final) const {
+  void SaveTimingData(const TimingWAMPF& timing, const bool is_final,
+                      const std::string& save_infix) const {
     size_t additive = (is_final ? 1 : 0);
-    std::string filename = "iteration_" +
+    std::string filename = "iteration_" + save_infix + "_" +
                            std::to_string(timing.num_recWAMPF + additive) +
                            ".timing";
     std::ofstream f(filename);
@@ -2248,7 +2250,8 @@ class XStar {
  public:
   XStar(Environment& environment) : m_env(environment) {}
 
-  bool search(const JointState_t& initial_states, JointPlan_t& solution) {
+  bool search(const JointState_t& initial_states, JointPlan_t& solution,
+              const std::string& save_infix) {
     TimingWAMPF timing;
     timing.total_WAMPF.start();
     if (!planIndividually(initial_states, solution, &timing)) {
@@ -2276,11 +2279,11 @@ class XStar {
         timing.time_first_plan.stop();
       }
       timing.total_WAMPF.stop();
-      SaveTimingData(timing, false);
+      SaveTimingData(timing, false, save_infix);
     } while (!shouldQuit(windows, optimal_solution_lower_bound, solution_cost));
     timing.is_optimal = true;
     timing.optimality_bound = 1.0;
-    SaveTimingData(timing, true);
+    SaveTimingData(timing, true, save_infix);
     return true;
   }
 };  // namespace libMultiRobotPlanning

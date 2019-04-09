@@ -709,13 +709,16 @@ int main(int argc, char* argv[]) {
   namespace po = boost::program_options;
   // Declare the supported options.
   po::options_description desc("Allowed options");
-  std::string inputFile;
-  std::string outputFile;
-  desc.add_options()("help", "produce help message")(
-      "input,i", po::value<std::string>(&inputFile)->required(),
-      "input file (YAML)")("output,o",
-                           po::value<std::string>(&outputFile)->required(),
-                           "output file (YAML)");
+  std::string input_file;
+  std::string output_file;
+  std::string timing_infix;
+  // clang-format off
+  desc.add_options()
+  ("help", "produce help message")
+  ("input,i", po::value<std::string>(&input_file)->required(), "input file (YAML)")
+  ("output,o", po::value<std::string>(&output_file)->required(),"output file prefix")
+  ("timing_infix,t", po::value<std::string>(&timing_infix)->required(), "Timing files infix");
+  // clang-format on
 
   try {
     po::variables_map vm;
@@ -732,7 +735,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  YAML::Node config = YAML::LoadFile(inputFile);
+  YAML::Node config = YAML::LoadFile(input_file);
 
   std::unordered_set<Location> obstacles;
   std::vector<Location> goals;
@@ -759,11 +762,11 @@ int main(int argc, char* argv[]) {
   std::vector<PlanResult<State, Action, int>> solution;
 
   Timer timer;
-  bool success = x_star.search(startStates, solution);
+  bool success = x_star.search(startStates, solution, timing_infix);
   timer.stop();
 
   if (success) {
-    std::cout << "Planning successful! " << std::endl;
+    //     std::cout << "Planning successful! " << std::endl;
     int cost = 0;
     int makespan = 0;
     for (const auto& s : solution) {
@@ -771,7 +774,7 @@ int main(int argc, char* argv[]) {
       makespan = std::max<int>(makespan, s.cost);
     }
 
-    std::ofstream out(outputFile);
+    std::ofstream out(output_file);
     out << "statistics:" << std::endl;
     out << "  cost: " << cost << std::endl;
     out << "  makespan: " << makespan << std::endl;
@@ -797,7 +800,7 @@ int main(int argc, char* argv[]) {
       }
     }
   } else {
-    std::cout << "Planning NOT successful!" << std::endl;
+    //     std::cout << "Planning NOT successful!" << std::endl;
   }
 
   return 0;
