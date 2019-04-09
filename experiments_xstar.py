@@ -28,7 +28,7 @@ def get_args():
 args = get_args();
 
 kMapBaseName = "map"
-kNumAgents = [10, 20]
+kNumAgents = [10, 20, 30, 40, 50]
 kDensity = 0.05
 kWidth = 100
 kHeight = 100
@@ -67,78 +67,9 @@ def run():
       seed = select_seed(idx, num_agents, kDensity, kWidth, kHeight)
       generate_new_scenario(num_agents, kWidth, kHeight, kDensity, seed, kMapBaseName)
       print("Agents:", num_agents, "Iter:", idx, "Seed:", seed)
-      cmd = "./collect_data_xstar.py {} {} {} agents_{}_iteration_{}_trial_ _seed_{}.result".format(std_map_name(kMapBaseName), kTimeout, args.trials, num_agents, idx, seed)
+      cmd = "./collect_data_xstar.py {} {} {} datasave/xstar_idv_agents_{}_iter_{}_trial_ _seed_{}.result".format(std_map_name(kMapBaseName), kTimeout, args.trials, num_agents, idx, seed)
       current_proc = subprocess.Popen(shlex.split(cmd))
       current_proc.wait()
       
 run()
 
-#def is_file_complete(file_name):
-  #file_shibboleth = "Complete!"
-  #f = open(file_name, 'r')
-  #return (file_shibboleth in f.readlines()[-1])
-
-#def clear_output_files():
-  #for f in glob.glob(args.output_file_prefix + "*" + args.output_file_postfix):
-    #os.remove(f)
-
-#def clear_timing_files():
-  #for f in glob.glob(our_timing_files):
-    #os.remove(f)
-
-#def get_complete_file():
-  #file_lst = [str(e) for e in list(glob.glob(our_timing_files))]
-  #file_lst.sort(key = lambda f: int(f.replace('iteration_{}_'.format(timing_file_custom_infix), '').replace('.timing', '')))
-  #if len(file_lst) <= 0:
-    #print("No timing files!")
-    #return None
-  
-  #complete_file = file_lst[-1]
-  #if not is_file_complete(complete_file):
-    #if len(file_lst) == 1:
-      ## Only known file is incomplete
-      #print("Only file incomplete")
-      #return None
-    #else:
-      #complete_file = file_lst[-2]
-      #assert(is_file_complete(complete_file))
-  #return complete_file
-    
-
-#def run_xstar(input_file, timeout):
-  #global current_proc
-  #output_file = "delete_me.out"
-  #cmd = "timeout {} release/xstar -i {} -o {} -t {}".format(timeout, input_file, output_file, timing_file_custom_infix)
-  #current_proc = subprocess.Popen(shlex.split(cmd))
-  #current_proc.wait()
-  #if current_proc.returncode != 0:
-    #print("X* timeout")
-  #current_proc = None
-  #complete_file = get_complete_file()
-  #if os.path.isfile(output_file):
-    #os.remove(output_file)
-  #return complete_file
-
-#def save_complete_file(complete_file, idx):
-  #dest_name = args.output_file_prefix + str(idx) + args.output_file_postfix
-  #if complete_file is None:
-    ## Write empty file
-    #open(dest_name, 'w').close()
-    #return
-  #copyfile(complete_file, dest_name)
-
-
-#def run():
-  #clear_output_files();
-  #for idx in range(args.iterations):
-    #clear_timing_files()
-    #complete_file = run_xstar(args.input_file, args.timeout)
-    #save_complete_file(complete_file, idx)
-    #clear_timing_files()
-    
-#run()
-
-
-    
-    
-    
