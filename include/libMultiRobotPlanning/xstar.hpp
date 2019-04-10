@@ -899,7 +899,6 @@ class XStar {
     verifyParentMap(ss->parent_map, ss->previous_start);
 
     verifyOpenSet(*window, solution);
-    out_of_window_t new_out_of_window;
     timing_stage1->time_add_x_to_o.start();
     for (const std::pair<JointState_t, Node>& sn : ss->out_of_window) {
       const Node& n = sn.second;
@@ -914,7 +913,7 @@ class XStar {
     }
     timing_stage1->time_add_x_to_o.stop();
     timing_stage1->time_clear_x.start();
-    ss->out_of_window = new_out_of_window;
+    ss->out_of_window.clear();
     timing_stage1->time_clear_x.stop();
 
     verifyOpenSet(*window, solution);
