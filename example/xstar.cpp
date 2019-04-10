@@ -702,7 +702,7 @@ class Environment {
 };
 
 int main(int argc, char* argv[]) {
-  std::ios_base::sync_with_stdio(false);
+  //   std::ios_base::sync_with_stdio(false);
   namespace po = boost::program_options;
   // Declare the supported options.
   po::options_description desc("Allowed options");

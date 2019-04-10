@@ -902,11 +902,6 @@ class XStar {
     out_of_window_t new_out_of_window;
     timing_stage1->time_add_x_to_o.start();
     for (const std::pair<JointState_t, Node>& sn : ss->out_of_window) {
-      //       assert(sn.first == sn.second.prev_state);
-      if (!window->window.inWindowOrOnPath(sn.first, solution)) {
-        new_out_of_window.insert(sn);
-        continue;
-      }
       const Node& n = sn.second;
       const JointState_t& current_state = n.prev_state;
       const JointState_t& neighbor_state = n.state;
