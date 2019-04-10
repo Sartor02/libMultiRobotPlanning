@@ -99,7 +99,7 @@ class XStar {
   template <class Timer>
   struct TimingAStarSearchUntil_t {
     Timer total_astar_search_until;
-    size_t num_values_f_less_fmax;
+    size_t num_values_f_less_fmax = 0;
     TimingASUExp timing_ASUExp;
   };
   using TimingAStarSearchUntil = TimingAStarSearchUntil_t<Timer>;
@@ -116,7 +116,7 @@ class XStar {
   template <class Timer>
   struct TimingStage2_t {
     Timer total_Stage2;
-    size_t num_len_path;
+    size_t num_len_path = 0;
     Timer time_expanding_s;
     TimingAStarSearchUntil timing_AStarSearchUntil;
   };
@@ -756,6 +756,7 @@ class XStar {
                         const JointState_t& goals, const JointPlan_t& solution,
                         const Cost& fmax,
                         TimingAStarSearchUntil* timing_AStarSearchUntil) {
+    verifyOpenSet(*window, solution);
     timing_AStarSearchUntil->total_astar_search_until.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
@@ -785,6 +786,7 @@ class XStar {
     timing_AStarSearchUntil->timing_ASUExp.total_ASUExp.start();
     for (size_t expand_count = 0;
          !open_set.empty() && open_set.top().f_score < fmax; ++expand_count) {
+      verifyOpenSet(*window, solution);
       assert(!isTooManyIterations(expand_count, *window));
       timing_AStarSearchUntil->num_values_f_less_fmax++;
 
@@ -876,9 +878,9 @@ class XStar {
     timing_AStarSearchUntil->total_astar_search_until.stop();
   }
 
-  void verifyOpenSet(WPS_t* window) {
-    for (const Node& n : window->getSearchState()->open_set) {
-      assert(n.state.size() == window->window.agent_idxs.size());
+  void verifyOpenSet(const WPS_t& window, const JointPlan_t&) {
+    for (const Node& n : window.getSearchState()->open_set) {
+      assert(n.state.size() == window.window.agent_idxs.size());
     }
   }
 
@@ -896,8 +898,15 @@ class XStar {
 
     verifyParentMap(ss->parent_map, ss->previous_start);
 
+    verifyOpenSet(*window, solution);
+    out_of_window_t new_out_of_window;
     timing_stage1->time_add_x_to_o.start();
     for (const std::pair<JointState_t, Node>& sn : ss->out_of_window) {
+      //       assert(sn.first == sn.second.prev_state);
+      if (!window->window.inWindowOrOnPath(sn.first, solution)) {
+        new_out_of_window.insert(sn);
+        continue;
+      }
       const Node& n = sn.second;
       const JointState_t& current_state = n.prev_state;
       const JointState_t& neighbor_state = n.state;
@@ -910,10 +919,10 @@ class XStar {
     }
     timing_stage1->time_add_x_to_o.stop();
     timing_stage1->time_clear_x.start();
-    ss->out_of_window.clear();
+    ss->out_of_window = new_out_of_window;
     timing_stage1->time_clear_x.stop();
 
-    verifyOpenSet(window);
+    verifyOpenSet(*window, solution);
 
     AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
                      &timing_stage1->timing_AStarSearchUntil);
@@ -964,7 +973,7 @@ class XStar {
     static constexpr bool kDebug = false;
     SearchState* ss = window->getSearchState();
 
-    verifyOpenSet(window);
+    verifyOpenSet(*window, solution);
     verifyParentMap(ss->parent_map, ss->previous_start);
 
     eraseParentMap(&(ss->parent_map), ss->previous_start);
@@ -989,7 +998,7 @@ class XStar {
     }
     timing_stage2->time_expanding_s.stop();
 
-    verifyOpenSet(window);
+    verifyOpenSet(*window, solution);
     if (kDebug) {
       std::cout << "Astar search until " << goal_node_fvalue << "\n";
     }
@@ -1555,6 +1564,7 @@ class XStar {
     Stage2(window, info_between_starts, new_starts, old_goals, *solution,
            old_goal_g_score_sum, &(timing_gari->timing_stage2));
     verifySolutionValid(*solution);
+    verifyOpenSet(*window, *solution);
     Stage3(window, solution, new_starts, new_starts_costs, new_goals,
            new_goals_costs, &(timing_gari->timing_stage3));
     //         print(*solution);
@@ -1564,11 +1574,9 @@ class XStar {
 
   bool shouldQuit(const WPSList_t& windows, const Cost& min_cost,
                   const Cost& current_cost) {
-    static int iter = 0;
     if (min_cost >= current_cost) {
       return true;
     }
-
     return windows.empty();
   }
 
@@ -1974,6 +1982,7 @@ class XStar {
 
   bool planIn(WPS_t* window, JointPlan_t* solution,
               TimingPlanIn* timing_PlanIn) {
+    verifyOpenSet(*window, *solution);
     timing_PlanIn->total_PlanIn.start();
     static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
@@ -2045,6 +2054,7 @@ class XStar {
         ss->max_cost = min_max.second;
         timing_PlanIn->timing_expansions.total_S3Exp.stop();
         timing_PlanIn->total_PlanIn.stop();
+        verifyOpenSet(*window, *solution);
         return insertWindowPath(&window_solution, window->window, starts_costs,
                                 goals_costs, solution);
       }

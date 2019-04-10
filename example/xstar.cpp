@@ -238,12 +238,17 @@ struct Window {
       const State& s = ss[i];
       const size_t& agend_idx = agent_idxs[i];
       const PlanResult<State, Action, int>& agent_plan = joint_plan[agend_idx];
-      const State& plan_state = agent_plan.states[s.time].first;
-      if (!contains(s) && plan_state != s) {
+      if (!inWindowOrOnPath(s, agent_plan)) {
         return false;
       }
     }
     return true;
+  }
+
+  bool inWindowOrOnPath(
+      const State& s, const PlanResult<State, Action, int>& agent_plan) const {
+    const State& plan_state = agent_plan.states[s.time].first;
+    return (contains(s) || (plan_state == s));
   }
 
   bool intersects(const Window& o) const {
@@ -473,14 +478,6 @@ class Environment {
       if (getState(agent_idx, joint_plan, s.time) == s) {
         window_neighbors.emplace_back(
             getStateAsNeighbor(agent_idx, joint_plan, s.time + 1), true);
-      } else {
-        // Not in window but also not on path!
-        if (kDebug) {
-          std::cerr << "Not in window but also not on path! Agent idx: "
-                    << agent_idx << " Window: " << w << " State: " << s
-                    << std::endl;
-        }
-        assert(false);
       }
       return;
     }
