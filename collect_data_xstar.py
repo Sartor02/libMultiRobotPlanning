@@ -72,8 +72,6 @@ def get_memory_limit_kb(limit_gb):
     limit_kb = limit_mb * 1024
     return limit_kb
 
-print(get_memory_limit_kb(args.memory_limit))
-
 def run_xstar(input_file, timeout, memory_limit):
   global current_proc
   output_file = "delete_me.out"
