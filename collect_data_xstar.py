@@ -15,6 +15,7 @@ def get_xstar_args():
     parser.add_argument("input_file", type=str, help="Input file for X*")
     parser.add_argument("timeout", type=float, help="X* timeout")
     parser.add_argument("trials", type=int, help="X* trials")
+    parser.add_argument("memory_limit", type=int, help="Memory limit (GB)")
     parser.add_argument("output_file_prefix", type=str, help="Output file prefix")
     parser.add_argument("output_file_postfix", type=str, help="Output file postfix")
     return parser.parse_args()
@@ -64,12 +65,23 @@ def get_complete_file():
       complete_file = file_lst[-2]
       assert(is_file_complete(complete_file))
   return complete_file
-    
 
-def run_xstar(input_file, timeout):
+def get_memory_limit_kb(limit_gb):
+    limit_gb = int(limit_gb)
+    limit_mb = limit_gb * 1024
+    limit_kb = limit_mb * 1024
+    return limit_kb
+
+print(get_memory_limit_kb(args.memory_limit))
+
+def run_xstar(input_file, timeout, memory_limit):
   global current_proc
   output_file = "delete_me.out"
-  cmd = "timeout {} release/xstar -i {} -o {} -t {}".format(timeout, input_file, output_file, timing_file_custom_infix)
+  cmd = "bash -c '(ulimit -v {}; timeout {} release/xstar -i {} -o {} -t {})'".format(get_memory_limit_kb(memory_limit),
+                                                                                                 timeout,
+                                                                                                 input_file,
+                                                                                                 output_file,
+                                                                                                 timing_file_custom_infix)
   current_proc = subprocess.Popen(shlex.split(cmd))
   current_proc.wait()
   if current_proc.returncode != 0:
@@ -93,7 +105,7 @@ def run():
   clear_output_files();
   for idx in range(args.trials):
     clear_timing_files()
-    complete_file = run_xstar(args.input_file, args.timeout)
+    complete_file = run_xstar(args.input_file, args.timeout, args.memory_limit)
     save_complete_file(complete_file, idx)
     clear_timing_files()
     
