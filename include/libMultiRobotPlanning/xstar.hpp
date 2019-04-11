@@ -503,7 +503,18 @@ class XStar {
       return (!out_of_window.empty());
     }
 
-    void disable() { disabled = true; }
+    void disable() {
+      static constexpr bool kEagerMemoryClearing = false;
+      disabled = true;
+      if (kEagerMemoryClearing) {
+        open_set.clear();
+        state_to_heap.clear();
+        closed_set.clear();
+        parent_map.clear();
+        out_of_window.clear();
+        goal_wait_nodes.clear();
+      }
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
       os << "Enabled: " << (ps.enabled ? "true" : "false");
