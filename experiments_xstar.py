@@ -34,7 +34,7 @@ kMapBaseName = "map"
 kDensity = 0.05
 kMemoryLimitGB = 60
 #kTimeout = 300 # 5 minutes
-kNumAgentsWHTimeout = [(60, 173, 173, 900), (80, 200, 200, 1200)]
+kNumAgentsWHTimeout = [(30, 122, 122, 450), (60, 173, 173, 900), (80, 200, 200, 1200)]
 
 def std_map_name(map_base_name):
   return map_base_name + ".stdmap"
