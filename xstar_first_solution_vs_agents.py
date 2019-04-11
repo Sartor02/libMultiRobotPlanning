@@ -132,17 +132,24 @@ plt.show()
 num_agents_in_window_optimal_times_lst = sorted([(get_field(d.filename, "num_max_agents_in_window", int, None), get_optimal_time_or_timeout(d.filename)) for d in file_datas if get_field(d.filename, "num_max_agents_in_window", int, None) is not None])
 
 def plt_boxplot(num_agents_in_window_times_lst, title):
+  # Build {agent : runtimes} dict
   num_agents_in_window_to_optimal_times_dict = reduce(add_to_dict, num_agents_in_window_times_lst , dict())
+  # Remove keys less than 2
   num_agents_in_window_to_optimal_times_dict = {k : v for k, v in num_agents_in_window_to_optimal_times_dict.items() if k >= 2}
+  # Fill in any missing count in the range with empty list
+  max_key = max(num_agents_in_window_to_optimal_times_dict.keys())
+  min_key = min(num_agents_in_window_to_optimal_times_dict.keys())
+  num_agents_in_window_to_optimal_times_dict = {e : num_agents_in_window_to_optimal_times_dict.get(e, [])  for e in range(min_key, max_key + 1)}
+  # Convert to list of (k, list(v)) pairs sorted by k
   keys_values = [(k, sorted(v)) for k,v in sorted(num_agents_in_window_to_optimal_times_dict.items(), key=lambda kv: kv[0])]
   ks, vs = zip(*keys_values)
   plt.boxplot(vs, notch=False)
   plt.gca().set_xticklabels(ks)
-  plt.xlabel("Maximum number of agents in single interaction")
+  plt.xlabel("Largest number of agents in any window")
   plt.ylabel("Time (seconds)")
   plt.title(title)
   
-plt_boxplot(num_agents_in_window_optimal_times_lst, "Number of agents in interaction vs time to optimal solution time")
+plt_boxplot(num_agents_in_window_optimal_times_lst, "Largest number of agents in any window vs time to optimal solution time")
 plt.axhline(kTimeout, color='black', lw=1, linestyle='--')
 plt.yscale('log')
 plt.show()
