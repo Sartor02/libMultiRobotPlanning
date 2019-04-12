@@ -64,7 +64,8 @@ def select_seed(idx, num_agents, density, width, height):
 
 def run():
   global current_proc
-  for num_agents, kWidth, kHeight, kTimeout in kNumAgentsWHTimeout:
+  #for num_agents, kWidth, kHeight, kTimeout in kNumAgentsWHTimeout:
+  for num_agents in kNumAgents:
     for idx in range(args.iterations):
       seed = select_seed(idx, num_agents, kDensity, kWidth, kHeight)
       generate_new_scenario(num_agents, kWidth, kHeight, kDensity, seed, kMapBaseName)
