@@ -195,6 +195,7 @@ class XStar {
     size_t num_agents = 0;
     Timer time_individual_plan;
     Timer time_first_plan;
+    size_t num_max_agents_in_window_first_iteration = 0;
     size_t num_recWAMPF = 0;
     TimingRecWAMPF timing_recWAMPF;
     // clang-format off
@@ -205,6 +206,7 @@ class XStar {
       "num_agents: " << t.num_agents << "\n"
       "time_individual_plan: " << t.time_individual_plan << "\n"
       "time_first_plan: " << t.time_first_plan << "\n"
+      "num_max_agents_in_window_first_iteration: " << t.num_max_agents_in_window_first_iteration << "\n"
       "num_recWAMPF: " << t.num_recWAMPF<< "\n"
       "timing_recWAMPF:\n"
       "    total_RecWAMPF: " << t.timing_recWAMPF.total_RecWAMPF<< "\n"
@@ -2291,6 +2293,11 @@ class XStar {
           static_cast<float>(solution_cost) /
           static_cast<float>(optimal_solution_lower_bound);
       if (timing.num_recWAMPF == 1) {
+        for (const WPS_t& w : windows) {
+          timing.num_max_agents_in_window_first_iteration =
+              std::max(timing.num_max_agents_in_window_first_iteration,
+                       w.window.agent_idxs.size());
+        }
         timing.time_first_plan.stop();
       }
       timing.total_WAMPF.stop();
