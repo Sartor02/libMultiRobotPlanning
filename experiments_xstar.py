@@ -28,13 +28,13 @@ def get_args():
 args = get_args();
 
 kMapBaseName = "map"
-#kNumAgents = [10, 20, 30, 40, 50]
-#kWidth = 100
-#kHeight = 100
+kNumAgents = [10, 20, 30, 40, 50]
+kWidth = 100
+kHeight = 100
 kDensity = 0.05
 kMemoryLimitGB = 60
-#kTimeout = 300 # 5 minutes
-kNumAgentsWHTimeout = [(30, 122, 122, 450), (60, 173, 173, 900), (80, 200, 200, 1200)]
+kTimeout = 1200 # 20 minutes
+#kNumAgentsWHTimeout = [(30, 122, 122, 450), (60, 173, 173, 900), (80, 200, 200, 1200)]
 
 def std_map_name(map_base_name):
   return map_base_name + ".stdmap"
@@ -69,7 +69,7 @@ def run():
       seed = select_seed(idx, num_agents, kDensity, kWidth, kHeight)
       generate_new_scenario(num_agents, kWidth, kHeight, kDensity, seed, kMapBaseName)
       print("Agents:", num_agents, "Iter:", idx, "Seed:", seed)
-      cmd = "./collect_data_xstar.py {} {} {} {} datasave/xstar_ratio_agents_{}_iter_{}_trial_ _seed_{}.result".format(std_map_name(kMapBaseName), kTimeout, args.trials, kMemoryLimitGB, num_agents, idx, seed)
+      cmd = "./collect_data_xstar.py {} {} {} {} datasave/xstar_ratio_agents_1200_timeout_{}_iter_{}_trial_ _seed_{}.result".format(std_map_name(kMapBaseName), kTimeout, args.trials, kMemoryLimitGB, num_agents, idx, seed)
       current_proc = subprocess.Popen(shlex.split(cmd))
       current_proc.wait()
       
