@@ -112,22 +112,24 @@ num_agents_in_window_optimal_times_lst = \
             if get_field(d.filename, "num_max_agents_in_window", int, None)
             is not None])
 
-
-def agents_to_timeout(agents):
-    lookup = {20: 300, 30: 450, 40: 600, 60: 900, 80: 1200}
-    return lookup[agents]
-
-
 ratio_file_datas = \
     [filename_to_filedata(f)
-     for f in glob.glob('datasave/xstar_ratio_*.result')]
+     for f in glob.glob('datasave/xstar_ratio_*.result') if "1200" not in f]
+ratio_timeout_dict = {20: 300, 30: 450, 40: 600, 60: 900, 80: 1200}
 ratio_agents_first_times_lst = \
     sorted([(d.agents, get_total_first_plan_time(d.filename))
             for d in ratio_file_datas])
 ratio_agents_optimal_times_lst = \
-    sorted([(d.agents, get_optimal_time_or_timeout(d.filename, agents_to_timeout(d.agents)))
+    sorted([(d.agents, get_optimal_time_or_timeout(d.filename, ratio_timeout_dict[d.agents]))
             for d in ratio_file_datas])
 
+def draw_timeout(timeout, xs):
+    if type(timeout) is int:
+        plt.axhline(timeout, color='black', lw=0.7, linestyle='--')
+    elif type(timeout) is dict:
+        ys = [timeout[x] for x in xs]
+        plt.plot(xs, ys, linestyle='--',
+                 color='black')
 
 def plt_cis(agents_times_lst, title, timeout=None):
     agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
@@ -179,34 +181,10 @@ def plt_cis(agents_times_lst, title, timeout=None):
     plt.xlabel("Number of agents")
     plt.xticks(xs)
 
-    if timeout is not None:
-        plt.axhline(timeout, color='black', lw=0.7, linestyle='--')
-    else:
-        plt.plot(xs, [agents_to_timeout(x) for x in xs], linestyle='--',
-                 color='black')
-    slope, intercept, r_value, p_value, std_err = stats.linregress(xs, medians)
-    print("xs:", xs)
-    print("medians:", medians)
-    fitted_line = [(slope * x + intercept) for x in xs]
-    print("Intercept:", intercept)
-
-    textstr = '\n'.join((
-    r'$\mathrm{slope}=%.5f$' % (slope, ),
-    r'$\mathrm{intercept}=%.5f$' % (intercept, ),
-    r'$r=%.5f$' % (r_value, )))
-
-    
-    # these are matplotlib.patch.Patch properties
-    props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-
-    # place a text box in upper left in axes coords
-    plt.text(0.73, 0.165, textstr, transform=plt.gca().transAxes,
-             verticalalignment='top', horizontalalignment='left', bbox=props)
-
-    plt.plot(xs, fitted_line, color='green')
+    draw_timeout(timeout, xs)
 
 
-def plt_percentiles(agents_times_lst, title):
+def plt_percentiles(agents_times_lst, title, timeout=None):
     agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
     agents_to_100_bounds_lst = \
         [[k] + list(get_percentile(v, 100))
@@ -264,6 +242,8 @@ def plt_percentiles(agents_times_lst, title):
     plt.xlabel("Number of agents")
     plt.xticks(xs)
 
+    draw_timeout(timeout, xs)
+
 
 ps.setupfig()
 plt_cis(agents_first_times_lst, "Time to first solution", kTimeout)
@@ -275,16 +255,16 @@ ps.setupfig()
 plt_cis(agents_optimal_times_lst, "Time to optimal solution", kTimeout)
 ps.grid()
 ps.legend('ul')
-ps.save_fig("xstar_optimal_solution_solution_ci")
+ps.save_fig("xstar_optimal_solution_ci")
 
 ps.setupfig()
-plt_percentiles(agents_first_times_lst, "Time to first solution")
+plt_percentiles(agents_first_times_lst, "Time to first solution", kTimeout)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_first_solution_percentile")
 
 ps.setupfig()
-plt_percentiles(agents_optimal_times_lst, "Time to optimal solution")
+plt_percentiles(agents_optimal_times_lst, "Time to optimal solution", kTimeout)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_optimal_solution_percentile")
@@ -292,13 +272,13 @@ ps.save_fig("xstar_optimal_solution_percentile")
 # =============================================================================
 
 ps.setupfig()
-plt_cis(ratio_agents_first_times_lst, "Time to first solution")
+plt_cis(ratio_agents_first_times_lst, "Time to first solution", ratio_timeout_dict)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_first_solution_for_ratio")
 
 ps.setupfig()
-plt_cis(ratio_agents_optimal_times_lst, "Time to optimal solution")
+plt_cis(ratio_agents_optimal_times_lst, "Time to optimal solution", ratio_timeout_dict)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_optimal_solution_for_ratio")
@@ -338,4 +318,4 @@ plt_boxplot(num_agents_in_window_optimal_times_lst,
 plt.axhline(kTimeout, color='black', lw=0.7, linestyle='--')
 plt.yscale('log')
 ps.grid()
-ps.save_fig("boxplot")
+ps.save_fig("agents_in_window_vs_optimal_time")
