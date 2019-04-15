@@ -14,7 +14,7 @@ FileData = collections.namedtuple('FileData', ['filename',
                                                'iter',
                                                'trial',
                                                'seed'])
-kTimeout = 300
+kTimeout = 1200
 
 
 def filename_to_filedata(l):
@@ -29,6 +29,9 @@ def filename_to_filedata(l):
 
 
 def get_line(ls, string, t):
+    string = string.strip()
+    if string[-1] != ':':
+        string += ':'
     fls = [l for l in ls if string in l]
     if len(fls) > 1:
         print(string, "is not unique")
@@ -99,7 +102,7 @@ def add_to_dict(acc, e):
 
 
 idv_file_datas = \
-    [filename_to_filedata(f) for f in glob.glob('datasave/xstar_idv_*.result')]
+    [filename_to_filedata(f) for f in glob.glob('datasave/xstar_idv_agents_1200*.result')]
 agents_first_times_lst = \
     sorted([(d.agents, get_total_first_plan_time(d.filename))
             for d in idv_file_datas])
@@ -111,6 +114,10 @@ num_agents_in_window_optimal_times_lst = \
              get_optimal_time_or_timeout(d.filename, kTimeout)) for d in idv_file_datas
             if get_field(d.filename, "num_max_agents_in_window", int, None)
             is not None])
+num_agents_in_window_first_times_lst = \
+    sorted([(get_field(d.filename, "num_max_agents_in_window_first_iteration", int, None),
+            get_total_first_plan_time(d.filename)) for d in idv_file_datas
+            if get_field(d.filename, "num_max_agents_in_window_first_iteration", int, None) is not None])
 
 ratio_file_datas = \
     [filename_to_filedata(f)
@@ -284,7 +291,7 @@ ps.legend('ul')
 ps.save_fig("xstar_optimal_solution_for_ratio")
 
 
-def plt_boxplot(num_agents_in_window_times_lst, title):
+def plt_window_agents_boxplot(num_agents_in_window_times_lst, title, timeout=None):
     # Build {agent : runtimes} dict
     num_agents_in_window_to_optimal_times_dict = \
         reduce(add_to_dict, num_agents_in_window_times_lst, dict())
@@ -307,15 +314,65 @@ def plt_boxplot(num_agents_in_window_times_lst, title):
     flierprops = dict(marker='.', markersize=1)
     plt.boxplot(vs, notch=False, flierprops=flierprops)
     plt.gca().set_xticklabels(ks)
-    plt.xlabel("Largest number of agents in any window")
+    plt.xlabel("Largest number of agents in window")
     plt.ylabel("Time (seconds)")
+
+    draw_timeout(timeout, None)
+
+
+def plt_window_agents_hist(num_agents_in_window_times_lst, title):
+    # Build {agent : runtimes} dict
+    num_agents_in_window_to_optimal_times_dict = \
+        reduce(add_to_dict, num_agents_in_window_times_lst, dict())
+    # Remove keys less than 2
+    num_agents_in_window_to_optimal_times_dict = \
+        {k: v for k, v in num_agents_in_window_to_optimal_times_dict.items()
+         if k >= 2}
+    # Fill in any missing count in the range with empty list
+    max_key = max(num_agents_in_window_to_optimal_times_dict.keys())
+    min_key = min(num_agents_in_window_to_optimal_times_dict.keys())
+    num_agents_in_window_to_optimal_times_dict = \
+        {e: num_agents_in_window_to_optimal_times_dict.get(e, []) for e in
+         range(min_key, max_key + 1)}
+    # Convert to list of (k, list(v)) pairs sorted by k
+    k_vs = \
+        [(k, len(v)) for k, v in
+         num_agents_in_window_to_optimal_times_dict.items()]
+    ks, vs = zip(*k_vs)
+    plt.bar(ks, vs)
+    plt.xticks(ks)
+    plt.xlabel("Largest number of agents in window")
+    plt.ylabel("Occurrences")
 
 
 ps.setupfig()
-plt_boxplot(num_agents_in_window_optimal_times_lst,
-            "Largest number of agents in any window vs time to optimal "
-            "solution time")
-plt.axhline(kTimeout, color='black', lw=0.7, linestyle='--')
+plt_window_agents_boxplot(num_agents_in_window_first_times_lst,
+                          "Largest number of agents in window vs time to "
+                          "first solution", kTimeout)
 plt.yscale('log')
 ps.grid()
-ps.save_fig("agents_in_window_vs_optimal_time")
+ps.save_fig("window_vs_time_to_first_boxplot")
+
+ps.setupfig()
+plt_window_agents_hist(num_agents_in_window_first_times_lst,
+                       "Largest number of agents in window vs occurrences in "
+                       "first solution")
+plt.yscale('log')
+ps.grid()
+ps.save_fig("window_vs_time_to_first_hist")
+
+ps.setupfig()
+plt_window_agents_boxplot(num_agents_in_window_optimal_times_lst,
+                          "Largest number of agents in any window vs time to "
+                          "optimal solution", kTimeout)
+plt.yscale('log')
+ps.grid()
+ps.save_fig("window_vs_time_to_optimal_boxplot")
+
+ps.setupfig()
+plt_window_agents_hist(num_agents_in_window_optimal_times_lst,
+                          "Largest number of agents in window vs occurrences in "
+                          "optimal solution")
+plt.yscale('log')
+ps.grid()
+ps.save_fig("window_vs_time_to_optimal_hist")
