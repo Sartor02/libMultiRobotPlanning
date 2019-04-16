@@ -18,6 +18,7 @@ def get_xstar_args():
     parser.add_argument("memory_limit", type=int, help="Memory limit (GB)")
     parser.add_argument("output_file_prefix", type=str, help="Output file prefix")
     parser.add_argument("output_file_postfix", type=str, help="Output file postfix")
+    parser.add_argument("--binary", type=str, default=None, help="Output file postfix")
     return parser.parse_args()
 
 args = get_xstar_args();
@@ -72,14 +73,15 @@ def get_memory_limit_kb(limit_gb):
     limit_kb = limit_mb * 1024
     return limit_kb
 
-def run_xstar(input_file, timeout, memory_limit):
+def run_xstar(input_file, timeout, memory_limit, binary):
   global current_proc
   output_file = "delete_me.out"
-  cmd = "bash -c '(ulimit -v {}; timeout {} release/xstar -i {} -o {} -t {})'".format(get_memory_limit_kb(memory_limit),
-                                                                                                 timeout,
-                                                                                                 input_file,
-                                                                                                 output_file,
-                                                                                                 timing_file_custom_infix)
+  cmd = "bash -c '(ulimit -v {}; timeout {} {} -i {} -o {} -t {})'".format(get_memory_limit_kb(memory_limit),
+                                                                           timeout,
+                                                                           binary,
+                                                                           input_file,
+                                                                           output_file,
+                                                                           timing_file_custom_infix)
   current_proc = subprocess.Popen(shlex.split(cmd))
   current_proc.wait()
   if current_proc.returncode != 0:
@@ -103,7 +105,8 @@ def run():
   clear_output_files();
   for idx in range(args.trials):
     clear_timing_files()
-    complete_file = run_xstar(args.input_file, args.timeout, args.memory_limit)
+    binary = "release/xstar" if args.binary is None else args.binary
+    complete_file = run_xstar(args.input_file, args.timeout, args.memory_limit, binary)
     save_complete_file(complete_file, idx)
     clear_timing_files()
     
