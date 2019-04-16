@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import collections
 import glob
+import matplotlib
 import re
 import numpy as np
 from scipy import stats
@@ -127,7 +128,7 @@ ratio_agents_first_times_lst = \
     sorted([(d.agents, get_total_first_plan_time(d.filename))
             for d in ratio_file_datas])
 ratio_agents_optimal_times_lst = \
-    sorted([(d.agents, get_optimal_time_or_timeout(d.filename, ratio_timeout_dict[d.agents]))
+    sorted([(d.agents, get_optimal_time_or_timeout(d.filename, kTimeout))
             for d in ratio_file_datas])
 
 def draw_timeout(timeout, xs):
@@ -279,13 +280,13 @@ ps.save_fig("xstar_optimal_solution_percentile")
 # =============================================================================
 
 ps.setupfig()
-plt_cis(ratio_agents_first_times_lst, "Time to first solution", ratio_timeout_dict)
+plt_cis(ratio_agents_first_times_lst, "Time to first solution", kTimeout)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_first_solution_for_ratio")
 
 ps.setupfig()
-plt_cis(ratio_agents_optimal_times_lst, "Time to optimal solution", ratio_timeout_dict)
+plt_cis(ratio_agents_optimal_times_lst, "Time to optimal solution", kTimeout)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_optimal_solution_for_ratio")
@@ -320,7 +321,7 @@ def plt_window_agents_boxplot(num_agents_in_window_times_lst, title, timeout=Non
     draw_timeout(timeout, None)
 
 
-def plt_window_agents_hist(num_agents_in_window_times_lst, title):
+def plt_window_agents_hist(num_agents_in_window_times_lst, title, plt=plt, draw_y_label=True, xlabel="Largest number of agents in window"):
     # Build {agent : runtimes} dict
     num_agents_in_window_to_optimal_times_dict = \
         reduce(add_to_dict, num_agents_in_window_times_lst, dict())
@@ -340,9 +341,15 @@ def plt_window_agents_hist(num_agents_in_window_times_lst, title):
          num_agents_in_window_to_optimal_times_dict.items()]
     ks, vs = zip(*k_vs)
     plt.bar(ks, vs)
-    plt.xticks(ks)
-    plt.xlabel("Largest number of agents in window")
-    plt.ylabel("Occurrences")
+    if plt is matplotlib.pyplot:
+        plt.xticks(ks)
+        plt.xlabel(xlabel)
+        plt.ylabel("Occurrences")
+    else:
+        plt.set_xticks(ks)
+        plt.set_xlabel(xlabel)
+        if draw_y_label:
+            plt.set_ylabel("Occurrences")
 
 
 ps.setupfig()
@@ -376,3 +383,17 @@ plt_window_agents_hist(num_agents_in_window_optimal_times_lst,
 plt.yscale('log')
 ps.grid()
 ps.save_fig("window_vs_time_to_optimal_hist")
+
+f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+ps.setupfig(f)
+ps.grid(ax1)
+plt_window_agents_hist(num_agents_in_window_first_times_lst,
+                       "Largest number of agents in window vs occurrences in "
+                       "first solution", plt=ax1, xlabel="Largest number of agents in window\nfor first solution")
+ax1.set_yscale('log')
+ps.grid(ax2)
+
+plt_window_agents_hist(num_agents_in_window_optimal_times_lst,
+                          "Largest number of agents in window vs occurrences in "
+                          "optimal solution", plt=ax2, draw_y_label=False, xlabel="Largest number of agents in window\nfor optimal solution")
+ps.save_fig("window_vs_time_both_hist")

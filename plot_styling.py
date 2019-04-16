@@ -16,14 +16,18 @@ def set_font(size):
 linewidth = 0.5
 minor_tick_color = (0.9, 0.9, 0.9)
 
-def setupfig():
-    plt.clf()
-    set_font(9)
-    fig = plt.gcf()
-    fig.set_size_inches(8.5/2.5 * 1.8, 8.5/2.5 / 1.61 * 1.8, forward=True)
+def setupfig(current_fig=None):
+    if current_fig is None:
+        plt.clf()
+        fig = plt.gcf()
+    else:
+        fig = current_fig
+    set_font(8)
+    kScaleDown = 2.5
+    fig.set_size_inches(8.5/kScaleDown * 1.8, 8.5 / kScaleDown / 1.61 * 1.8, forward=True)
     plt.gca().set_axisbelow(True)
 
-def grid():
+def grid(plt=plt):
     plt.grid(linewidth=linewidth/2)
     plt.grid(which='minor', color=minor_tick_color, linestyle='--', alpha=0.7, clip_on=True, linewidth=linewidth/4)
 
@@ -52,6 +56,6 @@ def legend(loc):
 
 def save_fig(filename):
     plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
-    plt.savefig("figout/{}.png".format(filename), bbox_inches='tight')
+    plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=200)
     plt.savefig("figout/{}.pdf".format(filename), bbox_inches='tight')
 
