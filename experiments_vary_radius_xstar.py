@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import shlex
 import signal
 import subprocess
 import sys
 
 current_proc = None
-
 
 def signal_handler(sig, frame):
     print(sys.argv[0], 'Signal caught')
@@ -29,13 +29,21 @@ def get_args():
 args = get_args()
 
 kMapBaseName = "map"
-kNumAgents = [10, 20, 30, 40, 50]
+kNumAgents = 20
 kWidth = 100
 kHeight = 100
 kDensity = 0.05
 kMemoryLimitGB = 60
-kTimeout = 1200  # 20 minutes
+kTimeout = 300  # 5 minutes
+kBinaries = ["xstar1", "xstar2", "xstar3", "xstar4", "xstar5", "xstar6"]
 # kNumAgentsWHTimeout = [(30, 122, 122, 450), (60, 173, 173, 900), (80, 200, 200, 1200)]
+
+
+def get_full_binary_path(binary):
+    path = "release/{}".format(binary)
+    assert(os.path.isfile(path))
+    assert(os.access(path, os.X_OK))
+    return path
 
 
 def std_map_name(map_base_name):
@@ -71,13 +79,16 @@ def select_seed(idx, num_agents, density, width, height):
 
 def run():
     global current_proc
-    # for num_agents, kWidth, kHeight, kTimeout in kNumAgentsWHTimeout:
-    for num_agents in kNumAgents:
+
+    binaries = [get_full_binary_path(b) for b in kBinaries]
+    num_agents = kNumAgents
+    for binary in binaries:
         for idx in range(args.iterations):
             seed = select_seed(idx, num_agents, kDensity, kWidth, kHeight)
             generate_new_scenario(num_agents, kWidth, kHeight, kDensity, seed, kMapBaseName)
             print("Agents:", num_agents, "Iter:", idx, "Seed:", seed)
-            cmd = "./collect_data_xstar.py {} {} {} {} datasave/xstar_ratio_agents_1200_timeout_{}_iter_{}_trial_ _seed_{}.result".format(std_map_name(kMapBaseName), kTimeout, args.trials, kMemoryLimitGB, num_agents, idx, seed)
+            cmd = "./collect_data_xstar.py {} {} {} {} datasave/xstar_grow_search_window_{}_iter_{}_trial_ _seed_{}.result --binary {}".format(std_map_name(kMapBaseName), kTimeout, args.trials, kMemoryLimitGB, num_agents, idx, seed, binary)
+            print(cmd)
             current_proc = subprocess.Popen(shlex.split(cmd))
             current_proc.wait()
 
