@@ -71,7 +71,8 @@ def generate_new_scenario(agents, width, height, obs_density, seed):
 
 def run_with_current_proc(cmd):
     global current_proc
-    current_proc = subprocess.Popen(shlex.split(cmd))
+    FNULL = open(os.devnull, 'w')
+    current_proc = subprocess.Popen(shlex.split(cmd), stdout=FNULL, stderr=subprocess.STDOUT)
     current_proc.wait()
     retcode = current_proc.returncode
     current_proc = None
@@ -95,20 +96,20 @@ def run_xstar(timeout, iteration):
     cmd = "./collect_data_xstar.py {} {} {} {} {} _seed_{}.result"\
           .format(generic_map,
                   args.timeout,
-                  args.trials,
+                  1,
                   args.memory_limit,
                   prefix,
                   seed)
-    print(cmd)
     run_with_current_proc(cmd)
     result_file = list(glob.glob(prefix + "*"))[0]
-    f = open(result_file, 'r')
-    ls = f.readlines()
-    bounds = get_line(ls, "successive_bounds", eval)
-    times = get_line(ls, "successive_runtimes", eval)
-    print(bounds)
-    print(times)
-    return (bounds, times)
+    try:
+        f = open(result_file, 'r')
+        ls = f.readlines()
+        bounds = get_line(ls, "successive_bounds", eval)
+        times = get_line(ls, "successive_runtimes", eval)
+        return (bounds, times)
+    except:
+        return ([0], [args.timeout])
 
 
 def run_afs(timeout):
@@ -191,13 +192,13 @@ for i in range(args.trials):
     os.remove("simple_test{}.result".format(args_to_string(args)))
 
 
-sh.save_to_file("xstar_data_lst_{}".format(args_to_str(args)), xstar_data_lst)
-sh.save_to_file("cbs_data_lst_{}".format(args_to_str(args)), cbs_data_lst)
-sh.save_to_file("afs_data_lst_{}".format(args_to_str(args)), afs_data_lst)
-sh.save_to_file("mstar_data_lst_{}".format(args_to_str(args)), mstar_data_lst)
+sh.save_to_file("xstar_data_lst_{}".format(args_to_string(args)), xstar_data_lst)
+sh.save_to_file("cbs_data_lst_{}".format(args_to_string(args)), cbs_data_lst)
+sh.save_to_file("afs_data_lst_{}".format(args_to_string(args)), afs_data_lst)
+sh.save_to_file("mstar_data_lst_{}".format(args_to_string(args)), mstar_data_lst)
 
 # Ensures data can be reloaded properly
-xstar_data_lst = sh.read_from_file("xstar_data_lst_{}".format(args_to_str(args)))
-cbs_data_lst = sh.read_from_file("cbs_data_lst_{}".format(args_to_str(args)))
-afs_data_lst = sh.read_from_file("afs_data_lst_{}".format(args_to_str(args)))
-mstar_data_lst = sh.read_from_file("mstar_data_lst_{}".format(args_to_str(args)))
+xstar_data_lst = sh.read_from_file("xstar_data_lst_{}".format(args_to_string(args)))
+cbs_data_lst = sh.read_from_file("cbs_data_lst_{}".format(args_to_string(args)))
+afs_data_lst = sh.read_from_file("afs_data_lst_{}".format(args_to_string(args)))
+mstar_data_lst = sh.read_from_file("mstar_data_lst_{}".format(args_to_string(args)))
