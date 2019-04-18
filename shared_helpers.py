@@ -17,10 +17,6 @@ def get_args():
     parser.add_argument("num_trials", type=int, help="Number of trials")
     parser.add_argument("timeout", type=int, help="Run timeout")
     return parser.parse_args()
-  
-def args_to_str(args):
-  string = str(args)
-  return string.replace(' ' , '')
 
 def save_to_file(name, data):
   f = open("datasave/{}.datasave".format(name), "w")

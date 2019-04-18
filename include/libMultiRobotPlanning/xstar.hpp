@@ -186,12 +186,14 @@ class XStar {
     Timer time_remove_window;
   };
   using TimingRecWAMPF = TimingRecWAMPF_t<Timer>;
-
+  
   template <class Timer>
   struct TimingWAMPF_t {
     Timer total_WAMPF;
     bool is_optimal = false;
     float optimality_bound = 0;
+    std::vector<float> successive_bounds;
+    std::vector<float> successive_runtimes;
     size_t num_agents = 0;
     Timer time_individual_plan;
     Timer time_first_plan;
@@ -203,6 +205,8 @@ class XStar {
       os << "Total time: " << t.total_WAMPF << "\n"
       "is_optimal: " << (t.is_optimal ? "true" : "false") << "\n"
       "optimality_bound: " << t.optimality_bound << "\n"
+      "successive_bounds: "; utils::list_to_string(os, t.successive_bounds); os << "\n"
+      "successive_runtimes: "; utils::list_to_string(os, t.successive_runtimes); os << "\n"
       "num_agents: " << t.num_agents << "\n"
       "time_individual_plan: " << t.time_individual_plan << "\n"
       "time_first_plan: " << t.time_first_plan << "\n"
@@ -2292,6 +2296,10 @@ class XStar {
       timing.optimality_bound =
           static_cast<float>(solution_cost) /
           static_cast<float>(optimal_solution_lower_bound);
+      timing.successive_bounds.push_back(timing.optimality_bound);
+      timing.total_WAMPF.stop();
+      timing.successive_runtimes.push_back(timing.total_WAMPF.get());
+      timing.total_WAMPF.start();      
       if (timing.num_recWAMPF == 1) {
         for (const WPS_t& w : windows) {
           timing.num_max_agents_in_window_first_iteration =
@@ -2305,6 +2313,7 @@ class XStar {
     } while (!shouldQuit(windows, optimal_solution_lower_bound, solution_cost));
     timing.is_optimal = true;
     timing.optimality_bound = 1.0;
+    timing.successive_bounds.push_back(timing.optimality_bound);
     SaveTimingData(timing, true, save_infix);
     return true;
   }

@@ -3,8 +3,6 @@ import collections
 import glob
 import matplotlib
 import re
-import numpy as np
-from scipy import stats
 from functools import reduce
 
 import plot_styling as ps
@@ -29,6 +27,12 @@ def filename_to_filedata(l):
     return FileData(l, agents, itr, trial, seed)
 
 
+def get_search_radius(filename):
+    regex = r"search_window_xstar(\d)"
+    match = list(re.finditer(regex, filename, re.MULTILINE))[0]
+    return int(match.group(1))
+
+
 def get_line(ls, string, t):
     string = string.strip()
     if string[-1] != ':':
@@ -44,10 +48,10 @@ def get_line(ls, string, t):
     return t(line)
 
 
-def get_total_first_plan_time(filename):
+def get_total_first_plan_time(filename, timeout=kTimeout):
     ls = open(filename, 'r').readlines()
     if len(ls) == 0:
-        return kTimeout
+        return timeout
     time_individual_plan = get_line(ls, "time_individual_plan", float)
     time_first_plan = get_line(ls, "time_first_plan", float)
     return time_individual_plan + time_first_plan
@@ -130,6 +134,12 @@ ratio_agents_first_times_lst = \
 ratio_agents_optimal_times_lst = \
     sorted([(d.agents, get_optimal_time_or_timeout(d.filename, kTimeout))
             for d in ratio_file_datas])
+
+kRadiusTimeout = 300
+radius_file_datas = [(filename_to_filedata(f), get_search_radius(f)) for f in glob.glob('datasave/xstar_grow_search_window*.result')]
+radius_first_times_lst = sorted([(r, get_total_first_plan_time(d.filename, kRadiusTimeout)) for d, r in radius_file_datas])
+radius_optimal_times_lst = sorted([(r, get_optimal_time_or_timeout(d.filename, kRadiusTimeout)) for d, r in radius_file_datas])
+
 
 def draw_timeout(timeout, xs):
     if type(timeout) is int:
@@ -394,6 +404,70 @@ ax1.set_yscale('log')
 ps.grid(ax2)
 
 plt_window_agents_hist(num_agents_in_window_optimal_times_lst,
-                          "Largest number of agents in window vs occurrences in "
-                          "optimal solution", plt=ax2, draw_y_label=False, xlabel="Largest number of agents in window\nfor optimal solution")
+                       "Largest number of agents in window vs occurrences in "
+                       "optimal solution", plt=ax2, draw_y_label=False, xlabel="Largest number of agents in window\nfor optimal solution")
 ps.save_fig("window_vs_time_both_hist")
+
+
+def plt_radius_vs_agents(data, timeout=kRadiusTimeout):
+    data_dict = reduce(add_to_dict, data, dict())
+    radius_to_100_bounds_lst = \
+        [[k] + list(get_ci(v, 100)) for k, v in data_dict.items()]
+    radius_to_95_bounds_lst = \
+        [[k] + list(get_ci(v, 95)) for k, v in data_dict.items()]
+    radius_to_90_bounds_lst = \
+        [[k] + list(get_ci(v, 90)) for k, v in data_dict.items()]
+    radius_to_75_bounds_lst = \
+        [[k] + list(get_ci(v, 75)) for k, v in data_dict.items()]
+    xs, hs, ms, ls = zip(*radius_to_100_bounds_lst)
+    plt.plot(xs, ls, color=ps.color(0, 4), label="Max bounds")
+    plt.plot(xs, hs, color=ps.color(0, 4))
+    plt.fill_between(xs, ls, hs,
+                     where=ls <= hs,
+                     facecolor=ps.alpha(ps.color(0, 4)),
+                     interpolate=True,
+                     linewidth=0.0)
+    xs, hs, ms, ls = zip(*radius_to_95_bounds_lst)
+    plt.plot(xs, ls, color=ps.color(1, 4), label="95% CI")
+    plt.plot(xs, hs, color=ps.color(1, 4))
+    plt.fill_between(xs, ls, hs,
+                     where=ls <= hs,
+                     facecolor=ps.alpha(ps.color(1, 4)),
+                     interpolate=True,
+                     linewidth=0.0)
+    xs, hs, ms, ls = zip(*radius_to_90_bounds_lst)
+    plt.plot(xs, ls, color=ps.color(2, 4), label="90% CI")
+    plt.plot(xs, hs, color=ps.color(2, 4))
+    plt.fill_between(xs, ls, hs,
+                     where=ls <= hs,
+                     facecolor=ps.alpha(ps.color(2, 4)),
+                     interpolate=True,
+                     linewidth=0.0)
+    xs, hs, ms, ls = zip(*radius_to_75_bounds_lst)
+    plt.plot(xs, ls, color=ps.color(3, 4), label="75% CI")
+    plt.plot(xs, ms, color=ps.color(3, 4))
+    plt.plot(xs, hs, color=ps.color(3, 4))
+    plt.fill_between(xs, ls, hs,
+                     where=ls <= hs,
+                     facecolor=ps.alpha(ps.color(3, 4)),
+                     interpolate=True,
+                     linewidth=0.0)
+    plt.yscale('log')
+    plt.ylabel("Time (seconds)")
+    plt.xlabel("Initial window $L_{\infty}$ radius")
+    plt.xticks(xs)
+
+    draw_timeout(timeout, xs)
+
+
+ps.setupfig()
+plt_radius_vs_agents(radius_first_times_lst)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("radius_first_times")
+
+ps.setupfig()
+plt_radius_vs_agents(radius_optimal_times_lst)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("radius_optimal_times")

@@ -80,6 +80,7 @@ def run():
             cmd = "./collect_data_xstar.py {} {} {} {} datasave/xstar_ratio_agents_1200_timeout_{}_iter_{}_trial_ _seed_{}.result".format(std_map_name(kMapBaseName), kTimeout, args.trials, kMemoryLimitGB, num_agents, idx, seed)
             current_proc = subprocess.Popen(shlex.split(cmd))
             current_proc.wait()
+            current_proc = None
 
 
 run()

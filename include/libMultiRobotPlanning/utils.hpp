@@ -24,6 +24,20 @@ T diffSum(const std::vector<T>& v1, const std::vector<T>& v2) {
   return sum;
 }
 
+template<typename T>
+std::ostream& list_to_string(std::ostream& os, const std::vector<T>& data) {
+  if (data.empty()) {
+    os << "[]";
+    return os;
+  }
+  os << "[";
+  for (size_t i = 0; i < data.size() - 1; ++i) {
+    os << data[i] << ", ";
+  }
+  os << data.back() << "]";
+  return os;   
+}
+
 template <typename T, size_t Size>
 class StableStorage {
  public:
