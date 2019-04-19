@@ -84,7 +84,7 @@ def run():
     num_agents = kNumAgents
     for binary, binary_name in binaries:
         for idx in range(args.iterations):
-            seed = select_seed(idx, num_agents, kDensity, kWidth, kHeight)
+            seed = select_seed(idx, 27, kDensity, kWidth, kHeight)
             generate_new_scenario(num_agents, kWidth, kHeight, kDensity, seed, kMapBaseName)
             print("Agents:", num_agents, "Iter:", idx, "Seed:", seed)
             cmd = "./collect_data_xstar.py {} {} {} {} datasave/xstar_grow_search_window_{}_agents_{}_iter_{}_trial_ _seed_{}.result --binary {}".format(std_map_name(kMapBaseName), kTimeout, args.trials, kMemoryLimitGB, binary_name, num_agents, idx, seed, binary)
