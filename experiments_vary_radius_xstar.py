@@ -21,6 +21,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("agents", type=int, help="X* agents")
     parser.add_argument("iterations", type=int, help="X* iterations")
     parser.add_argument("trials", type=int, help="X* trials")
     return parser.parse_args()
@@ -29,7 +30,7 @@ def get_args():
 args = get_args()
 
 kMapBaseName = "map"
-kNumAgents = 20
+kNumAgents = args.agents
 kWidth = 100
 kHeight = 100
 kDensity = 0.05
