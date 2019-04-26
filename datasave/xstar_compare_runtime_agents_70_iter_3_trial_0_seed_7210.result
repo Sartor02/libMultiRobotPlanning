@@ -1,0 +1,96 @@
+Total time: 2.24137
+is_optimal: true
+optimality_bound: 1
+successive_bounds: [1.01652, 1.01202, 1.00644, 1.00644, 1.00601, 1.00515, 1.00472, 1.00429, 1.00429, 1.00429, 1.00343, 1.00343, 1.00343, 1.00343, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.003, 1.00279, 1.00279, 1.00279, 1.00279, 1]
+successive_runtimes: [0.0917007, 0.222847, 0.23223, 0.240955, 0.249792, 0.272095, 0.277985, 0.288915, 0.313003, 0.392966, 1.96504, 1.97738, 1.98921, 2.00244, 2.01192, 2.01734, 2.02307, 2.03061, 2.03869, 2.0466, 2.05417, 2.06213, 2.06934, 2.07646, 2.08746, 2.09871, 2.10965, 2.12075, 2.13132, 2.13734, 2.14345, 2.17113, 2.17741, 2.18355, 2.18968, 2.1991, 2.20547, 2.22843, 2.23398, 2.23929, 2.24137]
+num_agents: 70
+time_individual_plan: 0.0306425
+time_first_plan: 0.0595583
+num_max_agents_in_window_first_iteration: 3
+num_recWAMPF: 41
+timing_recWAMPF:
+    total_RecWAMPF: 2.20921
+    num_windows: 560
+    num_max_agents_in_window: 5
+    timing_gari:
+        total_GARI: 0.527042
+        time_path_btw_starts: 0.00201451
+        Stage1:
+            total_Stage1:0.122303
+            time_add_x_to_o: 0.00691648
+            time_clear_x: 0.00157699
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.100586
+                num_values_f_less_fmax:2556
+                ASU Exp:
+                    total_ASUExp:0.100566
+                    time_top_o:0.00165639
+                    time_check_in_c:0.000791839
+                    time_add_parent:0
+                    num_neighbors:0
+                    time_add_neighbors_to_o:0
+        Stage2:
+            total_Stage2:0.170583
+            num_len_path:460
+            time_expanding_s:0.000517314
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.159066
+                num_values_f_less_fmax:6626
+                ASU Exp:
+                    total_ASUExp:0.15905
+                    time_top_o:0.00373833
+                    time_check_in_c:0.00197547
+                    time_add_parent:0.00506312
+                    num_neighbors:117645
+                    time_add_neighbors_to_o:0.0725792
+        Stage3:
+            total_Stage3:0.214892
+            num_until_goal_expanded:10330
+            timing_S3Exp:
+                total_S3Exp: 0.152567
+                time_top_o: 0.0040734
+                time_check_in_c: 0.00226414
+                time_add_parent: 0.00543847
+                num_neighbors: 197296
+                time_add_neighbors_to_o: 0.116069
+    timing_PIOW_overlapping:
+        total_PIOW: 1.54773
+        num_windows: 3707
+        time_check_overlap: 0.000163537
+        num_overlapping_windows: 19
+        time_merge_windows: 2.2741e-05
+        time_remove_window: 2.601e-06
+        time_remove_window: 2.1662e-05
+        timing_PlanIn:
+            total_PlanIn:1.52571
+            num_until_goal_expanded:11557
+            timing_expansions:
+                total_S3Exp: 1.52565
+                time_top_o: 0.0132044
+                time_check_in_c: 0.00321246
+                time_add_parent: 0.00938784
+                num_neighbors: 1972427
+                time_add_neighbors_to_o: 1.38799
+    num_new_collisions: 28
+    timing_PIOW_new_collisions:
+        total_PIOW: 0.0314732
+        num_windows: 334
+        time_check_overlap: 1.9595e-05
+        num_overlapping_windows: 1
+        time_merge_windows: 2.143e-06
+        time_remove_window: 2.37e-07
+        time_remove_window: 6.945e-06
+        timing_PlanIn:
+            total_PlanIn:0.03134
+            num_until_goal_expanded:1671
+            timing_expansions:
+                total_S3Exp: 0.0312119
+                time_top_o: 0.000798466
+                time_check_in_c: 0.000743716
+                time_add_parent: 0.00182168
+                num_neighbors: 21753
+                time_add_neighbors_to_o: 0.0205504
+    num_windows_should_quit: 8
+    time_should_quit: 1.3334e-05
+    time_remove_window: 1.387e-06
+Complete!
