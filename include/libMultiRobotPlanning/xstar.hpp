@@ -772,8 +772,8 @@ class XStar {
       const bool start_in_window = w.isInitialStartInWindow();
       const bool goal_in_window = w.isFinalGoalInWindow();
       static int iter = 0;
-      const bool iter_done = ++iter > 1;
-      std::cout << "USING ITER\n";
+      const bool iter_done = false; //++iter > 1;
+//       std::cout << "USING ITER\n";
       timing_recWAMPF->time_should_quit.stop();
       if ((!was_restricted && start_in_window && goal_in_window) || iter_done) {
         timing_recWAMPF->num_windows_should_quit++;
