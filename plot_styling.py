@@ -37,13 +37,13 @@ def color(count, total_elements):
     cm_subsection = np.linspace(start, stop, total_elements) 
     return [ matplotlib.cm.magma(x) for x in cm_subsection ][count]
 
-def alpha(color):
+def alpha(color, val=0.5):
     assert(type(color) == tuple)
     assert(len(color) == 4)
     r, g, b, a=color
-    return (r, g, b, 0.5)
+    return (r, g, b, val)
 
-def legend(loc):
+def legend(loc, plt=plt):
     if type(loc)  is str:
         if loc == 'ul':
             loc = 2

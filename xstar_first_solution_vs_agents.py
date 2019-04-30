@@ -7,6 +7,10 @@ from functools import reduce
 
 import plot_styling as ps
 from matplotlib import pyplot as plt
+from shared_helpers import XStarData
+from shared_helpers import MStarData
+from shared_helpers import CBSData
+from shared_helpers import AFSData
 
 FileData = collections.namedtuple('FileData', ['filename',
                                                'agents',
@@ -136,12 +140,50 @@ ratio_agents_optimal_times_lst = \
             for d in ratio_file_datas])
 
 kRadiusTimeout = 300
-radius_file_datas = [(filename_to_filedata(f), get_search_radius(f)) for f in glob.glob('datasave/xstar_grow_search_window*.result')]
-radius_first_times_lst = sorted([(r, get_total_first_plan_time(d.filename, kRadiusTimeout)) for d, r in radius_file_datas])
-radius_optimal_times_lst = sorted([(r, get_optimal_time_or_timeout(d.filename, kRadiusTimeout)) for d, r in radius_file_datas])
+
+radius_40_file_datas = [(filename_to_filedata(f), get_search_radius(f)) for f in glob.glob('datasave/xstar_grow_search_window*.result') if "agents_40" in f]
+radius_40_first_times_lst = sorted([(r, get_total_first_plan_time(d.filename, kRadiusTimeout)) for d, r in radius_40_file_datas])
+radius_40_optimal_times_lst = sorted([(r, get_optimal_time_or_timeout(d.filename, kRadiusTimeout)) for d, r in radius_40_file_datas])
+
+radius_30_file_datas = [(filename_to_filedata(f), get_search_radius(f)) for f in glob.glob('datasave/xstar_grow_search_window*.result') if "agents_30" in f]
+radius_30_first_times_lst = sorted([(r, get_total_first_plan_time(d.filename, kRadiusTimeout)) for d, r in radius_30_file_datas])
+radius_30_optimal_times_lst = sorted([(r, get_optimal_time_or_timeout(d.filename, kRadiusTimeout)) for d, r in radius_30_file_datas])
+
+radius_20_file_datas = [(filename_to_filedata(f), get_search_radius(f)) for f in glob.glob('datasave/xstar_grow_search_window*.result') if "agents_20" in f]
+radius_20_first_times_lst = sorted([(r, get_total_first_plan_time(d.filename, kRadiusTimeout)) for d, r in radius_20_file_datas])
+radius_20_optimal_times_lst = sorted([(r, get_optimal_time_or_timeout(d.filename, kRadiusTimeout)) for d, r in radius_20_file_datas])
 
 
-def draw_timeout(timeout, xs):
+def read_from_file(name):  
+    f = open("{}".format(name), 'r')
+    data = eval(f.read())
+    f.close()
+    return data
+
+
+def get_first_runtimes(data):
+    return data.runtimes[0]
+
+xstar_datas = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.05*')]
+xstar_datas = [x for lst in xstar_datas for x in lst]
+xstar_agents_first_times = [(x.num_agents, x.runtimes[0]) for x in xstar_datas]
+xstar_agents_optimal_times = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas]
+
+cbs_datas = [read_from_file(f) for f in glob.glob('datasave/cbs_data_lst_*density0.05*')]
+cbs_datas = [x for lst in cbs_datas for x in lst]
+cbs_agents_times = [(x.num_agents, x.runtimes) for x in cbs_datas]
+
+afs_datas = [read_from_file(f) for f in glob.glob('datasave/afs_data_lst_*density0.05*')]
+afs_datas = [x for lst in afs_datas for x in lst]
+afs_agents_first_times = [(x.num_agents, x.runtimes[0]) for x in afs_datas]
+afs_agents_optimal_times = [(x.num_agents, x.runtimes[-1]) for x in afs_datas]
+
+mstar_datas = [read_from_file(f) for f in glob.glob('datasave/mstar_data_lst_*density0.05*')]
+mstar_datas = [x for lst in mstar_datas for x in lst]
+mstar_agents_times = [(x.num_agents, x.runtimes) for x in mstar_datas]
+
+
+def draw_timeout(timeout, xs, plt=plt):
     if type(timeout) is int:
         plt.axhline(timeout, color='black', lw=0.7, linestyle='--')
     elif type(timeout) is dict:
@@ -150,6 +192,7 @@ def draw_timeout(timeout, xs):
                  color='black')
 
 def plt_cis(agents_times_lst, title, timeout=None):
+    agents_times_lst.sort()
     agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
     agents_to_100_bounds_lst = \
         [[k] + list(get_ci(v, 100)) for k, v in agents_to_times_dict.items()]
@@ -201,6 +244,40 @@ def plt_cis(agents_times_lst, title, timeout=None):
 
     draw_timeout(timeout, xs)
 
+
+def plt_95_ci(agents_times_lst, name, plt_idx, max_idx, timeout=None):
+    agents_times_lst.sort()
+    agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
+
+    agents_to_95_bounds_lst = \
+        [[k] + list(get_ci(v, 95)) for k, v in agents_to_times_dict.items()]
+    medians = []
+    xs, hs, ms, ls = zip(*agents_to_95_bounds_lst)
+    plt.plot(xs, ls, color=ps.color(plt_idx, max_idx), label="{} 95% CI".format(name))
+    plt.plot(xs, hs, color=ps.color(plt_idx, max_idx))
+    plt.plot(xs, ms, color=ps.color(plt_idx, max_idx))
+    plt.fill_between(xs, ls, hs,
+                     where=ls <= hs,
+                     facecolor=ps.alpha(ps.color(plt_idx, max_idx), 0.2),
+                     interpolate=True,
+                     linewidth=0.0)
+    plt.yscale('log')
+    plt.ylabel("Time (seconds)")
+    plt.xlabel("Number of agents")
+    plt.xticks(xs)
+
+    draw_timeout(timeout, xs)
+
+
+ps.setupfig()
+plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 1, 4, 1200)
+plt_95_ci(afs_agents_optimal_times, "AFS Optimal", 3, 4, 1200)
+plt_95_ci(xstar_agents_first_times, "X* First", 0, 4, 1200)
+plt_95_ci(afs_agents_first_times, "AFS First", 2, 4, 1200)
+ps.grid()
+ps.legend('ul')
+plt.show()
+exit(0)
 
 def plt_percentiles(agents_times_lst, title, timeout=None):
     agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
@@ -262,6 +339,11 @@ def plt_percentiles(agents_times_lst, title, timeout=None):
 
     draw_timeout(timeout, xs)
 
+ps.setupfig()
+plt_cis(xstar_datas, "Time to first solution", kTimeout)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_data_tuples_ci")
 
 ps.setupfig()
 plt_cis(agents_first_times_lst, "Time to first solution", kTimeout)
@@ -409,7 +491,7 @@ plt_window_agents_hist(num_agents_in_window_optimal_times_lst,
 ps.save_fig("window_vs_time_both_hist")
 
 
-def plt_radius_vs_agents(data, timeout=kRadiusTimeout):
+def plt_radius_vs_agents(data, printylabel, plt=plt, timeout=kRadiusTimeout):
     data_dict = reduce(add_to_dict, data, dict())
     radius_to_100_bounds_lst = \
         [[k] + list(get_ci(v, 100)) for k, v in data_dict.items()]
@@ -452,22 +534,54 @@ def plt_radius_vs_agents(data, timeout=kRadiusTimeout):
                      facecolor=ps.alpha(ps.color(3, 4)),
                      interpolate=True,
                      linewidth=0.0)
-    plt.yscale('log')
-    plt.ylabel("Time (seconds)")
-    plt.xlabel("Initial window $L_{\infty}$ radius")
-    plt.xticks(xs)
+    if plt is matplotlib.pyplot:
+        plt.yscale('log')
+        if printylabel:
+            plt.ylabel("Time (seconds)")
+        plt.xlabel("Initial window $L_{\infty}$ radius")
+        plt.xticks(xs)
+    else:
+        plt.set_yscale('log')
+        if printylabel:
+            plt.set_ylabel("Time (seconds)")
+        plt.set_xlabel("Initial window $L_{\infty}$ radius")
+        plt.set_xticks(xs)
 
-    draw_timeout(timeout, xs)
+    draw_timeout(timeout, xs, plt)
 
 
+# ps.setupfig()
+# plt_radius_vs_agents(radius_40_first_times_lst)
+# ps.grid()
+# ps.legend('ul')
+# ps.save_fig("radius_40_first_times")
+
+# ps.setupfig()
+# plt_radius_vs_agents(radius_40_optimal_times_lst)
+# ps.grid()
+# ps.legend('ul')
+# ps.save_fig("radius_40_optimal_times")
+
+f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+ps.setupfig(f)
+ps.grid(ax1)
+plt_radius_vs_agents(radius_30_first_times_lst, True, plt=ax1)
+ps.legend('ul', plt=ax1)
+
+ps.grid(ax2)
+plt_radius_vs_agents(radius_30_optimal_times_lst, False, plt=ax2)
+# ps.legend('ul')
+ps.save_fig("radius_30_first_optimal_times")
+
+f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
 ps.setupfig()
-plt_radius_vs_agents(radius_first_times_lst)
+plt.subplot(121)
+plt_radius_vs_agents(radius_20_first_times_lst, True)
 ps.grid()
 ps.legend('ul')
-ps.save_fig("radius_first_times")
 
-ps.setupfig()
-plt_radius_vs_agents(radius_optimal_times_lst)
+plt.subplot(122)
+plt_radius_vs_agents(radius_20_optimal_times_lst, False)
 ps.grid()
-ps.legend('ul')
-ps.save_fig("radius_optimal_times")
+# ps.legend('ul')
+ps.save_fig("radius_20_first_optimal_times")

@@ -83,7 +83,7 @@ class Animation:
     self.anim = animation.FuncAnimation(self.fig, self.animate_func,
                                init_func=self.init_func,
                                frames=int(self.T+1) * 10,
-                               interval=10,
+                               interval=100,
                                blit=True)
 
   def save(self, file_name, speed, dpi):

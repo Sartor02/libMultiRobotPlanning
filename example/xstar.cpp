@@ -471,7 +471,6 @@ class Environment {
       const std::vector<PlanResult<State, Action, int>>& joint_plan,
       std::vector<std::pair<Neighbor<State, Action, int>, bool>>&
           window_neighbors) {
-    static constexpr bool kDebug = false;
     if (!w.contains({s.x, s.y}, agent_idx)) {
       // If the given state is not in the window but it falls along the path
       // into the window, add the next step in the path towards the window.
@@ -736,6 +735,7 @@ int main(int argc, char* argv[]) {
 
   std::unordered_set<Location> obstacles;
   std::vector<Location> goals;
+  std::vector<State> goalStates;
   std::vector<State> startStates;
 
   const auto& dim = config["map"]["dimensions"];
@@ -752,6 +752,7 @@ int main(int argc, char* argv[]) {
     startStates.emplace_back(State(0, start[0].as<int>(), start[1].as<int>()));
     // std::cout << "s: " << startStates.back() << std::endl;
     goals.emplace_back(Location(goal[0].as<int>(), goal[1].as<int>()));
+    goalStates.emplace_back(State(0, goal[0].as<int>(), goal[1].as<int>()));
   }
 
   Environment mapf(dimx, dimy, obstacles, goals);
@@ -759,14 +760,14 @@ int main(int argc, char* argv[]) {
   std::vector<PlanResult<State, Action, int>> solution;
 
   Timer timer;
-  bool success = x_star.search(startStates, solution, timing_infix);
+  bool success = x_star.search(startStates, goalStates, solution, timing_infix);
   timer.stop();
 
   if (success) {
     //     std::cout << "Planning successful! " << std::endl;
     int cost = 0;
     int makespan = 0;
-    for (const auto& s : solution) {
+    for (const PlanResult<State, Action, int>& s : solution) {
       cost += s.cost;
       makespan = std::max<int>(makespan, s.cost);
     }

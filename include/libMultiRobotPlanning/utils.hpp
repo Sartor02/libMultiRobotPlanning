@@ -43,8 +43,8 @@ class StableStorage {
  public:
   StableStorage() : data_(), next_free_(0) {}
 
-  size_t add() {
-    data_[next_free_] = T();
+  size_t add(const T t = T()) {
+    data_[next_free_] = t;
     next_free_++;
     assert(next_free_ < Size);
     return next_free_ - 1;
