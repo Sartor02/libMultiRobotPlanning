@@ -72,8 +72,8 @@ class Animation:
       self.agent_names[name].set_verticalalignment('center')
       self.artists.append(self.agent_names[name])
 
-    min_tpl = (0, 3)
-    max_tpl = (5, 8)
+    min_tpl = (-1, 1)
+    max_tpl = (7, 7)
     self.artists.append(Rectangle((min_tpl[0]-0.5,min_tpl[1]-0.5),
                         max_tpl[0] - min_tpl[0] + 1,
                         max_tpl[1] - min_tpl[1] + 1,

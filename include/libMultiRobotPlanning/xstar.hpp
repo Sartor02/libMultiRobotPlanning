@@ -772,8 +772,8 @@ class XStar {
       const bool start_in_window = w.isInitialStartInWindow();
       const bool goal_in_window = w.isFinalGoalInWindow();
       static int iter = 0;
-      const bool iter_done = false; //++iter > 1;
-//       std::cout << "USING ITER\n";
+      const bool iter_done = ++iter > 2;
+      std::cout << "USING ITER\n";
       timing_recWAMPF->time_should_quit.stop();
       if ((!was_restricted && start_in_window && goal_in_window) || iter_done) {
         timing_recWAMPF->num_windows_should_quit++;
@@ -911,12 +911,10 @@ class XStar {
       timing_AStarSearchUntil->timing_ASUExp.time_top_o.stop();
 
       timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.start();
-      auto it = closed_set.find(current.state);
-      if (it != closed_set.end() &&
-          utils::sum(it->second) <= current.g_score_sum) {
+      
+      if (inClosedSetAndClosed(closed_set, current.state, current.g_score)) {
         if (kDebug) {
           std::cout << "Closed, skipping " << current << std::endl;
-          std::cout << "utils::sum(it->second): " << utils::sum(it->second) << " vs " << current.g_score_sum << std::endl;
         }
         timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.stop();
         continue;
@@ -1168,7 +1166,7 @@ class XStar {
       const JointState_t& s = pair.first;
       ParentValue_t& v = pair.second;
       if (containsGoalWait(v.action_out_of_previous_state)) {
-        auto closed_prev_it = closed_set->find(v.previous_state);
+        auto closed_prev_it = closed_set->find(toParentMapKey(v.previous_state));
         if (kDebug) {
           std::cout << "DELETING ";
           print(v.previous_state, std::cout, " ");
@@ -1214,7 +1212,7 @@ class XStar {
       (*handle).handle = handle;
       state_to_heap->insert(std::make_pair<>(n.state, handle));
 
-      auto it = closed_set->find(n.state);
+      auto it = closed_set->find(toParentMapKey(n.state));
       if (it != closed_set->end()) {
         closed_set->erase(it);
       }
@@ -1314,11 +1312,11 @@ class XStar {
 
       std::cout << current << std::endl;
       
-      if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} })) {
-        std::cout << "STAGE3 22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222" << std::endl;
-        std::cout << "G-score: ";
-        print(current.g_score);
-      }
+//       if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} })) {
+//         std::cout << "STAGE3 22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222" << std::endl;
+//         std::cout << "G-score: ";
+//         print(current.g_score);
+//       }
       
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
       
@@ -1367,21 +1365,14 @@ class XStar {
       timing_stage3->timing_S3Exp.time_top_o.stop();
 
       timing_stage3->timing_S3Exp.time_check_in_c.start();
-      const auto closed_set_insert_result =
-          closed_set.insert({current.state, current.g_score});
-      if (!closed_set_insert_result.second) {
-        if (utils::sum(closed_set_insert_result.first->second) <= utils::sum(current.g_score)) {
+      if (inClosedSetAndClosed(closed_set, current.state, current.g_score)) {
           if (kDebug) {
             std::cout << "Closed, skipping " << current << std::endl;
-            std::cout << "Closed stuff: ";
-            print(closed_set_insert_result.first->second, std::cout, "vs Existing stuff: ");
-            print(current.g_score);
           }
           timing_stage3->timing_S3Exp.time_check_in_c.stop();
           continue;
-        }
-        closed_set_insert_result.first->second = current.g_score;
       }
+      insertClosedSet(&closed_set, current.state, current.g_score);
       timing_stage3->timing_S3Exp.time_check_in_c.stop();
 
       timing_stage3->timing_S3Exp.time_add_parent.start();
@@ -1412,27 +1403,28 @@ class XStar {
         }
         
 
-        const bool is_debug_state = toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} });
-        ProcessNeighborResult r = processNeighbor(starts, goals, current, joint_neighbor_info,
+//         const bool is_debug_state = toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} });
+//         ProcessNeighborResult r = 
+        processNeighbor(starts, goals, current, joint_neighbor_info,
                         joint_neighbor_in_window, closed_set, &state_to_heap,
-                        &open_set, &out_of_window, is_debug_state);
-        if (is_debug_state) {
-          JointState_t neighbor_state;
-          JointAction_t neighbor_action;
-          for (const auto& n : joint_neighbor_info) {
-            neighbor_state.push_back(n.state);
-            neighbor_action.push_back(n.action);
-          }
-          std::cout << "N: ";
-          print(neighbor_state, std::cout << "Act: ");
-          print(neighbor_action);
-          switch(r) {
-            case ADDOPEN: { std::cout << "ADDOPEN\n"; break; }
-            case INCLOSED: { std::cout << "INCLOSED\n";break; }
-            case NOTINWINDOW: { std::cout << "NOTINWINDOW\n";break; }
-            case ISCOLLIDING: { std::cout << "ISCOLLIDING\n"; break;}
-          }
-        }
+                        &open_set, &out_of_window);
+//         if (is_debug_state) {
+//           JointState_t neighbor_state;
+//           JointAction_t neighbor_action;
+//           for (const auto& n : joint_neighbor_info) {
+//             neighbor_state.push_back(n.state);
+//             neighbor_action.push_back(n.action);
+//           }
+//           std::cout << "N: ";
+//           print(neighbor_state, std::cout << "Act: ");
+//           print(neighbor_action);
+//           switch(r) {
+//             case ADDOPEN: { std::cout << "ADDOPEN\n"; break; }
+//             case INCLOSED: { std::cout << "INCLOSED\n";break; }
+//             case NOTINWINDOW: { std::cout << "NOTINWINDOW\n";break; }
+//             case ISCOLLIDING: { std::cout << "ISCOLLIDING\n"; break;}
+//           }
+//         }
       }
       timing_stage3->timing_S3Exp.time_add_neighbors_to_o.stop();
 
@@ -1713,10 +1705,7 @@ class XStar {
       std::cout << "New goals: ";
       print(new_goals);
       
-      std::cout << "Window Min" << window->window.min_position << std::endl;
-      std::cout << "Window Max" << window->window.max_position << std::endl;
-      
-//       std::cout << "Window: " << << std::cout;
+      std::cout << "Grow and replan in: " << window->window << '\n';
     }
 
     verifyStartCostDifference(old_starts_costs, new_starts_costs);
@@ -2056,7 +2045,7 @@ class XStar {
                        const JointNeighbor_t& joint_neighbor_info,
                        const bool& is_in_window, const closed_set_t& closed_set,
                        state_to_heap_t* state_to_heap, open_set_t* open_set,
-                       out_of_window_t* out_of_window, bool dump_contents = false) {
+                       out_of_window_t* out_of_window) {
     const JointState_t& current_state = current.state;
     const JointCost_t& current_g_score = current.g_score;
 
@@ -2093,14 +2082,7 @@ class XStar {
       return NOTINWINDOW;
     }
 
-    auto res = closed_set.find(neighbor_joint_state);
-    if (res != closed_set.end() && utils::sum(res->second) <= n.g_score_sum) {
-      if (dump_contents) {
-        std::cout << "Closed cost: ";
-        print(closed_set.find(neighbor_joint_state)->second, std::cout, "Candidate:");
-        print(n.g_score, std::cout, "Sum: ");
-        std::cout << n.g_score_sum << std::endl;
-      }
+    if (inClosedSetAndClosed(closed_set, neighbor_joint_state, n.g_score)) {
       return INCLOSED;
     }
 
@@ -2159,26 +2141,6 @@ class XStar {
     static constexpr bool kDebug = true;
     if (kDebug) {
       std::cout << "p-map insert: " << n << " inserted: ";
-    }
-    
-    if (toParentMapKey(n.state) == JointState_t({ {0, 2, 2}, {0, 3, 6}, {0, 5, 5} })) {
-      std::cout << "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" << std::endl;
-    }
-    
-    if (toParentMapKey(n.state) == JointState_t({ {0, 2, 3}, {0, 3, 6}, {0, 5, 6} })) {
-      std::cout << "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111" << std::endl;
-    }
-    
-    if (toParentMapKey(n.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} })) {
-      std::cout << "22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222" << std::endl;
-    }
-    
-    if (toParentMapKey(n.state) == JointState_t({ {0, 2, 5}, {0, 3, 6}, {0, 4, 7} })) {
-      std::cout << "33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333" << std::endl;
-    }
-    
-    if (toParentMapKey(n.state) == JointState_t({ {0, 2, 5}, {0, 3, 6}, {0, 3, 7} })) {
-      std::cout << "44444444444444444444444444444444444444444444444444444444444444444444444444444444444444444" << std::endl;
     }
 
     assert(n.state.size() == n.prev_state.size());
@@ -2239,7 +2201,7 @@ class XStar {
     }
     const auto result = parent_map->find(toParentMapKey(key));
     assert(result != parent_map->end());
-    assert(key == result->first);
+    assert(toParentMapKey(key) == result->first);
     if (kDebug) {
       const ParentValue_t& v = result->second;
       print(v.g_score_previous_state, std::cout, " => ");
@@ -2248,13 +2210,35 @@ class XStar {
     parent_map->erase(toParentMapKey(key));
   }
 
+  void insertClosedSet(closed_set_t* closed_set, const JointState_t& key, const JointCost_t& value) {
+     auto res = closed_set->insert({toParentMapKey(key), value });
+     if (res.second) {
+       return;
+     }
+     if (utils::sum(res.first->second) > utils::sum(value)) {
+       res.first->second = value;
+     }
+  }
+  
+  bool inClosedSet(const closed_set_t& closed_set, const JointState_t& key) {
+    return closed_set.find(toParentMapKey(key)) != closed_set.end();
+  }
+  
+  bool inClosedSetAndClosed(const closed_set_t& closed_set, const JointState_t& key, const JointCost_t& value) {
+    auto it = closed_set.find(toParentMapKey(key));
+    if (it == closed_set.end()) {
+      return false;
+    }
+    return utils::sum(it->second) <= utils::sum(value);
+  }
+  
   void eraseClosedSet(closed_set_t* closed_set, const JointState_t& key) {
     static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Erasing ";
       print(key);
     }
-    closed_set->erase(key);
+    closed_set->erase(toParentMapKey(key));
   }
   
   bool containsState(const Node& n, const State& s, const size_t idx) {
@@ -2363,12 +2347,11 @@ class XStar {
       state_to_heap.erase(current.state);
       timing_PlanIn->timing_expansions.time_top_o.stop();
       timing_PlanIn->timing_expansions.time_check_in_c.start();
-      const auto closed_set_insert_result =
-          closed_set.insert({current.state, current.g_score});
-      if (!closed_set_insert_result.second) {
+      if (inClosedSetAndClosed(closed_set, current.state, current.g_score)) {
         timing_PlanIn->timing_expansions.time_check_in_c.stop();
         continue;
       }
+      insertClosedSet(&closed_set, current.state, current.g_score);
       timing_PlanIn->timing_expansions.time_check_in_c.stop();
 
       timing_PlanIn->timing_expansions.time_add_parent.start();
