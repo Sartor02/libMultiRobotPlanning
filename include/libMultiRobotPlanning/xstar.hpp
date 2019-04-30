@@ -772,8 +772,8 @@ class XStar {
       const bool start_in_window = w.isInitialStartInWindow();
       const bool goal_in_window = w.isFinalGoalInWindow();
       static int iter = 0;
-      const bool iter_done = ++iter > 2;
-      std::cout << "USING ITER\n";
+      const bool iter_done = false;//++iter > 2;
+//       std::cout << "USING ITER\n";
       timing_recWAMPF->time_should_quit.stop();
       if ((!was_restricted && start_in_window && goal_in_window) || iter_done) {
         timing_recWAMPF->num_windows_should_quit++;
@@ -884,6 +884,9 @@ class XStar {
     for (size_t expand_count = 0;
          !open_set.empty() && open_set.top().f_score < fmax; ++expand_count) {
       verifyOpenSet(*window, solution);
+      if (kDebug && isTooManyIterations(expand_count, *window)) {
+        std::cout << "Too many agents: " <<  window->window.agent_idxs.size() << std::endl;
+      }
       assert(!isTooManyIterations(expand_count, *window));
       timing_AStarSearchUntil->num_values_f_less_fmax++;
 
@@ -1060,7 +1063,7 @@ class XStar {
               const JointPlan_t& solution, const Cost& goal_node_fvalue,
               TimingStage2* timing_stage2) {
     timing_stage2->total_Stage2.start();
-    static constexpr bool kDebug = false;
+    static constexpr bool kDebug = true;
     SearchState* ss = window->getSearchState();
 
     verifyOpenSet(*window, solution);
@@ -1077,13 +1080,12 @@ class XStar {
       assert(node.state.size() == window->window.agent_idxs.size());
       Node node_copy = node;
       // Hack to make sure that the node is expanded before any other nodes.
-      node_copy.f_score = m_env.admissibleJointHeuristic(node_copy.state, goals);
+      node_copy.f_score = node_copy.f_score / 2;
       auto handle = ss->open_set.push(node_copy);
       (*handle).handle = handle;
       ss->state_to_heap[node_copy.state] = handle;
       if (kDebug) {
-        std::cout << "Node state pushed: ";
-        print(node_copy.state);
+        std::cout << "Node state pushed: " << node_copy << " top fval: " << ss->open_set.top().f_score << std::endl;
       }
     }
     timing_stage2->time_expanding_s.stop();
@@ -2097,7 +2099,7 @@ class XStar {
 
   bool isTooManyIterations(const size_t& iterations, const WPS_t& window) {
     switch (window.window.agent_idxs.size()) {
-      case 2: return iterations > 5000;
+      case 2: return iterations > 10000;
       case 3: return iterations > 20000;
       case 4: return iterations > 350000;
       case 5: return iterations > 500000;
