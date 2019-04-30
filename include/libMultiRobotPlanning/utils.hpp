@@ -15,6 +15,17 @@ T sum(const std::vector<T>& v) {
 }
 
 template <typename T>
+std::vector<T> element_add(const std::vector<T>& v1, const std::vector<T>& v2) {
+  std::vector<T> res;
+  assert(v1.size() == v2.size());
+  const auto min = std::min(v1.size(), v2.size());
+  for (size_t i = 0; i < min; ++i) {
+     res.push_back(v1[i] + v2[i]);
+  }
+  return res;
+}
+
+template <typename T>
 T diffSum(const std::vector<T>& v1, const std::vector<T>& v2) {
   assert(v1.size() == v2.size());
   T sum = 0;
