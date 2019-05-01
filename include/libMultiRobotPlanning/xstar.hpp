@@ -777,7 +777,7 @@ class XStar {
       const bool start_in_window = w.isInitialStartInWindow();
       const bool goal_in_window = w.isFinalGoalInWindow();
       static int iter = 0;
-      const bool iter_done = false;//++iter > 2;
+      const bool iter_done = false; //++iter > 1;
 //       std::cout << "USING ITER\n";
       timing_recWAMPF->time_should_quit.stop();
       if ((!was_restricted && start_in_window && goal_in_window) || iter_done) {
@@ -930,7 +930,7 @@ class XStar {
       timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.stop();
 
       if (kDebug) {
-        std::cout << current << std::endl;
+        std::cout << "A*SU Exp: " << current << std::endl;
       }
 
       timing_AStarSearchUntil->timing_ASUExp.time_add_parent.start();
@@ -966,9 +966,16 @@ class XStar {
             assert(n.action == Action::GoalWait);
           }
         }
-        processNeighbor(starts, goals, current, joint_neighbor_info,
+        
+        const bool dump_neighbor = current.f_score < 10;
+        
+        ProcessNeighborResult r = processNeighbor(starts, goals, current, joint_neighbor_info,
                         joint_neighbor_in_window, closed_set, &state_to_heap,
-                        &open_set, &out_of_window);
+                        &open_set, &out_of_window, dump_neighbor);
+        
+        if (dump_neighbor) {
+          std::cout << r << std::endl;
+        }
       }
 
       timing_AStarSearchUntil->timing_ASUExp.time_add_neighbors_to_o.stop();
@@ -1109,20 +1116,12 @@ class XStar {
   void verifySolutionValid(const JointPlan_t& solution) {
     static constexpr bool kDebug = true;
     if (kDebug) {
-      std::cout << "Solution: " << std::endl;
+      std::cout << "Verifying solution: " << std::endl;
+      print(solution);
     }
     for (const auto& p : solution) {
       assert(!p.states.empty());
       assert(p.states.size() == p.actions.size() + 1);
-      if (kDebug) {
-        std::cout << p.states.front().first;
-        for (size_t i = 0; i < p.actions.size(); ++i) {
-          const auto& ap = p.actions.at(i).first;
-          const auto& sp = p.states.at(i).first;
-          std::cout << " >" << ap << "< " << sp;
-        }
-        std::cout << "END!" << std::endl;
-      }
 
       for (size_t i = 1; i < p.states.size(); ++i) {
         const State& prev_s = p.states.at(i - 1).first;
@@ -2066,12 +2065,32 @@ class XStar {
     ADDOPEN, INCLOSED, NOTINWINDOW, ISCOLLIDING
   };
   
+  friend std::ostream& operator<<(std::ostream & os, ProcessNeighborResult r) {
+    switch (r) {
+      case ADDOPEN: {os << "ADDOPEN"; return os;}
+      case INCLOSED: {os << "INCLOSED"; return os; }
+      case NOTINWINDOW: { os << "NOTINWINDOW"; return os; };
+      case ISCOLLIDING: {os << "ISCOLLIDING"; return os; };
+      default: {os << (int) r; return os; }
+    }
+  }
+  
+//   std::ostream& ProcessNeighborResult::operator<<(std::ostream& os) {
+//       switch(*this) {
+//         case ADDOPEN: { os << "ADDOPEN"; break; }
+//         case INCLOSED: { os << "INCLOSED"; break; }
+//         case NOTINWINDOW: { os << "NOTINWINDOW"; break; }
+//         case ISCOLLIDING: { os << "ISCOLLIDING"; break; }
+//       }
+//       return os;
+//   }
+  
   ProcessNeighborResult processNeighbor(const JointState_t& starts, const JointState_t& goals,
                        const Node& current,
                        const JointNeighbor_t& joint_neighbor_info,
                        const bool& is_in_window, const closed_set_t& closed_set,
                        state_to_heap_t* state_to_heap, open_set_t* open_set,
-                       out_of_window_t* out_of_window) {
+                       out_of_window_t* out_of_window, bool dump_contents = false) {
     const JointState_t& current_state = current.state;
     const JointCost_t& current_g_score = current.g_score;
 
@@ -2102,6 +2121,9 @@ class XStar {
     const Node n = neighborInfoToNode(goals, current_state, neighbor_joint_state,
                             neighbor_joint_action, neighbor_joint_cost,
                             neighbor_tenative_gscore);
+    if (dump_contents) {
+      std::cout << "Neighbor: " << n << std::endl;
+    }
     
     if (!is_in_window) {
       out_of_window->insert({neighbor_joint_state, n});
