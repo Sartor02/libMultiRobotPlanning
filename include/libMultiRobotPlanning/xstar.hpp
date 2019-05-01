@@ -640,7 +640,12 @@ class XStar {
     for (size_t i = 0; i < windows->size(); ++i) {
       timing_recWAMPF->num_windows++;
       WPS_t& wi = windows->at(i);
-      growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
+      bool gri_res = growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
+      while (!gri_res) {
+        wi.window.grow();
+        TimingPlanIn tp;
+        gri_res = planIn(&wi, solution, &tp);
+      }
 
       timing_recWAMPF->timing_PIOW_overlapping.total_PIOW.start();
       bool found_overlapping = false;
@@ -849,7 +854,7 @@ class XStar {
     open_set->pop();
   }
 
-  void AStarSearchUntil(WPS_t* window, const JointState_t& starts,
+  bool AStarSearchUntil(WPS_t* window, const JointState_t& starts,
                         const JointState_t& goals, const JointPlan_t& solution,
                         const Cost& fmax,
                         TimingAStarSearchUntil* timing_AStarSearchUntil) {
@@ -884,10 +889,9 @@ class XStar {
     for (size_t expand_count = 0;
          !open_set.empty() && open_set.top().f_score < fmax; ++expand_count) {
       verifyOpenSet(*window, solution);
-      if (kDebug && isTooManyIterations(expand_count, *window)) {
-        std::cout << "Too many agents: " <<  window->window.agent_idxs.size() << std::endl;
+      if (isTooManyIterations(expand_count, *window)) {
+        return false;
       }
-      assert(!isTooManyIterations(expand_count, *window));
       timing_AStarSearchUntil->num_values_f_less_fmax++;
 
       Node current = open_set.top();
@@ -975,6 +979,7 @@ class XStar {
     }
     timing_AStarSearchUntil->timing_ASUExp.total_ASUExp.stop();
     timing_AStarSearchUntil->total_astar_search_until.stop();
+    return true;
   }
 
   void verifyOpenSet(const WPS_t& window, const JointPlan_t&) {
@@ -989,7 +994,7 @@ class XStar {
     assert(parent_map.find(toParentMapKey(starts)) != parent_map.end());
   }
 
-  void Stage1(WPS_t* window, const JointState_t& starts,
+  bool Stage1(WPS_t* window, const JointState_t& starts,
               const JointState_t& goals, const JointPlan_t& solution,
               const Cost& goal_node_fvalue, TimingStage1* timing_stage1) {
     timing_stage1->total_Stage1.start();
@@ -1017,9 +1022,10 @@ class XStar {
 
     verifyOpenSet(*window, solution);
 
-    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
+    bool res = AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
                      &timing_stage1->timing_AStarSearchUntil);
     timing_stage1->total_Stage1.stop();
+    return res;
   }
 
   std::pair<JointState_t, JointAction_t> getStateAction(
@@ -1058,7 +1064,7 @@ class XStar {
     }
   };
 
-  void Stage2(WPS_t* window, const NodeAndCameFromValues_t& info_between_starts,
+  bool Stage2(WPS_t* window, const NodeAndCameFromValues_t& info_between_starts,
               const JointState_t& starts, const JointState_t& goals,
               const JointPlan_t& solution, const Cost& goal_node_fvalue,
               TimingStage2* timing_stage2) {
@@ -1094,9 +1100,10 @@ class XStar {
     if (kDebug) {
       std::cout << "Astar search until " << goal_node_fvalue << "\n";
     }
-    AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
-                     &timing_stage2->timing_AStarSearchUntil);
+    bool res = AStarSearchUntil(window, starts, goals, solution, goal_node_fvalue,
+                          &timing_stage2->timing_AStarSearchUntil);
     timing_stage2->total_Stage2.stop();
+    return res;
   }
 
   void verifySolutionValid(const JointPlan_t& solution) {
@@ -1201,12 +1208,12 @@ class XStar {
   void readdGoalWaitNodes(open_set_t* open_set, state_to_heap_t* state_to_heap,
                           goal_wait_nodes_t* goal_wait_nodes,
                           closed_set_t* closed_set, const JointState_t& goals) {
-    static constexpr bool kDebug = false;
+    static constexpr bool kDebug = true;
     for (Node& n : *goal_wait_nodes) {
       if (containsGoalWait(n.action)) {
         continue;
       }
-      n.f_score = m_env.admissibleJointHeuristic(n.state, goals);
+      n.f_score = m_env.admissibleJointHeuristic(n.state, goals) + n.g_score_sum;
       if (kDebug) {
         std::cout << "READDING WAIT NODE: " << n << std::endl;
       }
@@ -1237,7 +1244,7 @@ class XStar {
 //   }
 
   
-  void Stage3(WPS_t* window, JointPlan_t* solution, const JointState_t& starts,
+  bool Stage3(WPS_t* window, JointPlan_t* solution, const JointState_t& starts,
               const JointCost_t& starts_costs, const JointState_t& goals,
               const JointCost_t& goals_costs, TimingStage3* timing_stage3) {
     timing_stage3->total_Stage3.start();
@@ -1302,12 +1309,15 @@ class XStar {
           insertWindowPath(&window_solution, window->window, starts_costs,
                             goals_costs, solution);
       assert(insert_result);
-      return;
+      return true;
     }
 
     timing_stage3->timing_S3Exp.total_S3Exp.start();
     for (size_t expand_count = 0; !open_set.empty(); ++expand_count) {
       timing_stage3->num_until_goal_expanded++;
+      if (isTooManyIterations(expand_count, *window)) {
+        return false;
+      }
       assert(!isTooManyIterations(expand_count, *window));
 
       Node current = open_set.top();
@@ -1359,7 +1369,7 @@ class XStar {
         assert(insert_result);
         timing_stage3->timing_S3Exp.total_S3Exp.stop();
         timing_stage3->total_Stage3.stop();
-        return;
+        return true;
       }
 
       timing_stage3->timing_S3Exp.time_top_o.start();
@@ -1438,6 +1448,7 @@ class XStar {
     assert(false);
     timing_stage3->timing_S3Exp.total_S3Exp.stop();
     timing_stage3->total_Stage3.stop();
+    return true;
   }
 
   void verifyStartCostDifference(const JointCost_t& before_starts_costs,
@@ -1668,7 +1679,7 @@ class XStar {
     return nodes_and_came_from;
   }
 
-  void growAndReplanIn(WPS_t* window, JointPlan_t* solution,
+  bool growAndReplanIn(WPS_t* window, JointPlan_t* solution,
                        TimingGARI* timing_gari) {
     timing_gari->total_GARI.start();
     static constexpr bool kDebug = true;
@@ -1733,10 +1744,10 @@ class XStar {
     verifySolutionValid(*solution);
     if (window->getSearchState()->previous_start != old_starts) {
       TimingPlanIn tpi;
-      planIn(window, solution, &tpi);
+      bool pi_res = planIn(window, solution, &tpi);
       verifySolutionValid(*solution);
       timing_gari->total_GARI.stop();
-      return;
+      return pi_res;
     }
     
     std::cout << "Stage1 before: " << std::endl;
@@ -1744,24 +1755,37 @@ class XStar {
     
     const Cost old_goal_g_score_sum =
         window->getSearchState()->open_set.top().g_score_sum;
-    Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum,
+    bool s1_res = Stage1(window, old_starts, old_goals, *solution, old_goal_g_score_sum,
            &(timing_gari->timing_stage1));
+    if (!s1_res) {
+      timing_gari->total_GARI.stop();
+      return false;
+    }
     verifySolutionValid(*solution);
     std::cout << "Stage1 after: " << std::endl;
     print(*solution);
-    Stage2(window, info_between_starts, new_starts, old_goals, *solution,
+    bool s2_res = Stage2(window, info_between_starts, new_starts, old_goals, *solution,
            old_goal_g_score_sum, &(timing_gari->timing_stage2));
+    if (!s2_res) {
+      timing_gari->total_GARI.stop();
+      return false;
+    }
     verifySolutionValid(*solution);
     verifyOpenSet(*window, *solution);
     std::cout << "Stage2 after: " << std::endl;
     print(*solution);
-    Stage3(window, solution, new_starts, new_starts_costs, new_goals,
+    bool s3_res = Stage3(window, solution, new_starts, new_starts_costs, new_goals,
            new_goals_costs, &(timing_gari->timing_stage3));
     //         print(*solution);
+    if (!s3_res) {
+      timing_gari->total_GARI.stop();
+      return false;
+    }
     std::cout << "Stage3 after: " << std::endl;
     print(*solution);
     verifySolutionValid(*solution);
     timing_gari->total_GARI.stop();
+    return true;
   }
 
   bool shouldQuit(const WPSList_t& windows, const Cost& min_cost,
@@ -2099,7 +2123,7 @@ class XStar {
 
   bool isTooManyIterations(const size_t& iterations, const WPS_t& window) {
     switch (window.window.agent_idxs.size()) {
-      case 2: return iterations > 10000;
+      case 2: return iterations > 5000;
       case 3: return iterations > 20000;
       case 4: return iterations > 350000;
       case 5: return iterations > 500000;
@@ -2140,7 +2164,7 @@ class XStar {
   }
   
   void insertParentMap(ParentMap_t* parent_map, const Node& n) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "p-map insert: " << n << " inserted: ";
     }
@@ -2168,9 +2192,11 @@ class XStar {
     ParentValue_t value(n.state, n.prev_state, n.action, n.action_cost, n.g_score);
     const auto insert_result = parent_map->insert({toParentMapKey(n.state), value});
     if (!insert_result.second) {
-      std::cout << "Prev: ";
-      print(insert_result.first->second.g_score_previous_state, std::cout, "vs Candidate: ");
-      print(n.g_score);
+      if (kDebug) {
+        std::cout << "Prev: ";
+        print(insert_result.first->second.g_score_previous_state, std::cout, "vs Candidate: ");
+        print(n.g_score);
+      }
       if (utils::sum(insert_result.first->second.g_score_previous_state) >
           utils::sum(n.g_score)) {
         insert_result.first->second = value;
