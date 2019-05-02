@@ -19,6 +19,7 @@
 namespace libMultiRobotPlanning {
 
 static constexpr bool kTiming = true;
+static constexpr bool kProduction = true;
 
 /*!
   \example cbs.cpp Example that solves the Multi-Agent Path-Finding (MAPF)
@@ -777,7 +778,7 @@ class XStar {
       const bool start_in_window = w.isInitialStartInWindow();
       const bool goal_in_window = w.isFinalGoalInWindow();
       static int iter = 0;
-      const bool iter_done = false; //++iter > 1;
+      const bool iter_done = false; // ++iter > 1;
 //       std::cout << "USING ITER\n";
       timing_recWAMPF->time_should_quit.stop();
       if ((!was_restricted && start_in_window && goal_in_window) || iter_done) {
@@ -796,7 +797,7 @@ class XStar {
                 WPSList_t* windows, SSList_t* search_states,
                 JointPlan_t* solution, TimingRecWAMPF* timing_recWAMPF) {
     timing_recWAMPF->total_RecWAMPF.start();
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Starting recWAMPF\n";
     }
@@ -860,7 +861,7 @@ class XStar {
                         TimingAStarSearchUntil* timing_AStarSearchUntil) {
     verifyOpenSet(*window, solution);
     timing_AStarSearchUntil->total_astar_search_until.start();
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
 
     auto* ss = window->getSearchState();
@@ -896,8 +897,9 @@ class XStar {
 
       Node current = open_set.top();
       if (kDebug) {
-//         std::cout << current << std::endl;
+        std::cout << current << std::endl;
       }
+      bool is_debug_state = isDebugState(current);
 
       assert(current.state.size() == current.action.size());
 
@@ -926,7 +928,7 @@ class XStar {
         timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.stop();
         continue;
       }
-      closed_set[current.state] = current.g_score;
+      insertClosedSet(&closed_set, current.state, current.g_score);
       timing_AStarSearchUntil->timing_ASUExp.time_check_in_c.stop();
 
       if (kDebug) {
@@ -966,16 +968,12 @@ class XStar {
             assert(n.action == Action::GoalWait);
           }
         }
-        
-        const bool dump_neighbor = current.f_score < 10;
-        
         ProcessNeighborResult r = processNeighbor(starts, goals, current, joint_neighbor_info,
                         joint_neighbor_in_window, closed_set, &state_to_heap,
-                        &open_set, &out_of_window, dump_neighbor);
-        
-        if (dump_neighbor) {
-          std::cout << r << std::endl;
-        }
+                        &open_set, &out_of_window);
+//         if (is_debug_state) {
+//           std::cout << r << std::endl;
+//         }
       }
 
       timing_AStarSearchUntil->timing_ASUExp.time_add_neighbors_to_o.stop();
@@ -989,14 +987,20 @@ class XStar {
     return true;
   }
 
-  void verifyOpenSet(const WPS_t& window, const JointPlan_t&) {
+  inline void verifyOpenSet(const WPS_t& window, const JointPlan_t&) {
+    if (kProduction) {
+      return;
+    }
     for (const Node& n : window.getSearchState()->open_set) {
       assert(n.state.size() == window.window.agent_idxs.size());
     }
   }
 
-  void verifyParentMap(const ParentMap_t& parent_map,
-                       const JointState_t& starts) {
+  inline void verifyParentMap(const ParentMap_t& parent_map,
+                              const JointState_t& starts) {
+    if (kProduction) {
+      return;
+    }
     assert(!starts.empty());
     assert(parent_map.find(toParentMapKey(starts)) != parent_map.end());
   }
@@ -1055,6 +1059,9 @@ class XStar {
 
     void verify(const WPS_t& window, const JointState_t& old_starts,
                 const JointState_t& new_starts) const {
+      if (kProduction) {
+        return;
+      }
       static constexpr bool kDebug = false;
       assert(!cost_between_starts.empty());
 
@@ -1076,7 +1083,7 @@ class XStar {
               const JointPlan_t& solution, const Cost& goal_node_fvalue,
               TimingStage2* timing_stage2) {
     timing_stage2->total_Stage2.start();
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     SearchState* ss = window->getSearchState();
 
     verifyOpenSet(*window, solution);
@@ -1114,7 +1121,10 @@ class XStar {
   }
 
   void verifySolutionValid(const JointPlan_t& solution) {
-    static constexpr bool kDebug = true;
+    if (kProduction) {
+      return;
+    }
+    static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Verifying solution: " << std::endl;
       print(solution);
@@ -1174,7 +1184,7 @@ class XStar {
       const JointState_t& s = pair.first;
       ParentValue_t& v = pair.second;
       if (containsGoalWait(v.action_out_of_previous_state)) {
-        auto closed_prev_it = closed_set->find(toParentMapKey(v.previous_state));
+        auto closed_prev_it = closed_set->find(toParentMapKey(v.current_state));
         if (kDebug) {
           std::cout << "DELETING ";
           print(v.previous_state, std::cout, " ");
@@ -1207,7 +1217,7 @@ class XStar {
   void readdGoalWaitNodes(open_set_t* open_set, state_to_heap_t* state_to_heap,
                           goal_wait_nodes_t* goal_wait_nodes,
                           closed_set_t* closed_set, const JointState_t& goals) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     for (Node& n : *goal_wait_nodes) {
       if (containsGoalWait(n.action)) {
         continue;
@@ -1242,12 +1252,113 @@ class XStar {
 //     return n.at(idx).state == (s);
 //   }
 
+  void checkClosedSetParentMapDebugState(const closed_set_t& closed_set, const ParentMap_t& parent_map) {
+    auto k = toParentMapKey( JointState_t({ {0, 2, 4}, {0, 1, 4} }));
+    auto c_res = closed_set.find(k);
+    auto p_res = parent_map.find(k);
+    if (c_res == closed_set.end()) {
+      assert(p_res == parent_map.end());
+      std::cout << "-----------------------------------Debug state not in closed set!" << std::endl;
+      return;
+    }
+    assert(p_res != parent_map.end());
+    
+    std::cout << "-----------------------------------Result found with cost: ";
+    print(c_res->second);
+    std::cout << "Parents: ";
+    print(p_res->second.current_state, std::cout, "<= "); 
+    print(p_res->second.previous_state);
+  }
+
+  bool isDebugState(const Node& current) {
+    bool is_debug_state = false;
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 2, 0} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "0000000000000000000000000000000000000000000000000000000000000000000" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 2, 1} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 2, 2} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 1, 2} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3D3" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 0, 2} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 0, 3} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 0, 4} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6D6" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 1, 4} })) {
+        is_debug_state = true;
+        std::cout << std::endl;
+        std::cout << current << std::endl;
+        std::cout << "D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7D7" << std::endl;
+        std::cout << std::endl;
+        std::cout << "G-score: ";
+        print(current.g_score);
+    }
+    return is_debug_state;
+  }
   
   bool Stage3(WPS_t* window, JointPlan_t* solution, const JointState_t& starts,
               const JointCost_t& starts_costs, const JointState_t& goals,
               const JointCost_t& goals_costs, TimingStage3* timing_stage3) {
     timing_stage3->total_Stage3.start();
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
     if (kDebug) {
       std::cout << "Stage 3 in: " << window->window << '\n';
@@ -1266,29 +1377,45 @@ class XStar {
     out_of_window_t& out_of_window = ss->out_of_window;
     goal_wait_nodes_t& goal_wait_nodes = ss->goal_wait_nodes;
 
+    checkClosedSetParentMapDebugState(closed_set, parent_map);
+    
     verifyParentMap(parent_map, ss->previous_start);
 
+    checkClosedSetParentMapDebugState(closed_set, parent_map);
+    
     readdGoalWaitNodes(&open_set, &state_to_heap, &goal_wait_nodes,
                        &closed_set, goals);
+    
+    checkClosedSetParentMapDebugState(closed_set, parent_map);
+    
     removeGoalWaitMovesClosed(&closed_set, &parent_map);
+    
+    checkClosedSetParentMapDebugState(closed_set, parent_map);
+    
     removeGoalWaitMovesOpen(&open_set, &state_to_heap);
+    
+    checkClosedSetParentMapDebugState(closed_set, parent_map);
+    
     recomputeHeuristic(&open_set, &state_to_heap, goals);
+    
+    std::cout << "END!\n";
+    checkClosedSetParentMapDebugState(closed_set, parent_map);
 
     assert(parent_map.find(toParentMapKey(starts)) != parent_map.end());
     
-    std::cout << "Goals\n";
-    print(goals);
-    // If the solution is already in the parent map, then we can unwind directly.
-    if (parent_map.find(toParentMapKey(goals)) != parent_map.end()) {
-      std::cout << "Early terminating Stage3!" << std::endl;
-      const auto it = parent_map.find(toParentMapKey(goals));
-      const ParentValue_t& parent = it->second;
+    if (kDebug) {
+      std::cout << "Goals\n";
+      print(goals);
+    }
+    
+    if (inClosedSet(closed_set, goals)) {
+      std::cout << "Goal closed already, unwinding!" << std::endl;
+      assert(parent_map.find(toParentMapKey(goals)) != parent_map.end());
       
-      const JointCost_t current_g_score = 
-        utils::element_add(parent.g_score_previous_state, 
-                           parent.cost_out_of_previous_state);
+      const JointCost_t goals_unwind_cost = closed_set.find(toParentMapKey(goals))->second;
+      
       auto window_solution =
-            unwindPath(starts, starts_costs, goals, current_g_score, parent_map);
+            unwindPath(starts, starts_costs, goals, goals_unwind_cost, parent_map);
       if (kDebug) {
         std::cout << "Verifying unwound result" << std::endl;
       }
@@ -1303,12 +1430,16 @@ class XStar {
 
       if (kDebug) {
         std::cout << "Inserting path into window" << std::endl;
+//         std::cout << "Goal f_score: " << current.f_score << std::endl;
       }
       bool insert_result =
           insertWindowPath(&window_solution, window->window, starts_costs,
                             goals_costs, solution);
       assert(insert_result);
+      timing_stage3->timing_S3Exp.total_S3Exp.stop();
+      timing_stage3->total_Stage3.stop();
       return true;
+      
     }
 
     timing_stage3->timing_S3Exp.total_S3Exp.start();
@@ -1321,13 +1452,13 @@ class XStar {
 
       Node current = open_set.top();
 
+      if (kDebug) {
       std::cout << current << std::endl;
+      }
       
-//       if (toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} })) {
-//         std::cout << "STAGE3 22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222" << std::endl;
-//         std::cout << "G-score: ";
-//         print(current.g_score);
-//       }
+      bool is_debug_state = isDebugState(current);
+      
+      
       
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
       
@@ -1341,6 +1472,7 @@ class XStar {
           std::cout << "Goal node has an fvalue of " << current.f_score << std::endl;
         }
         insertParentMap(&parent_map, current);
+        insertClosedSet(&closed_set, current.state, current.g_score);
         if (kDebug) {
           std::cout << "Starting unwind!" << std::endl;
         }
@@ -1415,10 +1547,13 @@ class XStar {
         
 
 //         const bool is_debug_state = toParentMapKey(current.state) == JointState_t({ {0, 2, 4}, {0, 3, 6}, {0, 5, 7} });
-//         ProcessNeighborResult r = 
-        processNeighbor(starts, goals, current, joint_neighbor_info,
-                        joint_neighbor_in_window, closed_set, &state_to_heap,
-                        &open_set, &out_of_window);
+        ProcessNeighborResult r = 
+          processNeighbor(starts, goals, current, joint_neighbor_info,
+                          joint_neighbor_in_window, closed_set, &state_to_heap,
+                          &open_set, &out_of_window, is_debug_state);
+        if (is_debug_state) {
+          std::cout << r << std::endl;
+        }
 //         if (is_debug_state) {
 //           JointState_t neighbor_state;
 //           JointAction_t neighbor_action;
@@ -1444,14 +1579,16 @@ class XStar {
       }
     }
     // Emptied openlist!
-    assert(false);
     timing_stage3->timing_S3Exp.total_S3Exp.stop();
     timing_stage3->total_Stage3.stop();
-    return true;
+    return false;
   }
 
   void verifyStartCostDifference(const JointCost_t& before_starts_costs,
                                  const JointCost_t& after_starts_costs) {
+    if (kProduction) {
+      return;
+    }
     assert(before_starts_costs.size() == after_starts_costs.size());
     assert(!before_starts_costs.empty());
     const Cost delta = after_starts_costs.front() - before_starts_costs.front();
@@ -1677,9 +1814,27 @@ class XStar {
 
     return nodes_and_came_from;
   }
+  
+  void dumpOpenSet(const WPS_t* window) {
+    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+    std::cout << "Looking in open_set: " << std::endl;
+    std::vector<Node> node_lst;
+    for (const Node& n : window->getSearchState()->open_set) {
+      node_lst.push_back(n);
+    }
+    std::sort(node_lst.begin(), node_lst.end());
+    for (const Node& n : node_lst) {
+      if (isDebugState(n)) {
+        std::cout << n << std::endl;
+      }
+    }
+    std::cout << "Done in open_set: " << std::endl;
+    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+  }
 
   bool growAndReplanIn(WPS_t* window, JointPlan_t* solution,
                        TimingGARI* timing_gari) {
+    checkClosedSetParentMapDebugState(window->getSearchState()->closed_set, window->getSearchState()->parent_map);
     timing_gari->total_GARI.start();
     static constexpr bool kDebug = true;
     if (kDebug) {
@@ -1749,8 +1904,10 @@ class XStar {
       return pi_res;
     }
     
-    std::cout << "Stage1 before: " << std::endl;
-    print(*solution);
+//     std::cout << "Stage1 before: " << std::endl;
+//     print(*solution);
+    
+    checkClosedSetParentMapDebugState(window->getSearchState()->closed_set, window->getSearchState()->parent_map);
     
     const Cost old_goal_g_score_sum =
         window->getSearchState()->open_set.top().g_score_sum;
@@ -1760,6 +1917,11 @@ class XStar {
       timing_gari->total_GARI.stop();
       return false;
     }
+    
+    checkClosedSetParentMapDebugState(window->getSearchState()->closed_set, window->getSearchState()->parent_map);
+    
+//     dumpOpenSet(window);
+    
     verifySolutionValid(*solution);
     std::cout << "Stage1 after: " << std::endl;
     print(*solution);
@@ -1769,6 +1931,11 @@ class XStar {
       timing_gari->total_GARI.stop();
       return false;
     }
+    
+    checkClosedSetParentMapDebugState(window->getSearchState()->closed_set, window->getSearchState()->parent_map);
+    
+//     dumpOpenSet(window);
+    
     verifySolutionValid(*solution);
     verifyOpenSet(*window, *solution);
     std::cout << "Stage2 after: " << std::endl;
@@ -1780,8 +1947,11 @@ class XStar {
       timing_gari->total_GARI.stop();
       return false;
     }
-    std::cout << "Stage3 after: " << std::endl;
-    print(*solution);
+    checkClosedSetParentMapDebugState(window->getSearchState()->closed_set, window->getSearchState()->parent_map);
+//     dumpOpenSet(window);
+    
+//     std::cout << "Stage3 after: " << std::endl;
+//     print(*solution);
     verifySolutionValid(*solution);
     timing_gari->total_GARI.stop();
     return true;
@@ -1827,10 +1997,13 @@ class XStar {
     return false;
   }
 
-  void verifyPlanInEndpoints(const JointState_t& start,
+  inline void verifyPlanInEndpoints(const JointState_t& start,
                              const JointCost_t& start_cost,
                              const JointState_t& goal,
                              const JointCost_t& goal_cost) const {
+    if (kProduction) {
+      return;
+    }
     assert(!start.empty());
     assert(!start_cost.empty());
     assert(start.size() == start_cost.size());
@@ -1971,6 +2144,8 @@ class XStar {
       solution.cost = unwind_start_node_g_score.at(i);
       solution.fmin = 0;
     }
+
+    if (kDebug) {
     for (const auto& solution : window_solution) {
       std::cout << "Solution:\n";
       for (const auto& s : solution.states) {
@@ -1978,7 +2153,6 @@ class XStar {
       }
     }
 
-    if (kDebug) {
       std::cout << "Verify unwind!" << std::endl;
     }
     verifySolutionValid(window_solution);
@@ -2037,6 +2211,9 @@ class XStar {
 
   void verifyStateTimeOrdering(const JointState_t& prev_state,
                                const JointState_t& next_state) {
+    if (kProduction) {
+      return;
+    }
     assert(prev_state.size() == next_state.size());
     for (size_t i = 0; i < prev_state.size(); ++i) {
       assert(prev_state.at(i).time <= next_state.at(i).time);
@@ -2090,7 +2267,7 @@ class XStar {
                        const JointNeighbor_t& joint_neighbor_info,
                        const bool& is_in_window, const closed_set_t& closed_set,
                        state_to_heap_t* state_to_heap, open_set_t* open_set,
-                       out_of_window_t* out_of_window, bool dump_contents = false) {
+                       out_of_window_t* out_of_window, const bool is_debug_state = false) {
     const JointState_t& current_state = current.state;
     const JointCost_t& current_g_score = current.g_score;
 
@@ -2121,8 +2298,8 @@ class XStar {
     const Node n = neighborInfoToNode(goals, current_state, neighbor_joint_state,
                             neighbor_joint_action, neighbor_joint_cost,
                             neighbor_tenative_gscore);
-    if (dump_contents) {
-      std::cout << "Neighbor: " << n << std::endl;
+    if (is_debug_state) {
+      std::cout << "Neighbor: " <<  n << std::endl;
     }
     
     if (!is_in_window) {
@@ -2131,6 +2308,10 @@ class XStar {
     }
 
     if (inClosedSetAndClosed(closed_set, neighbor_joint_state, n.g_score)) {
+      std::cout << "Closed set cost: ";
+      print(closed_set.find(toParentMapKey(neighbor_joint_state))->second);
+      std::cout << "g-score cost: ";
+      print(n.g_score);
       return INCLOSED;
     }
 
@@ -2265,6 +2446,7 @@ class XStar {
      if (res.second) {
        return;
      }
+     assert(utils::sum(res.first->second) > utils::sum(value));
      if (utils::sum(res.first->second) > utils::sum(value)) {
        res.first->second = value;
      }
@@ -2376,6 +2558,7 @@ class XStar {
           std::cout << "Goal node has fvalue of " << current.f_score << std::endl;
         }
         insertParentMap(&parent_map, current);
+        insertClosedSet(&closed_set, current.state, current.g_score);
         verifyParentMap(parent_map, starts);
         auto window_solution =
             unwindPath(starts, starts_costs, current, parent_map);

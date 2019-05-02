@@ -10,11 +10,11 @@ def generate_agents(num_agents, width, height):
     starts = []
     goals = []
     while len(starts) < num_agents:
-      sx = np.random.randint(0, width - 1)
-      sy = np.random.randint(0, height - 1)
+      sx = np.random.randint(0, width)
+      sy = np.random.randint(0, height)
       sxy = [sx, sy]
-      gx = np.random.randint(0, width - 1)
-      gy = np.random.randint(0, height - 1)
+      gx = np.random.randint(0, width)
+      gy = np.random.randint(0, height)
       gxy = [gx, gy]
       if sxy in starts or gxy in goals:
             continue
