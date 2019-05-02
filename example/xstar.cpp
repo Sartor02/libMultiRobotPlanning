@@ -420,7 +420,8 @@ class Environment {
   utils::CartesianProduct<std::pair<Neighbor<State, Action, int>, bool>>
   getJointWindowNeighbors(
       const std::vector<State>& states, const std::vector<Action>& actions,
-      const std::vector<State>& goals, const Window& window,
+      const std::vector<State>& goals, const std::vector<State>& new_goals, 
+      const Window& window,
       const std::vector<PlanResult<State, Action, int>>& joint_plan) {
     std::vector<std::vector<std::pair<Neighbor<State, Action, int>, bool>>>
         neighbor_list;
@@ -437,14 +438,18 @@ class Environment {
           std::pair<Neighbor<State, Action, int>, bool>>();
     }
 
+    assert(goals.size() == new_goals.size());
+    assert(goals.size() == states.size());
+    
     for (size_t i = 0; i < states.size(); ++i) {
       const State& s = states[i];
       const Action& a = actions[i];
       const State& goal = goals[i];
+      const State& new_goal = new_goals[i];
       const size_t agent_idx = window.agent_idxs[i];
       std::vector<std::pair<Neighbor<State, Action, int>, bool>>
           window_neighbors;
-      getWindowNeighbors(s, a, goal, agent_idx, window, joint_plan,
+      getWindowNeighbors(s, a, goal, new_goal, agent_idx, window, joint_plan,
                          window_neighbors);
 
       if (window_neighbors.empty()) {
@@ -466,7 +471,7 @@ class Environment {
   }
 
   void getWindowNeighbors(
-      const State& s, const Action& a, const State& goal,
+      const State& s, const Action& a, const State& goal, const State& new_goal,
       const size_t agent_idx, const Window& w,
       const std::vector<PlanResult<State, Action, int>>& joint_plan,
       std::vector<std::pair<Neighbor<State, Action, int>, bool>>&
@@ -481,7 +486,7 @@ class Environment {
       }
     }
 
-    if (s.equalExceptTime(goal)) {
+    if (s.equalExceptTime(goal) || s.equalExceptTime(new_goal)) {
       const auto& n = getStateAsGoalNeighbor(s);
       window_neighbors.emplace_back(n, true);
     }
