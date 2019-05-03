@@ -778,8 +778,8 @@ class XStar {
       const bool start_in_window = w.isInitialStartInWindow();
       const bool goal_in_window = w.isFinalGoalInWindow();
       static int iter = 0;
-      const bool iter_done = false;// ++iter > 1;
-      std::cout << "USING ITER\n";
+      const bool iter_done = false; //++iter > 2;
+//       std::cout << "USING ITER\n";
       timing_recWAMPF->time_should_quit.stop();
       if ((!was_restricted && start_in_window && goal_in_window) || iter_done) {
         timing_recWAMPF->num_windows_should_quit++;
@@ -1177,13 +1177,14 @@ class XStar {
   }
 
   void removeGoalWaitMovesClosed(closed_set_t* closed_set,
-                                 ParentMap_t* parent_map) {
-    static constexpr bool kDebug = false;
+                                 ParentMap_t* parent_map, 
+                                 const JointState_t& goal) {
+    static constexpr bool kDebug = true;
     for (auto it = parent_map->begin(); it != parent_map->end();) {
       std::pair<const JointState_t, ParentValue_t>& pair = *it;
       const JointState_t& s = pair.first;
       ParentValue_t& v = pair.second;
-      if (containsGoalWait(v.action_out_of_previous_state)) {
+      if (containsGoalWait(v.action_out_of_previous_state, v.current_state, goal)) {
         auto closed_prev_it = closed_set->find(toParentMapKey(v.current_state));
         if (kDebug) {
           std::cout << "DELETING ";
@@ -1202,10 +1203,11 @@ class XStar {
   }
 
   void removeGoalWaitMovesOpen(open_set_t* open_set,
-                               state_to_heap_t* state_to_heap) {
+                               state_to_heap_t* state_to_heap, 
+                                 const JointState_t& goal) {
     for (auto it = state_to_heap->begin(); it != state_to_heap->end();) {
       auto& handle = it->second;
-      if (containsGoalWait((*handle).action)) {
+      if (containsGoalWait((*handle).action, (*handle).state, goal)) {
         open_set->erase(handle);
         it = state_to_heap->erase(it);
       } else {
@@ -1217,9 +1219,9 @@ class XStar {
   void readdGoalWaitNodes(open_set_t* open_set, state_to_heap_t* state_to_heap,
                           goal_wait_nodes_t* goal_wait_nodes,
                           closed_set_t* closed_set, ParentMap_t* parent_map, const JointState_t& goals) {
-    static constexpr bool kDebug = false;
+    static constexpr bool kDebug = true;
     for (Node& n : *goal_wait_nodes) {
-      if (containsGoalWait(n.action)) {
+      if (containsGoalWait(n.action, n.state, goals)) {
         continue;
       }
       n.f_score = m_env.admissibleJointHeuristic(n.state, goals) + n.g_score_sum;
@@ -1250,14 +1252,15 @@ class XStar {
 //   }
 
   void checkClosedSetParentMapDebugState(const state_to_heap_t& state_to_heap, const closed_set_t& closed_set, const ParentMap_t& parent_map) {
-    auto k = JointState_t({ {4, 0, 3}, {4, 0, 4} });
+    auto k = JointState_t({ {4, 3, 1}, {4, 1, 1} });
     auto c_res = closed_set.find(toParentMapKey( k));
     auto p_res = parent_map.find(toParentMapKey( k));
     auto o_res = state_to_heap.find(k);
     
     if (o_res != state_to_heap.end()) {
       std::cout << "Open set value: ";
-      print((*o_res->second).state, std::cout, "fval: ");
+      print((*o_res->second).state, std::cout, "g_score: ");
+      print((*o_res->second).g_score, std::cout, "fval: ");
       std::cout  << (*o_res->second).f_score << std::endl;
     } else {
       std::cout << "Not in open set!" << std::endl;
@@ -1284,72 +1287,31 @@ class XStar {
   bool isDebugState(const Node& current, std::ostream& os = std::cout) {
     bool is_debug_state = false;
     
-    if (toParentMapKey(current.state) == JointState_t({ {0, 0, 2}, {0, 2, 3} })) {
+    if (toParentMapKey(current.state) == JointState_t({ {0, 1, 1}, {0, 1, 0} })) {
         is_debug_state = true;
         os << std::endl;
         os << current << std::endl;
-        os << "B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0" << std::endl;
+        os << "0000000000000000000000000000000000000000000000000000000000000000000" << std::endl;
         os << std::endl;
         os << "G-score: ";
         print(current.g_score, os);
     }
     
-    if (toParentMapKey(current.state) == JointState_t({ {0, 0, 1}, {0, 2, 4} })) {
+    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 1}, {0, 1, 1} })) {
         is_debug_state = true;
         os << std::endl;
         os << current << std::endl;
-        os << "B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1B1" << std::endl;
+        os << "1111111111111111111111111111111111111111111111111111111111111111111" << std::endl;
         os << std::endl;
         os << "G-score: ";
         print(current.g_score, os);
     }
     
-    if (toParentMapKey(current.state) == JointState_t({ {0, 1, 1}, {0, 3, 4} })) {
+    if (toParentMapKey(current.state) == JointState_t({ {0, 3, 1}, {0, 1, 1} })) {
         is_debug_state = true;
         os << std::endl;
         os << current << std::endl;
-        os << "B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2" << std::endl;
-        os << std::endl;
-        os << "G-score: ";
-        print(current.g_score, os);
-    }
-    
-    if (toParentMapKey(current.state) == JointState_t({ {0, 2, 1}, {0, 3, 4} })) {
-        is_debug_state = true;
-        os << std::endl;
-        os << current << std::endl;
-        os << "B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3B3" << std::endl;
-        os << std::endl;
-        os << "G-score: ";
-        print(current.g_score, os);
-    }
-    
-    
-//     if (toParentMapKey(current.state) == JointState_t({ {0, 0, 2}, {0, 2, 3} })) {
-//         is_debug_state = true;
-//         os << std::endl;
-//         os << current << std::endl;
-//         os << "0000000000000000000000000000000000000000000000000000000000000000000" << std::endl;
-//         os << std::endl;
-//         os << "G-score: ";
-//         print(current.g_score, os);
-//     }
-    
-    if (toParentMapKey(current.state) == JointState_t({ {0, 0, 3}, {0, 0, 4} })) {
-        is_debug_state = true;
-        os << std::endl;
-        os << current << std::endl;
-        os << "D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1D1" << std::endl;
-        os << std::endl;
-        os << "G-score: ";
-        print(current.g_score, os);
-    }
-    
-    if (toParentMapKey(current.state) == JointState_t({ {0, 0, 2}, {0, 1, 4} })) {
-        is_debug_state = true;
-        os << std::endl;
-        os << current << std::endl;
-        os << "D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2D2" << std::endl;
+        os << "2222222222222222222222222222222222222222222222222222222222222222222" << std::endl;
         os << std::endl;
         os << "G-score: ";
         print(current.g_score, os);
@@ -1393,13 +1355,13 @@ class XStar {
     std::cout << "readdGoalWaitNodes done" << std::endl;
     checkClosedSetParentMapDebugState(state_to_heap, closed_set, parent_map);
     
-    removeGoalWaitMovesClosed(&closed_set, &parent_map);
+    removeGoalWaitMovesClosed(&closed_set, &parent_map, goals);
     eraseClosedSet(&closed_set, old_goals);
     //eraseParentMap(&parent_map, old_goals);
     
     checkClosedSetParentMapDebugState(state_to_heap, closed_set, parent_map);
     
-    removeGoalWaitMovesOpen(&open_set, &state_to_heap);
+    removeGoalWaitMovesOpen(&open_set, &state_to_heap, goals);
     
     checkClosedSetParentMapDebugState(state_to_heap, closed_set, parent_map);
     
@@ -2225,9 +2187,16 @@ class XStar {
     }
   }
 
-  bool containsGoalWait(const JointAction_t& ja) {
-    for (const auto& a : ja) {
-      if (a == Action::GoalWait) {
+  bool containsGoalWait(const JointAction_t& ja, 
+                        const JointState_t& js, 
+                        const JointState_t& goal) {
+    assert(ja.size() == goal.size());
+    assert(js.size() == goal.size());
+    for (size_t i = 0; i < ja.size(); ++i) {
+      const auto& a = ja[i];
+      const auto& s = js[i];
+      const auto& g = goal[i];
+      if (a == Action::GoalWait && !s.equalExceptTime(g)) {
         return true;
       }
     }
