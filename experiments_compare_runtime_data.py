@@ -37,6 +37,7 @@ def get_args():
 
 args = get_args()
 
+assert(os.path.isdir("./datasave"))
 
 def args_to_string(args):
     return str(args).replace('(', '').replace(')', '').replace(' ', '').replace('=', '').replace(',', '')
