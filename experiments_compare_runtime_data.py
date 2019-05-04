@@ -12,11 +12,26 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 current_proc = None
 
+def clean_up():
+    if current_proc is not None:
+        current_proc.terminate()
+    for f in glob.glob("*.timing"):
+        os.remove(f)
+    for f in glob.glob("*.yaml"):
+        os.remove(f)
+    for f in glob.glob("*.out"):
+        os.remove(f)
+    for f in glob.glob("*.map"):
+        os.remove(f)
+    for f in glob.glob("*.agents"):
+        os.remove(f)
+    for f in glob.glob("*.result"):
+        os.remove(f)
+
 
 def signal_handler(sig, frame):
     print(sys.argv[0], 'Signal caught')
-    if current_proc is not None:
-        current_proc.terminate()
+    clean_up()
     sys.exit(0)
 
 
@@ -190,7 +205,6 @@ for i in range(args.trials):
                                        args.agents,
                                        args.timeout,
                                        mstar_runtime))
-    os.remove("simple_test{}.result".format(args_to_string(args)))
 
 
 sh.save_to_file("xstar_data_lst_{}".format(args_to_string(args)), xstar_data_lst)
@@ -203,3 +217,5 @@ xstar_data_lst = sh.read_from_file("xstar_data_lst_{}".format(args_to_string(arg
 cbs_data_lst = sh.read_from_file("cbs_data_lst_{}".format(args_to_string(args)))
 afs_data_lst = sh.read_from_file("afs_data_lst_{}".format(args_to_string(args)))
 mstar_data_lst = sh.read_from_file("mstar_data_lst_{}".format(args_to_string(args)))
+
+clean_up()
