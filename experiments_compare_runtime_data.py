@@ -81,11 +81,11 @@ def run_with_current_proc(cmd):
 
 
 def run_mstar(timeout):
-    cmd = "timeout {} mstar_public/cpp/main -i {} -o simple_test{}.result".format(timeout, generic_map, args_to_string(args))
+    cmd = "timeout {} mstar_public/cpp/main -i {} -o simple_test_mstar{}.result".format(timeout, generic_map, args_to_string(args))
     retcode = run_with_current_proc(cmd)
     if retcode != 0:
         return timeout
-    f = open("simple_test{}.result".format(args_to_string(args)))
+    f = open("simple_test_mstar{}.result".format(args_to_string(args)))
     runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
     return runtime
 
@@ -133,12 +133,12 @@ def run_afs(timeout):
 
 
 def run_cbs(timeout):
-    cmd = "timeout {} release/cbs -i {} -o simple_test{}.result".format(timeout, generic_map, args_to_string(args))
+    cmd = "timeout {} release/cbs -i {} -o simple_test_cbs{}.result".format(timeout, generic_map, args_to_string(args))
     retcode = run_with_current_proc(cmd)
     if retcode != 0:
         print("CBS timeout")
         return timeout
-    f = open("simple_test{}.result".format(args_to_string(args)))
+    f = open("simple_test_cbs{}.result".format(args_to_string(args)))
     runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
     return runtime
 
