@@ -19,7 +19,7 @@
 namespace libMultiRobotPlanning {
 
 static constexpr bool kTiming = true;
-static constexpr bool kProduction = false;
+static constexpr bool kProduction = true;
 
 /*!
   \example cbs.cpp Example that solves the Multi-Agent Path-Finding (MAPF)
@@ -899,7 +899,7 @@ class XStar {
       if (kDebug or true) {
         std::cout << current << std::endl;
       }
-      bool is_debug_state = isDebugState(current);
+//       bool is_debug_state = isDebugState(current);
 
       assert(current.state.size() == current.action.size());
 
@@ -970,10 +970,10 @@ class XStar {
         }
         ProcessNeighborResult r = processNeighbor(starts, goals, current, joint_neighbor_info,
                         joint_neighbor_in_window, closed_set, &state_to_heap,
-                        &open_set, &out_of_window, is_debug_state);
-        if (is_debug_state) {
-          std::cout << r << std::endl;
-        }
+                        &open_set, &out_of_window);
+//         if (is_debug_state) {
+//           std::cout << r << std::endl;
+//         }
       }
 
       timing_AStarSearchUntil->timing_ASUExp.time_add_neighbors_to_o.stop();
@@ -1179,7 +1179,7 @@ class XStar {
   void removeGoalWaitMovesClosed(closed_set_t* closed_set,
                                  ParentMap_t* parent_map, 
                                  const JointState_t& goal) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     for (auto it = parent_map->begin(); it != parent_map->end();) {
       std::pair<const JointState_t, ParentValue_t>& pair = *it;
       const JointState_t& s = pair.first;
@@ -1219,7 +1219,7 @@ class XStar {
   void readdGoalWaitNodes(open_set_t* open_set, state_to_heap_t* state_to_heap,
                           goal_wait_nodes_t* goal_wait_nodes,
                           closed_set_t* closed_set, ParentMap_t* parent_map, const JointState_t& goals) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     for (Node& n : *goal_wait_nodes) {
       if (containsGoalWait(n.action, n.state, goals)) {
         continue;
@@ -1424,7 +1424,7 @@ class XStar {
       std::cout << current << std::endl;
       }
       
-      bool is_debug_state = isDebugState(current);
+//       bool is_debug_state = isDebugState(current);
       
       
       
@@ -1472,7 +1472,7 @@ class XStar {
 
       timing_stage3->timing_S3Exp.time_check_in_c.start();
       if (inClosedSetAndClosed(closed_set, current.state, current.g_score)) {
-          if (kDebug || is_debug_state) {
+          if (kDebug) {
             std::cout << "Closed, skipping " << current << std::endl;
           }
           timing_stage3->timing_S3Exp.time_check_in_c.stop();
@@ -1492,9 +1492,9 @@ class XStar {
       bool joint_neighbor_in_window = true;
       bool neighbor_has_goal_wait = false;
       timing_stage3->timing_S3Exp.time_add_neighbors_to_o.start();
-      if (is_debug_state) {
-        std::cout << "Neighbors:" << std::endl;
-      }
+//       if (is_debug_state) {
+//         std::cout << "Neighbors:" << std::endl;
+//       }
       while (!neighbor_generator.atEnd()) {
         timing_stage3->timing_S3Exp.num_neighbors++;
         const auto& generator_output = neighbor_generator.getAndIncrement();
@@ -1516,10 +1516,10 @@ class XStar {
         ProcessNeighborResult r = 
           processNeighbor(starts, goals, current, joint_neighbor_info,
                           joint_neighbor_in_window, closed_set, &state_to_heap,
-                          &open_set, &out_of_window, is_debug_state);
-        if (is_debug_state) {
-          std::cout << r << std::endl;
-        }
+                          &open_set, &out_of_window);
+//         if (is_debug_state) {
+//           std::cout << r << std::endl;
+//         }
 //         if (is_debug_state) {
 //           JointState_t neighbor_state;
 //           JointAction_t neighbor_action;
@@ -1802,7 +1802,7 @@ class XStar {
                        TimingGARI* timing_gari) {
     checkClosedSetParentMapDebugState(window->getSearchState()->state_to_heap, window->getSearchState()->closed_set, window->getSearchState()->parent_map);
     timing_gari->total_GARI.start();
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     if (kDebug) {
       std::cout << "Grow and replan in" << std::endl;
     }
@@ -2043,7 +2043,7 @@ class XStar {
                          const JointState_t& unwind_start_node_state,
                          const JointCost_t& unwind_start_node_g_score,
                          const ParentMap_t& parent_map) {
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     static constexpr size_t kMaxSteps = 2000;
     if (kDebug) {
       std::cout << "Beginning unwind! Unwind node start state\n";
@@ -2241,7 +2241,7 @@ class XStar {
                        const JointNeighbor_t& joint_neighbor_info,
                        const bool& is_in_window, const closed_set_t& closed_set,
                        state_to_heap_t* state_to_heap, open_set_t* open_set,
-                       out_of_window_t* out_of_window, const bool is_debug_state = false) {
+                       out_of_window_t* out_of_window) {
     const JointState_t& current_state = current.state;
     const JointCost_t& current_g_score = current.g_score;
 
@@ -2274,13 +2274,13 @@ class XStar {
                             neighbor_tenative_gscore);
     
     
-    if (is_debug_state) {
-      std::cout << "Neighbor: " <<  n << std::endl;
-      std::ofstream empty;
-      if (isDebugState(n, empty)) {
-        std::cout << "===================>Debug neighbor!\n";
-      }
-    }
+//     if (is_debug_state) {
+//       std::cout << "Neighbor: " <<  n << std::endl;
+//       std::ofstream empty;
+//       if (isDebugState(n, empty)) {
+//         std::cout << "===================>Debug neighbor!\n";
+//       }
+//     }
     
     if (!is_in_window) {
       out_of_window->insert({neighbor_joint_state, n});
@@ -2473,7 +2473,7 @@ class XStar {
               TimingPlanIn* timing_PlanIn) {
     verifyOpenSet(*window, *solution);
     timing_PlanIn->total_PlanIn.start();
-    static constexpr bool kDebug = true;
+    static constexpr bool kDebug = false;
     assert(!(window->window.agent_idxs.empty()));
 
     JointState_t starts;
@@ -2571,7 +2571,7 @@ class XStar {
       insertClosedSet(&closed_set, current.state, current.g_score);
       timing_PlanIn->timing_expansions.time_check_in_c.stop();
 
-      bool is_debug_state = isDebugState(current);
+//       bool is_debug_state = isDebugState(current);
       
       timing_PlanIn->timing_expansions.time_add_parent.start();
       insertParentMap(&parent_map, current);
@@ -2601,10 +2601,10 @@ class XStar {
 
         ProcessNeighborResult r = processNeighbor(starts, goals, current, joint_neighbor_info,
                         joint_neighbor_in_window, closed_set, &state_to_heap,
-                        &open_set, &out_of_window, is_debug_state);
-        if (is_debug_state) {
-          std::cout << r << std::endl;
-        }
+                        &open_set, &out_of_window);
+//         if (is_debug_state) {
+//           std::cout << r << std::endl;
+//         }
         
         timing_PlanIn->timing_expansions.time_add_neighbors_to_o.stop();
       }
