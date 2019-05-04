@@ -896,7 +896,7 @@ class XStar {
       timing_AStarSearchUntil->num_values_f_less_fmax++;
 
       Node current = open_set.top();
-      if (kDebug or true) {
+      if (kDebug) {
         std::cout << current << std::endl;
       }
 //       bool is_debug_state = isDebugState(current);
@@ -1252,6 +1252,9 @@ class XStar {
 //   }
 
   void checkClosedSetParentMapDebugState(const state_to_heap_t& state_to_heap, const closed_set_t& closed_set, const ParentMap_t& parent_map) {
+    if (kProduction) {
+      return;
+    }
     auto k = JointState_t({ {4, 3, 1}, {4, 1, 1} });
     auto c_res = closed_set.find(toParentMapKey( k));
     auto p_res = parent_map.find(toParentMapKey( k));
@@ -1352,7 +1355,7 @@ class XStar {
     
     readdGoalWaitNodes(&open_set, &state_to_heap, &goal_wait_nodes,
                        &closed_set, &parent_map, goals);
-    std::cout << "readdGoalWaitNodes done" << std::endl;
+    
     checkClosedSetParentMapDebugState(state_to_heap, closed_set, parent_map);
     
     removeGoalWaitMovesClosed(&closed_set, &parent_map, goals);
@@ -1367,7 +1370,6 @@ class XStar {
     
     recomputeHeuristic(&open_set, &state_to_heap, goals);
     
-    std::cout << "END!\n";
     checkClosedSetParentMapDebugState(state_to_heap, closed_set, parent_map);
 
     assert(parent_map.find(toParentMapKey(starts)) != parent_map.end());
@@ -1420,8 +1422,8 @@ class XStar {
 
       Node current = open_set.top();
 
-      if (kDebug or true) {
-      std::cout << current << std::endl;
+      if (kDebug) {
+        std::cout << current << std::endl;
       }
       
 //       bool is_debug_state = isDebugState(current);
@@ -1889,8 +1891,8 @@ class XStar {
 //     dumpOpenSet(window);
     
     verifySolutionValid(*solution);
-    std::cout << "Stage1 after: " << std::endl;
-    print(*solution);
+//     std::cout << "Stage1 after: " << std::endl;
+//     print(*solution);
     bool s2_res = Stage2(window, info_between_starts, new_starts, old_goals, new_goals, *solution,
            old_goal_g_score_sum, &(timing_gari->timing_stage2));
     if (!s2_res) {
@@ -1904,8 +1906,8 @@ class XStar {
     
     verifySolutionValid(*solution);
     verifyOpenSet(*window, *solution);
-    std::cout << "Stage2 after: " << std::endl;
-    print(*solution);
+//     std::cout << "Stage2 after: " << std::endl;
+//     print(*solution);
     bool s3_res = Stage3(window, solution, new_starts, new_starts_costs, new_goals,
            new_goals_costs, old_goals, &(timing_gari->timing_stage3));
     //         print(*solution);
@@ -2532,8 +2534,6 @@ class XStar {
       }
 
       Node current = open_set.top();
-      
-      std::cout << current << std::endl;
 
       m_env.onExpandNode(current.state, current.f_score, current.g_score);
 
