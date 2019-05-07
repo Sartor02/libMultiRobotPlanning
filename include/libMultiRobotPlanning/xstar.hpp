@@ -626,8 +626,8 @@ class XStar {
                                     const WindowPlannerState& ws) {
       os << "Window: " << ws.window
                 << " Search state index: " << ws.ss_index << " starts: ";
-      print(ws.initial_starts, os, " goals: ");
-      print(ws.final_goal, os);
+      // print(ws.initial_starts, os, " goals: ");
+      // print(ws.final_goal, os);
       return os;
     }
   };
