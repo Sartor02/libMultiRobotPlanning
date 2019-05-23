@@ -106,9 +106,10 @@ def run_mstar(timeout):
 
 
 def run_xstar(timeout, iteration):
-    prefix = "datasave/xstar_compare_runtime_agents_{}_iter_{}_trial_"\
+    prefix = "datasave/xstar_compare_runtime_agents_{}_iter_{}_density_{}_trial_"\
              .format(args.agents,
-                     iteration)
+                     iteration,
+                     args.obs_density)
     cmd = "./collect_data_xstar.py {} {} {} {} {} _seed_{}.result"\
           .format(generic_map,
                   args.timeout,
