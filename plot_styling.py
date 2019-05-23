@@ -55,6 +55,7 @@ def legend(loc, plt=plt):
         legobj.set_linewidth(linewidth * 2)
 
 def save_fig(filename):
+    print("Saving figout/{}.*".format(filename))
     plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
     plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=200)
     plt.savefig("figout/{}.pdf".format(filename), bbox_inches='tight')

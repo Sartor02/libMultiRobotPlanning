@@ -111,7 +111,7 @@ def add_to_dict(acc, e):
 
 
 idv_file_datas = \
-    [filename_to_filedata(f) for f in glob.glob('datasave/xstar_idv_agents_1200*.result')]
+    [filename_to_filedata(f) for f in glob.glob('datasave/xstar*.result')]
 agents_first_times_lst = \
     sorted([(d.agents, get_total_first_plan_time(d.filename))
             for d in idv_file_datas])
@@ -163,6 +163,7 @@ def read_from_file(name):
 
 def get_first_runtimes(data):
     return data.runtimes[0]
+
 
 xstar_datas = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.05*')]
 xstar_datas = [x for lst in xstar_datas for x in lst]
@@ -253,9 +254,9 @@ def plt_95_ci(agents_times_lst, name, plt_idx, max_idx, timeout=None):
         [[k] + list(get_ci(v, 95)) for k, v in agents_to_times_dict.items()]
     medians = []
     xs, hs, ms, ls = zip(*agents_to_95_bounds_lst)
-    plt.plot(xs, ls, color=ps.color(plt_idx, max_idx), label="{} 95% CI".format(name))
-    plt.plot(xs, hs, color=ps.color(plt_idx, max_idx))
-    plt.plot(xs, ms, color=ps.color(plt_idx, max_idx))
+    plt.plot(xs, ls, color=ps.color(plt_idx, max_idx), linestyle='--')
+    plt.plot(xs, hs, color=ps.color(plt_idx, max_idx), linestyle='--')
+    plt.plot(xs, ms, color=ps.color(plt_idx, max_idx), label="{} 95% CI".format(name))
     plt.fill_between(xs, ls, hs,
                      where=ls <= hs,
                      facecolor=ps.alpha(ps.color(plt_idx, max_idx), 0.2),
@@ -268,16 +269,6 @@ def plt_95_ci(agents_times_lst, name, plt_idx, max_idx, timeout=None):
 
     draw_timeout(timeout, xs)
 
-
-ps.setupfig()
-plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 1, 4, 1200)
-plt_95_ci(afs_agents_optimal_times, "AFS Optimal", 3, 4, 1200)
-plt_95_ci(xstar_agents_first_times, "X* First", 0, 4, 1200)
-plt_95_ci(afs_agents_first_times, "AFS First", 2, 4, 1200)
-ps.grid()
-ps.legend('ul')
-plt.show()
-exit(0)
 
 def plt_percentiles(agents_times_lst, title, timeout=None):
     agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
@@ -339,11 +330,86 @@ def plt_percentiles(agents_times_lst, title, timeout=None):
 
     draw_timeout(timeout, xs)
 
+
+############################
+# Head to head comparisons #
+############################
+print("Head to head comparisons")
+
 ps.setupfig()
-plt_cis(xstar_datas, "Time to first solution", kTimeout)
+plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 0, 4, 1200)
+plt_95_ci(afs_agents_optimal_times, "AFS Optimal", 1, 4, 1200)
+plt_95_ci(xstar_agents_first_times, "X* First", 2, 4, 1200)
+plt_95_ci(afs_agents_first_times, "AFS First", 3, 4, 1200)
 ps.grid()
 ps.legend('ul')
-ps.save_fig("xstar_data_tuples_ci")
+ps.save_fig("xstar_afs_first_optimal_times")
+
+ps.setupfig()
+plt_95_ci(xstar_agents_first_times, "X* First", 0, 2, 1200)
+plt_95_ci(afs_agents_first_times, "AFS First", 1, 2, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_afs_first_times")
+
+ps.setupfig()
+plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 0, 2, 1200)
+plt_95_ci(afs_agents_optimal_times, "AFS Optimal", 1, 2, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_afs_optimal_times")
+
+ps.setupfig()
+plt_95_ci(xstar_agents_first_times, "X* First", 0, 2, 1200)
+plt_95_ci(cbs_agents_times, "CBS First/Optimal", 1, 2, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_cbs_first_times")
+
+ps.setupfig()
+plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 0, 2, 1200)
+plt_95_ci(cbs_agents_times, "CBS Optimal", 1, 2, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_cbs_optimal_times")
+
+ps.setupfig()
+plt_95_ci(xstar_agents_first_times, "X* First", 0, 2, 1200)
+plt_95_ci(mstar_agents_times, "M* First/Optimal", 1, 2, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_mstar_first_times")
+
+ps.setupfig()
+plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 0, 2, 1200)
+plt_95_ci(mstar_agents_times, "M* Optimal", 1, 2, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_mstar_optimal_times")
+
+ps.setupfig()
+plt_95_ci(cbs_agents_times, "CBS First/Optimal", 0, 4, 1200)
+plt_95_ci(mstar_agents_times, "M* First/Optimal", 1, 4, 1200)
+plt_95_ci(afs_agents_first_times, "AFS First", 2, 4, 1200)
+plt_95_ci(xstar_agents_first_times, "X* First", 3, 4, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_vs_all_first_times")
+
+ps.setupfig()
+plt_95_ci(cbs_agents_times, "CBS Optimal", 0, 4, 1200)
+plt_95_ci(mstar_agents_times, "M* Optimal", 1, 4, 1200)
+plt_95_ci(afs_agents_optimal_times, "AFS Optimal", 2, 4, 1200)
+plt_95_ci(xstar_agents_optimal_times, "X* Optimal", 3, 4, 1200)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_vs_all_optimal_times")
+
+
+###########################################
+# X* Only Agents vs Performance Breakdown #
+###########################################
+print("X* Only Agents vs Performance Breakdown")
 
 ps.setupfig()
 plt_cis(agents_first_times_lst, "Time to first solution", kTimeout)
@@ -368,20 +434,6 @@ plt_percentiles(agents_optimal_times_lst, "Time to optimal solution", kTimeout)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("xstar_optimal_solution_percentile")
-
-# =============================================================================
-
-ps.setupfig()
-plt_cis(ratio_agents_first_times_lst, "Time to first solution", kTimeout)
-ps.grid()
-ps.legend('ul')
-ps.save_fig("xstar_first_solution_for_ratio")
-
-ps.setupfig()
-plt_cis(ratio_agents_optimal_times_lst, "Time to optimal solution", kTimeout)
-ps.grid()
-ps.legend('ul')
-ps.save_fig("xstar_optimal_solution_for_ratio")
 
 
 def plt_window_agents_boxplot(num_agents_in_window_times_lst, title, timeout=None):
@@ -443,6 +495,11 @@ def plt_window_agents_hist(num_agents_in_window_times_lst, title, plt=plt, draw_
         if draw_y_label:
             plt.set_ylabel("Occurrences")
 
+
+######################################################
+# Histogram and boxplot of window dimensions vs time #
+######################################################
+print("Histogram and boxplot of window dimensions vs time")
 
 ps.setupfig()
 plt_window_agents_boxplot(num_agents_in_window_first_times_lst,
@@ -550,6 +607,12 @@ def plt_radius_vs_agents(data, printylabel, plt=plt, timeout=kRadiusTimeout):
     draw_timeout(timeout, xs, plt)
 
 
+######################
+# Density vs runtime #
+######################
+print("Density vs runtime")
+print("TODO: FIX")
+exit(0)
 # ps.setupfig()
 # plt_radius_vs_agents(radius_40_first_times_lst)
 # ps.grid()
@@ -585,3 +648,17 @@ plt_radius_vs_agents(radius_20_optimal_times_lst, False)
 ps.grid()
 # ps.legend('ul')
 ps.save_fig("radius_20_first_optimal_times")
+
+# =============================================================================
+
+ps.setupfig()
+plt_cis(ratio_agents_first_times_lst, "Time to first solution", kTimeout)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_first_solution_for_ratio")
+
+ps.setupfig()
+plt_cis(ratio_agents_optimal_times_lst, "Time to optimal solution", kTimeout)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("xstar_optimal_solution_for_ratio")
