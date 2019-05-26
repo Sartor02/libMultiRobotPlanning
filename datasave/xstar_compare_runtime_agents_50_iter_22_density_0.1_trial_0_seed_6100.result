@@ -1,0 +1,96 @@
+Total time: 144.524
+is_optimal: false
+optimality_bound: 1.0028
+successive_bounds: [1.00529, 1.00404, 1.00342, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028, 1.0028]
+successive_runtimes: [0.0545276, 0.103507, 0.179253, 0.228817, 0.265386, 0.302936, 0.370854, 0.449373, 1.57353, 2.72832, 3.5715, 4.60537, 5.75299, 6.84936, 7.82923, 8.78343, 9.57665, 10.223, 10.7834, 11.3395, 12.2617, 13.2418, 16.556, 17.5368, 18.513, 19.4887, 20.9629, 22.0139, 23.0637, 24.1104, 25.1581, 26.6412, 27.7626, 31.7424, 33.3025, 34.8581, 36.4162, 134.965, 144.524]
+num_agents: 50
+time_individual_plan: 0.0300824
+time_first_plan: 0.0228893
+num_max_agents_in_window_first_iteration: 3
+num_recWAMPF: 39
+timing_recWAMPF:
+    total_RecWAMPF: 144.492
+    num_windows: 204
+    num_max_agents_in_window: 4
+    timing_gari:
+        total_GARI: 143.462
+        time_path_btw_starts: 0.000885187
+        Stage1:
+            total_Stage1:3.91039
+            time_add_x_to_o: 0.8982
+            time_clear_x: 0.313878
+            timing_AStarSearchUntil:
+                total_astar_search_until:2.69828
+                num_values_f_less_fmax:13856
+                ASU Exp:
+                    total_ASUExp:2.69827
+                    time_top_o:0.0227908
+                    time_check_in_c:0.0330931
+                    time_add_parent:0.0177185
+                    num_neighbors:3164744
+                    time_add_neighbors_to_o:2.55596
+        Stage2:
+            total_Stage2:0.0191142
+            num_len_path:128
+            time_expanding_s:0.000279798
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.0186693
+                num_values_f_less_fmax:210
+                ASU Exp:
+                    total_ASUExp:0.0186626
+                    time_top_o:0.000151891
+                    time_check_in_c:0.00010863
+                    time_add_parent:0.000205401
+                    num_neighbors:17249
+                    time_add_neighbors_to_o:0.0173977
+        Stage3:
+            total_Stage3:139.531
+            num_until_goal_expanded:312808
+            timing_S3Exp:
+                total_S3Exp: 113.28
+                time_top_o: 0.807911
+                time_check_in_c: 0.205213
+                time_add_parent: 0.390405
+                num_neighbors: 125484068
+                time_add_neighbors_to_o: 110.652
+    timing_PIOW_overlapping:
+        total_PIOW: 0.0475183
+        num_windows: 715
+        time_check_overlap: 4.2666e-05
+        num_overlapping_windows: 13
+        time_merge_windows: 2.0971e-05
+        time_remove_window: 2.969e-06
+        time_remove_window: 2.0128e-05
+        timing_PlanIn:
+            total_PlanIn:0.0474032
+            num_until_goal_expanded:1596
+            timing_expansions:
+                total_S3Exp: 0.0473682
+                time_top_o: 0.000699226
+                time_check_in_c: 0.000527561
+                time_add_parent: 0.00123271
+                num_neighbors: 45085
+                time_add_neighbors_to_o: 0.0383995
+    num_new_collisions: 18
+    timing_PIOW_new_collisions:
+        total_PIOW: 0.930387
+        num_windows: 253
+        time_check_overlap: 1.7481e-05
+        num_overlapping_windows: 3
+        time_merge_windows: 0
+        time_remove_window: 10.9452
+        time_remove_window: 1.776e-05
+        timing_PlanIn:
+            total_PlanIn:0.930278
+            num_until_goal_expanded:3537
+            timing_expansions:
+                total_S3Exp: 0.930184
+                time_top_o: 0.00503777
+                time_check_in_c: 0.00217713
+                time_add_parent: 0.00360409
+                num_neighbors: 986815
+                time_add_neighbors_to_o: 0.867096
+    num_windows_should_quit: 1
+    time_should_quit: 2.5478e-05
+    time_remove_window: 6.98e-07
+Complete!
