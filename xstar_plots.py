@@ -21,14 +21,23 @@ kTimeout = 1200
 
 
 def filename_to_filedata(l):
+    l_orig = l
+    l = l.replace("_density_0.1", "")
+    l = l.replace("_density_0.05", "")
+    l = l.replace("_density_0.01", "")
     regex = r"[a-zA-Z_\/]*(\d\d\d|\d\d|\d)_iter_(\d\d\d|\d\d|\d)_trial_(\d\d\d|\d\d|\d)_seed_(\d\d\d\d\d\d|\d\d\d\d\d|\d\d\d\d|\d\d\d|\d\d|\d).result" # noqa
     matches = list(re.finditer(regex, l, re.MULTILINE))
-    match = matches[0]
+    match = None
+    try:
+        match = matches[0]
+    except:
+        print(l)
+        exit(-1)
     agents = int(match.group(1))
     itr = int(match.group(2))
     trial = int(match.group(3))
     seed = int(match.group(4))
-    return FileData(l, agents, itr, trial, seed)
+    return FileData(l_orig, agents, itr, trial, seed)
 
 
 def get_search_radius(filename):

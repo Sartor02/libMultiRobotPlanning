@@ -24,7 +24,7 @@ def setupfig(current_fig=None):
         fig = current_fig
     set_font(8)
     kScaleDown = 2.5
-    fig.set_size_inches(8.5/kScaleDown * 1.8, 8.5 / kScaleDown / 1.61 * 1.8, forward=True)
+    fig.set_size_inches(8.5/kScaleDown * 1.58, 8.5 / kScaleDown / 1.61 * 1.58, forward=True)
     plt.gca().set_axisbelow(True)
 
 def grid(plt=plt):
