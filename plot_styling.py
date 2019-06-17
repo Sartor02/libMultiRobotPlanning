@@ -16,7 +16,7 @@ def set_font(size):
 linewidth = 0.5
 minor_tick_color = (0.9, 0.9, 0.9)
 
-def setupfig(current_fig=None):
+def setupfig(current_fig=None, halfsize=False):
     if current_fig is None:
         plt.clf()
         fig = plt.gcf()
@@ -24,7 +24,10 @@ def setupfig(current_fig=None):
         fig = current_fig
     set_font(8)
     kScaleDown = 2.5
-    fig.set_size_inches(8.5/kScaleDown * 1.58, 8.5 / kScaleDown / 1.61 * 1.58, forward=True)
+    halfsize_scale = 1
+    if halfsize:
+        halfsize_scale = 0.45
+    fig.set_size_inches(8.5/kScaleDown * 1.58 * halfsize_scale , 8.5 / kScaleDown / 1.61 * 1.58, forward=True)
     plt.gca().set_axisbelow(True)
 
 def grid(plt=plt):
@@ -47,6 +50,8 @@ def legend(loc, plt=plt):
     if type(loc)  is str:
         if loc == 'ul':
             loc = 2
+        elif loc == 'br':
+            loc = 0
         else:
             assert(False)
     leg = plt.legend(loc=loc)

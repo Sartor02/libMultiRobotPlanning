@@ -98,12 +98,11 @@ def dump_yaml(instances, map_width, map_height, occupancy_list, filename):
     start: {}
 """.format(list(i[1]), idx, list(i[0])))
     f.write("map:\n")
-    f.write("dimensions: {}\n".format([map_width, map_height]))
-    f.write("obstacles:\n")
+    f.write("    dimensions: {}\n".format([map_width, map_height]))
+    f.write("    obstacles:\n")
     for o in occupancy_list:
         f.write("    - !!python/tuple {}\n".format(list(o)))
     f.close()
-
 
 args = setup_args()
 print("Loading map")
