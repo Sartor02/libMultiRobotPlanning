@@ -31,8 +31,9 @@ def filename_to_filedata(l):
     try:
         match = matches[0]
     except:
+        print("Exception caught:")
         print(l)
-        exit(-1)
+        return None
     agents = int(match.group(1))
     itr = int(match.group(2))
     trial = int(match.group(3))
@@ -114,7 +115,7 @@ def add_to_dict(acc, e):
 
 
 idv_file_datas = \
-    [filename_to_filedata(f) for f in glob.glob('datasave/xstar*.result')]
+    [filename_to_filedata(f) for f in glob.glob('datasave/xstar*.result') if filename_to_filedata(f) is not None]
 idv_file_datas = [e for e in idv_file_datas if e.agents <= 60]
 agents_first_times_lst = \
     sorted([(d.agents, get_total_first_plan_time(d.filename))
@@ -134,7 +135,7 @@ num_agents_in_window_first_times_lst = \
 
 ratio_file_datas = \
     [filename_to_filedata(f)
-     for f in glob.glob('datasave/xstar_ratio_*.result') if "1200" not in f]
+     for f in glob.glob('datasave/xstar_ratio_*.result') if "1200" not in f and filename_to_filedata(f) is not None]
 ratio_timeout_dict = {20: 300, 30: 450, 40: 600, 60: 900, 80: 1200}
 ratio_agents_first_times_lst = \
     sorted([(d.agents, get_total_first_plan_time(d.filename))
@@ -711,7 +712,8 @@ def plt_window_agents_hist(num_agents_in_window_times_lst, title, plt=plt, draw_
     if plt is matplotlib.pyplot:
         plt.xticks(ks)
         plt.xlabel(xlabel)
-        plt.ylabel("Occurrences")
+        if draw_y_label:
+            plt.ylabel("Occurrences")
     else:
         plt.set_xticks(ks)
         plt.set_xlabel(xlabel)
@@ -735,7 +737,7 @@ plt.yscale('log')
 ps.grid()
 ps.save_fig("window_vs_time_to_first_boxplot")
 
-ps.setupfig()
+ps.setupfig(halfsize=True)
 plt_window_agents_hist(num_agents_in_window_first_times_lst,
                        "Largest number of agents in window vs occurrences in "
                        "first solution")
@@ -752,10 +754,10 @@ plt.yscale('log')
 ps.grid()
 ps.save_fig("window_vs_time_to_optimal_boxplot")
 
-ps.setupfig()
+ps.setupfig(halfsize=True)
 plt_window_agents_hist(num_agents_in_window_optimal_times_lst,
                           "Largest number of agents in window vs occurrences in "
-                          "optimal solution")
+                          "optimal solution", draw_y_label=False)
 plt.yscale('log')
 ps.grid()
 ps.save_fig("window_vs_time_to_optimal_hist")
@@ -851,10 +853,10 @@ ps.legend('br')
 ps.save_fig("xstar_afs_first_optimal_times_density_const")
 
 ps.setupfig(halfsize=True)
-plt_95_ci(xstar_agents_optimal_times_density_const, "X* Optimal", 0, 4, 1200)
+plt_95_ci(afs_agents_first_times_density_const, "AFS First", 0, 4, 1200)
 plt_95_ci(afs_agents_optimal_times_density_const, "AFS Optimal", 1, 4, 1200)
 plt_95_ci(xstar_agents_first_times_density_const, "X* First", 2, 4, 1200)
-plt_95_ci(afs_agents_first_times_density_const, "AFS First", 3, 4, 1200)
+plt_95_ci(xstar_agents_optimal_times_density_const, "X* Optimal", 3, 4, 1200)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_afs_first_optimal_times_density_const_half")
@@ -944,37 +946,37 @@ ps.legend('br')
 ps.save_fig("xstar_mstar_optimal_times_density_const_half")
 
 ps.setupfig()
-plt_95_ci(cbs_agents_times_density_const, "CBS First/Opt.", 0, 4, 1200)
+plt_95_ci(xstar_agents_first_times_density_const, "X* First", 0, 4, 1200)
 plt_95_ci(mstar_agents_times_density_const, "M* First/Opt.", 1, 4, 1200)
 plt_95_ci(afs_agents_first_times_density_const, "AFS First", 2, 4, 1200)
-plt_95_ci(xstar_agents_first_times_density_const, "X* First", 3, 4, 1200)
+plt_95_ci(cbs_agents_times_density_const, "CBS First/Opt.", 3, 4, 1200)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_vs_all_first_times_density_const")
 
 ps.setupfig(halfsize=True)
-plt_95_ci(cbs_agents_times_density_const, "CBS First/Opt.", 0, 4, 1200)
+plt_95_ci(xstar_agents_first_times_density_const, "X* First", 0, 4, 1200)
 plt_95_ci(mstar_agents_times_density_const, "M* First/Opt.", 1, 4, 1200)
 plt_95_ci(afs_agents_first_times_density_const, "AFS First", 2, 4, 1200)
-plt_95_ci(xstar_agents_first_times_density_const, "X* First", 3, 4, 1200)
+plt_95_ci(cbs_agents_times_density_const, "CBS First/Opt.", 3, 4, 1200)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_vs_all_first_times_density_const_half")
 
 ps.setupfig()
-plt_95_ci(cbs_agents_times_density_const, "CBS Optimal", 0, 4, 1200)
+plt_95_ci(xstar_agents_optimal_times_density_const, "X* Optimal", 0, 4, 1200)
 plt_95_ci(mstar_agents_times_density_const, "M* Optimal", 1, 4, 1200)
 plt_95_ci(afs_agents_optimal_times_density_const, "AFS Optimal", 2, 4, 1200)
-plt_95_ci(xstar_agents_optimal_times_density_const, "X* Optimal", 3, 4, 1200)
+plt_95_ci(cbs_agents_times_density_const, "CBS Optimal", 3, 4, 1200)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_vs_all_optimal_times_density_const")
 
 ps.setupfig(halfsize=True)
-plt_95_ci(cbs_agents_times_density_const, "CBS Optimal", 0, 4, 1200)
+plt_95_ci(xstar_agents_optimal_times_density_const, "X* Optimal", 0, 4, 1200)
 plt_95_ci(mstar_agents_times_density_const, "M* Optimal", 1, 4, 1200)
 plt_95_ci(afs_agents_optimal_times_density_const, "AFS Optimal", 2, 4, 1200)
-plt_95_ci(xstar_agents_optimal_times_density_const, "X* Optimal", 3, 4, 1200)
+plt_95_ci(cbs_agents_times_density_const, "CBS Optimal", 3, 4, 1200)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_vs_all_optimal_times_density_const_half")
