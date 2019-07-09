@@ -21,6 +21,12 @@ namespace libMultiRobotPlanning {
 static constexpr bool kTiming = true;
 static constexpr bool kProduction = true;
 
+enum RunMode {
+    XSTAR, NWASTAR
+};
+
+static constexpr RunMode kRunMode = RunMode::XSTAR;
+
 /*!
   \example cbs.cpp Example that solves the Multi-Agent Path-Finding (MAPF)
   problem in a 2D grid world with up/down/left/right
@@ -526,6 +532,15 @@ class XStar {
       }
     }
 
+    void reset() {
+      open_set.clear();
+      state_to_heap.clear();
+      closed_set.clear();
+      parent_map.clear();
+      out_of_window.clear();
+      goal_wait_nodes.clear();
+    }
+    
     friend std::ostream& operator<<(std::ostream& os, const SearchState& ps) {
       os << "Enabled: " << (ps.enabled ? "true" : "false");
       return os;
@@ -641,7 +656,13 @@ class XStar {
     for (size_t i = 0; i < windows->size(); ++i) {
       timing_recWAMPF->num_windows++;
       WPS_t& wi = windows->at(i);
-      bool gri_res = growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
+      bool gri_res = false;
+      if (kRunMode == RunMode::XSTAR) {
+        gri_res = growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
+      } else {
+        TimingPlanIn tp;
+        gri_res = planIn(&wi, solution, &tp);
+      }
       while (!gri_res) {
         wi.window.grow();
         TimingPlanIn tp;
@@ -2823,7 +2844,7 @@ class XStar {
 
  public:
   XStar(Environment& environment) : m_env(environment) {}
-
+  
   bool search(const JointState_t& initial_starts, 
               const JointState_t& final_goal, 
               JointPlan_t& solution,
