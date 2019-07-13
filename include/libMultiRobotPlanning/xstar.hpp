@@ -661,6 +661,8 @@ class XStar {
         gri_res = growAndReplanIn(&wi, solution, &(timing_recWAMPF->timing_gari));
       } else {
         TimingPlanIn tp;
+        wi.getSearchState()->reset();
+        wi.window.grow();
         gri_res = planIn(&wi, solution, &tp);
       }
       while (!gri_res) {
