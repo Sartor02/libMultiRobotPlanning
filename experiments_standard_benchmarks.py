@@ -54,7 +54,7 @@ args = get_args()
 assert(os.path.isdir("./datasave"))
 
 def args_to_string(args):
-    return str(args).replace('(', '').replace(')', '').replace(' ', '').replace('=', '').replace(',', '')
+    return str(args).replace('(', '').replace(')', '').replace(' ', '').replace('=', '').replace(',', '').replace("'", "")
 
 
 generic_map = "simple_test{}.yaml".format(args_to_string(args))
@@ -88,12 +88,13 @@ def run_with_current_proc(cmd):
 def generate_new_scenario(agents, scen_name, iteration):
     cmd = "./example/standard_benchmark_converter.py ./scenarios/scen-random/{}-random-{}.scen ./scenarios/{}.map tmp".format(scen_name, iteration + 1, scen_name)
     run_with_current_proc(cmd)
-    cmd = "mv tmp_50_agents.yaml {}".format(generic_map)
+    cmd = "mv tmp_{}_agents.yaml {}".format(agents, generic_map)
     run_with_current_proc(cmd)
     for f in  glob.glob("tmp_*.yaml"):
         os.remove(f)
     cmd = "./yaml_to_afs_converter.py {} {} {}".format(generic_map, afs_map, afs_agents)
-    run_with_current_proc(cmd)
+    print(cmd)
+    ret_val = run_with_current_proc(cmd)
 
 
 def run_mstar(timeout):
@@ -120,7 +121,7 @@ def run_xstar(timeout, iteration):
                   0)
     if run_with_current_proc(cmd) != 0:
         print("Error running X*")
-        exit(-1)
+        return ([0], [args.timeout])
     result_file = list(glob.glob(prefix + "*"))[0]
     try:
         f = open(result_file, 'r')
@@ -162,7 +163,6 @@ def run_cbs(timeout):
     runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
     return runtime
 
-
 xstar_data_lst = []
 mstar_data_lst = []
 afs_data_lst = []
@@ -170,6 +170,9 @@ cbs_data_lst = []
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
+    
+    clean_up()
+    
     generate_new_scenario(args.agents, args.scen_name, i)
 
     print("X*")
@@ -210,16 +213,22 @@ for i in range(args.trials):
                                        args.timeout,
                                        mstar_runtime))
 
-
-sh.save_to_file("xstar_data_lst_{}".format(args_to_string(args)), xstar_data_lst)
-sh.save_to_file("cbs_data_lst_{}".format(args_to_string(args)), cbs_data_lst)
-sh.save_to_file("afs_data_lst_{}".format(args_to_string(args)), afs_data_lst)
-sh.save_to_file("mstar_data_lst_{}".format(args_to_string(args)), mstar_data_lst)
+xstar_out_file = "xstar_data_lst_{}".format(args_to_string(args))
+print("X* out file:", xstar_out_file)
+sh.save_to_file(xstar_out_file, xstar_data_lst)
+cbs_out_file = "cbs_data_lst_{}".format(args_to_string(args))
+print(cbs_out_file)
+sh.save_to_file(cbs_out_file, cbs_data_lst)
+afs_out_file = "afs_data_lst_{}".format(args_to_string(args))
+print(afs_out_file)
+sh.save_to_file(afs_out_file, afs_data_lst)
+mstar_out_file = "mstar_data_lst_{}".format(args_to_string(args))
+sh.save_to_file(mstar_out_file, mstar_data_lst)
 
 # Ensures data can be reloaded properly
-xstar_data_lst = sh.read_from_file("xstar_data_lst_{}".format(args_to_string(args)))
-cbs_data_lst = sh.read_from_file("cbs_data_lst_{}".format(args_to_string(args)))
-afs_data_lst = sh.read_from_file("afs_data_lst_{}".format(args_to_string(args)))
-mstar_data_lst = sh.read_from_file("mstar_data_lst_{}".format(args_to_string(args)))
+xstar_data_lst = sh.read_from_file(xstar_out_file)
+cbs_data_lst = sh.read_from_file(cbs_out_file)
+afs_data_lst = sh.read_from_file(afs_out_file)
+mstar_data_lst = sh.read_from_file(mstar_out_file)
 
 clean_up()

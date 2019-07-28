@@ -15,19 +15,25 @@ def set_font(size):
                             })
 linewidth = 0.5
 minor_tick_color = (0.9, 0.9, 0.9)
+kFontSize = 6
 
-def setupfig(current_fig=None, halfsize=False):
+def setupfig(current_fig=None, halfsize=False, thirdsize=False, quartersize=False):
     if current_fig is None:
         plt.clf()
         fig = plt.gcf()
     else:
         fig = current_fig
-    set_font(8)
-    kScaleDown = 2.5
+    set_font(kFontSize)
+    kScaleDown = 2.1
+    kVerticalScale = 0.9
     halfsize_scale = 1
     if halfsize:
         halfsize_scale = 0.45
-    fig.set_size_inches(8.5/kScaleDown * 1.58 * halfsize_scale , 8.5 / kScaleDown / 1.61 * 1.58, forward=True)
+    if thirdsize:
+        halfsize_scale = 0.30
+    if quartersize:
+        halfsize_scale = 0.19
+    fig.set_size_inches(7 /kScaleDown * 1.58 * halfsize_scale , 7.8 / kScaleDown / 1.61 * kVerticalScale, forward=True)
     plt.gca().set_axisbelow(True)
 
 def grid(plt=plt):
@@ -54,14 +60,14 @@ def legend(loc, plt=plt):
             loc = 0
         else:
             assert(False)
-    leg = plt.legend(loc=loc)
+    leg = plt.legend(loc=loc, prop={'size': 4})
     # set the linewidth of each legend object
     for legobj in leg.legendHandles:
-        legobj.set_linewidth(linewidth * 2)
+        legobj.set_linewidth(linewidth * 3)
 
 def save_fig(filename):
     print("Saving figout/{}.*".format(filename))
-    plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
-    plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=200)
-    plt.savefig("figout/{}.pdf".format(filename), bbox_inches='tight')
+    #plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
+    #plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=200)
+    plt.savefig("figout/{}.pdf".format(filename), bbox_inches='tight', pad_inches=0)
 

@@ -18,7 +18,6 @@ def get_lines(line, ls):
 
 ls = open(args.yaml, 'r').readlines()
 width, height = tuple(eval(get_line("dimensions:", ls)))
-print(width, height)
 
 def make_map(map_file, width, height, ls):
     f = open(map_file, 'w')
@@ -35,13 +34,39 @@ def make_map(map_file, width, height, ls):
                 f.write('0')
         f.write('1\n')
     f.write('1' * (width + 2) + '\n')
+    
+def write_afs_map(obstacles, width, height, f):
+    f.write("{},{}\n".format(width + 2, height + 2))
+    f.write("{}\n".format(("1," * (width + 2))[:-1]))
+    
+    for x in range(width):
+      f.write('1,')
+      for y in range(height):
+        xy = (x, y)
+        if xy in obstacles:
+          f.write("1,")
+        else:
+          f.write("0,")
+      f.write('1\n')
+    f.write("{}\n".format(("1," * (width + 2))[:-1]))
 
 def make_agents(agents_file, ls):
     f = open(agents_file, 'w')
     goals = ([tuple(eval(e)) for e in get_lines("-   goal: ", ls)])
     starts = ([tuple(eval(e)) for e in get_lines("start: ", ls)])
+    assert(len(goals) == len(starts))
+    f.write(str(len(goals)) + '\n')
     for start, goal in zip(starts, goals):
-        f.write("{},{},{},{}\n".format(start[0] + 1, start[1] + 1,goal[0] + 1, goal[1] + 1,))
+        f.write("{},{},{},{}\n".format(start[0] + 1, start[1] + 1,goal[0] + 1, goal[1] + 1))
 
-make_map(args.map, width, height, ls)
+#make_map(args.map, width, height, ls)
+f = open(args.map, 'w')
+obstacle_points = set([tuple(eval(e)) for e in get_lines("- !!python/tuple ", ls)])
+assert(len(obstacle_points)!= 0)
+for e in obstacle_points:
+    assert(type(e) == tuple)
+    assert(len(e) == 2)
+
+write_afs_map(obstacle_points, width, height, f)
+f.close()
 make_agents(args.agents, ls)
