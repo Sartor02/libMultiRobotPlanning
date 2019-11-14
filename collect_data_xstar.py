@@ -19,7 +19,7 @@ def get_xstar_args():
     parser.add_argument("memory_limit", type=int, help="Memory limit (GB)")
     parser.add_argument("output_file_prefix", type=str, help="Output file prefix")
     parser.add_argument("output_file_postfix", type=str, help="Output file postfix")
-    parser.add_argument("--binary", type=str, default=None, help="Output file postfix")
+    parser.add_argument("--binary", type=str, default="release/xstar", help="executable to use")
     return parser.parse_args()
 
 
@@ -117,8 +117,7 @@ def run():
     clear_output_files()
     for idx in range(args.trials):
         clear_timing_files()
-        binary = "release/xstar" if args.binary is None else args.binary
-        complete_file = run_xstar(args.input_file, args.timeout, args.memory_limit, binary)
+        complete_file = run_xstar(args.input_file, args.timeout, args.memory_limit, args.binary)
         save_complete_file(complete_file, idx)
         clear_timing_files()
 
