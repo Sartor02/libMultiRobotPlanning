@@ -47,6 +47,7 @@ def write_labels(optimal_times, first_times, seed):
 
 for seed in range(kNumSeeds):
   print("==================")
+  print("Seed:", seed)
   generic_map, afs_map, afs_agents = generate_new_scenario(kAgents, kMapName, seed)
   cbs_time = run_cbs.run(generic_map, kTimeout)
   print("CBS Time: %.6f" % cbs_time)
