@@ -90,8 +90,10 @@ def label_file_to_X_y(arguments):
     return None
 
 arguments = [(label_file, idx) for idx, label_file in enumerate(sorted(list(glob.glob(destination_data_folder + "/data/*.labels"))))]
-pool = multiprocessing.Pool(pool_cpus)
 print("Making pool of {} CPUs for {} entries".format(pool_cpus, len(arguments)))
+# Initialize the globals.
+label_file_to_X_y(arguments[0])
+pool = multiprocessing.Pool(pool_cpus)
 Xys = pool.map(label_file_to_X_y, arguments)
 
 import joblib
