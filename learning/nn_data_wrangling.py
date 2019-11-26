@@ -80,11 +80,14 @@ def label_file_to_ys(file):
   return (opt_times, first_times)
 
 def label_file_to_X_y(arguments):
-  label_file, index = arguments
-  print(index, ";", label_file)
-  X = map_file_to_x(get_map_file(label_file))
-  opt_y, first_y = label_file_to_ys(label_file)
-  return X, opt_y, first_y
+  try:
+    label_file, index = arguments
+    print(index, ";", label_file)
+    X = map_file_to_x(get_map_file(label_file))
+    opt_y, first_y = label_file_to_ys(label_file)
+    return X, opt_y, first_y
+  except:
+    return None
 
 arguments = [(label_file, idx) for idx, label_file in enumerate(sorted(list(glob.glob(destination_data_folder + "/data/*.labels"))))]
 pool = multiprocessing.Pool(pool_cpus)
@@ -93,7 +96,7 @@ Xys = pool.map(label_file_to_X_y, arguments)
 
 import joblib
 
-lst_Xs, lst_opt_ys, lst_first_ys = zip(*list(Xys))
+lst_Xs, lst_opt_ys, lst_first_ys = zip(*[e for e in Xys if e is not None])
 
 def stack_instances(instances):
   return np.concatenate([np.expand_dims(e, 0) for e in instances])
