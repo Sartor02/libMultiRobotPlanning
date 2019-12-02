@@ -4,6 +4,9 @@ import glob
 import yaml
 import numpy as np
 import multiprocessing
+import tracemalloc
+
+tracemalloc.start()
 
 def get_CPUs_to_use(max_cpus):
   return max(max_cpus - 2, 1)
@@ -26,18 +29,19 @@ def get_seed(file):
 def get_map_file(label_file):
   return label_file.split("seed")[0] + "seed{}_generic.map".format(get_seed(label_file))
 
-def make_agent_layer(agent_info, shape):
+def make_agent_layer(agent_info_lst, shape):
   grid_map = np.zeros(shape)
-  sx, sy = agent_info['start']  
-  gx, gy = agent_info['goal']  
-  grid_map[sx, sy] = 1
-  grid_map[gx, gy] = -1
+  for agent_info in agent_info_lst:
+    sx, sy = agent_info['start']  
+    gx, gy = agent_info['goal']  
+    grid_map[sx, sy] = 1
+    grid_map[gx, gy] = -1
   return grid_map
 
 def read_agents(map_file, N):
   f = open(map_file)
   head = [next(f) for x in range(N * 3 + 1)]
-  return yaml.load("\n".join(head), Loader=yaml.FullLoader)
+  return yaml.load("\n".join(head), Loader=yaml.UnsafeLoader)
 
 def make_grid_map(map):
   dx, dy = map['map']['dimensions']
@@ -53,15 +57,15 @@ def map_file_to_x(map_file):
   global grid_map
 
   if grid_map is None:
-    map = yaml.load(open(map_file, 'r'), Loader=yaml.FullLoader)
+    print("Map Cache miss!")
+    map = yaml.load(open(map_file, 'r'), Loader=yaml.UnsafeLoader)
     grid_map = make_grid_map(map)
   else:
     print
     map = read_agents(map_file, kNumAgents)
 
-  layers = [make_agent_layer(a, grid_map.shape) for a in map['agents']]
-  layers.insert(0, grid_map)
-  return np.concatenate([np.expand_dims(e, 0) for e in layers])
+  agent_layer = make_agent_layer(map['agents'], grid_map.shape)
+  return np.concatenate([np.expand_dims(e, 0) for e in [grid_map, agent_layer]])
   
 def times_tuple_list_to_vectors(times):
   times.sort(key=lambda e: e[0])
@@ -85,16 +89,27 @@ def label_file_to_X_y(arguments):
     print(index, ";", label_file)
     X = map_file_to_x(get_map_file(label_file))
     opt_y, first_y = label_file_to_ys(label_file)
+
+    # if index % 20 == 0:
+    #   snapshot = tracemalloc.take_snapshot()
+    #   top_stats = snapshot.statistics('lineno')
+    #   print(top_stats[0])
+
     return X, opt_y, first_y
   except:
     return None
+
+def opt_pool_map(func, args, pool=None):
+  if pool is None:
+    return [func(a) for a in args]
+  return pool.map(func, args)
 
 arguments = [(label_file, idx) for idx, label_file in enumerate(sorted(list(glob.glob(destination_data_folder + "/data/*.labels"))))]
 print("Making pool of {} CPUs for {} entries".format(pool_cpus, len(arguments)))
 # Initialize the globals.
 label_file_to_X_y(arguments[0])
 pool = multiprocessing.Pool(pool_cpus)
-Xys = pool.map(label_file_to_X_y, arguments)
+Xys = opt_pool_map(label_file_to_X_y, arguments[:7000])
 
 import joblib
 
@@ -111,4 +126,4 @@ joblib.dump(np_Xs, destination_data_folder + "/np_Xs")
 joblib.dump(np_first_ys, destination_data_folder + "/np_first_ys")
 joblib.dump(np_opt_ys, destination_data_folder + "/np_opt_ys")
 
-joblib.dump(Xys, destination_data_folder + "/Xys")
+#joblib.dump(Xys, destination_data_folder + "/Xys")
