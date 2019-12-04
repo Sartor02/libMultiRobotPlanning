@@ -5,6 +5,7 @@ import yaml
 import numpy as np
 import multiprocessing
 import tracemalloc
+import joblib
 
 tracemalloc.start()
 
@@ -30,13 +31,12 @@ def get_map_file(label_file):
   return label_file.split("seed")[0] + "seed{}_generic.map".format(get_seed(label_file))
 
 def make_agent_layer(agent_info_lst, shape):
-  grid_map = np.zeros(shape)
+  starts_map = np.zeros(shape)
+  goals_map = np.zeros(shape)
   for agent_info in agent_info_lst:
-    sx, sy = agent_info['start']  
-    gx, gy = agent_info['goal']  
-    grid_map[sx, sy] = 1
-    grid_map[gx, gy] = -1
-  return grid_map
+    starts_map[agent_info['start']] = 1
+    goals_map[agent_info['goal']] = 1
+  return starts_map, goals_map
 
 def read_agents(map_file, N):
   f = open(map_file)
@@ -44,9 +44,7 @@ def read_agents(map_file, N):
   return yaml.load("\n".join(head), Loader=yaml.UnsafeLoader)
 
 def make_grid_map(map):
-  dx, dy = map['map']['dimensions']
-  shape = (dx, dy)
-  grid_map = np.zeros(shape)
+  grid_map = np.zeros(map['map']['dimensions'])
   for x, y in map['map']['obstacles']:
     grid_map[x, y] = 1
   assert(len(map['agents']) == kNumAgents)
@@ -64,8 +62,8 @@ def map_file_to_x(map_file):
     print
     map = read_agents(map_file, kNumAgents)
 
-  agent_layer = make_agent_layer(map['agents'], grid_map.shape)
-  return np.concatenate([np.expand_dims(e, 0) for e in [grid_map, agent_layer]])
+  starts_map, goals_map = make_agent_layer(map['agents'], grid_map.shape)
+  return np.concatenate([np.expand_dims(e, 0) for e in [grid_map, starts_map, goals_map]])
   
 def times_tuple_list_to_vectors(times):
   times.sort(key=lambda e: e[0])
@@ -106,24 +104,28 @@ def opt_pool_map(func, args, pool=None):
 
 arguments = [(label_file, idx) for idx, label_file in enumerate(sorted(list(glob.glob(destination_data_folder + "/data/*.labels"))))]
 print("Making pool of {} CPUs for {} entries".format(pool_cpus, len(arguments)))
+
+boundaries = list([e * 1000 for e in range(len(arguments) // 1000)]) + [len(arguments)]
+chunks = list(zip(boundaries, boundaries[1:]))
+
 # Initialize the globals.
 label_file_to_X_y(arguments[0])
 pool = multiprocessing.Pool(pool_cpus)
-Xys = opt_pool_map(label_file_to_X_y, arguments[:7000])
 
-import joblib
+for lower, upper in chunks:
+  Xys = opt_pool_map(label_file_to_X_y, arguments[lower : upper])
 
-lst_Xs, lst_opt_ys, lst_first_ys = zip(*[e for e in Xys if e is not None])
+  lst_Xs, lst_opt_ys, lst_first_ys = zip(*[e for e in Xys if e is not None])
 
-def stack_instances(instances):
-  return np.concatenate([np.expand_dims(e, 0) for e in instances])
+  def stack_instances(instances):
+    return np.concatenate([np.expand_dims(e, 0) for e in instances])
 
-np_Xs = stack_instances(lst_Xs)
-np_first_ys = stack_instances(lst_first_ys)
-np_opt_ys = stack_instances(lst_opt_ys)
+  np_Xs = stack_instances(lst_Xs)
+  np_first_ys = stack_instances(lst_first_ys)
+  np_opt_ys = stack_instances(lst_opt_ys)
 
-joblib.dump(np_Xs, destination_data_folder + "/np_Xs")
-joblib.dump(np_first_ys, destination_data_folder + "/np_first_ys")
-joblib.dump(np_opt_ys, destination_data_folder + "/np_opt_ys")
+  joblib.dump(np_Xs, destination_data_folder + "/np_Xs_{}_{}".format(lower, upper))
+  joblib.dump(np_first_ys, destination_data_folder + "/np_first_ys_{}_{}".format(lower, upper))
+  joblib.dump(np_opt_ys, destination_data_folder + "/np_opt_ys_{}_{}".format(lower, upper))
 
 #joblib.dump(Xys, destination_data_folder + "/Xys")
