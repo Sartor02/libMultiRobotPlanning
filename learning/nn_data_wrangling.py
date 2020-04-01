@@ -16,7 +16,7 @@ def get_CPUs_to_use(max_cpus):
 pool_cpus = get_CPUs_to_use(multiprocessing.cpu_count())
 
 print("Has {} CPUs. Pool CPUs: {}".format(multiprocessing.cpu_count(), pool_cpus))
-destination_data_folder = "./fixed_building"
+destination_data_folder = "./boston"
 
 kNumAgents = 5
 
@@ -38,8 +38,8 @@ def make_agent_layer(agent_info_lst, shape):
     x, y = agent_info['start']
     starts_map[x, y] = 1
     x, y = agent_info['goal']
-    starts_map[x, y] = -1
-  return starts_map
+    goals_map[x, y] = 1
+  return starts_map, goals_map
 
 def read_agents(map_file, N):
   f = open(map_file)
@@ -65,8 +65,8 @@ def map_file_to_x(map_file):
     print
     map = read_agents(map_file, kNumAgents)
 
-  starts_map = make_agent_layer(map['agents'], grid_map.shape)
-  return np.concatenate([np.expand_dims(e, 0) for e in [grid_map, starts_map]])
+  starts_map, goals_map = make_agent_layer(map['agents'], grid_map.shape)
+  return np.concatenate([np.expand_dims(e, 0) for e in [grid_map, starts_map, goals_map]])
   
 def times_tuple_list_to_vectors(times):
   times.sort(key=lambda e: e[0])
@@ -115,7 +115,7 @@ chunks = list(zip(boundaries, boundaries[1:]))
 label_file_to_X_y(arguments[0])
 pool = multiprocessing.Pool(pool_cpus)
 
-count = "two"
+count = "three"
 
 # for lower, upper in chunks:
 Xys = opt_pool_map(label_file_to_X_y, arguments) #[lower : upper])
