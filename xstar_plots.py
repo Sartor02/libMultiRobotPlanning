@@ -275,12 +275,20 @@ xstar_radius_optimal_times = [(r, t) for r, f, t in xstar_datas_scale_radius]
 
 
 def draw_timeout(timeout, xs, plt=plt):
+    linestyle = (0, (1, 3))
     if type(timeout) is int:
-        plt.axhline(timeout, color='black', lw=0.7, linestyle='--')
+        plt.axhline(timeout, color='black', lw=0.7, linestyle=linestyle)
     elif type(timeout) is dict:
         ys = [timeout[x] for x in xs]
-        plt.plot(xs, ys, linestyle='--',
+        plt.plot(xs, ys, linestyle=linestyle,
                  color='black')
+
+def draw_timeout_data(timeout, data_lst, plt=plt):
+    data_lst.sort()
+    agents_to_times_dict = reduce(add_to_dict, data_lst, dict())
+    xs = sorted(agents_to_times_dict.keys())
+    draw_timeout(timeout, xs, plt=plt)
+
 
 def plt_cis(agents_times_lst, title, timeout=None):
     agents_times_lst.sort()
@@ -361,6 +369,40 @@ def plt_95_ci(agents_times_lst, name, plt_idx, max_idx, timeout=None, show_y_axi
     draw_timeout(timeout, xs)
 
 
+def plt_bw(agents_times_lst, name, plt_idx, max_idx, timeout, show_y_axis, pos_idx, num_pos=2, position_offset = 0.2, plot_width = 0.15):
+    agents_times_lst.sort()
+    agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
+    
+    current_offset = -(num_pos + 1) / 2 * position_offset + position_offset * (pos_idx + 1)
+    
+    xs = sorted(agents_to_times_dict.keys())
+    positions = [e + current_offset for e in range(1, len(xs) + 1)]
+    values = [agents_to_times_dict[k] for k in xs]
+    color = ps.color(plt_idx, max_idx)
+    colort = ps.alpha(color, 0.2)
+    bplot = plt.boxplot(values, 
+        patch_artist=True, 
+        boxprops=dict(facecolor=colort, color=colort),
+        flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
+        capprops=dict(color=color),
+        whiskerprops=dict(color=colort),
+        medianprops=dict(color=color),
+        widths=plot_width,
+        positions=positions
+        # 
+        )
+    label_string="{} Performance".format(name)
+
+    handles, labels = plt.gca().get_legend_handles_labels()
+    ps.add_legend(bplot["boxes"][0], label_string)
+
+    plt.yscale('log')
+    if show_y_axis:
+        plt.ylabel("Time (seconds)")
+    plt.xlabel("Number of agents")
+    plt.xticks([e + 1 for e in range(len(xs))], xs)
+
+
 def plt_percentiles(agents_times_lst, title, timeout=None):
     agents_to_times_dict = reduce(add_to_dict, agents_times_lst, dict())
     agents_to_100_bounds_lst = \
@@ -427,14 +469,14 @@ def plt_percentiles(agents_times_lst, title, timeout=None):
 ############################
 print("Head to head comparisons")
 
-ps.setupfig()
-plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200)
-plt_95_ci(afs_agents_optimal_times_density_01, "AFS Optimal", 1, 4, 1200)
-plt_95_ci(xstar_agents_first_times_density_01, "X* First", 2, 4, 1200)
-plt_95_ci(afs_agents_first_times_density_01, "AFS First", 3, 4, 1200)
-ps.grid()
-ps.legend('br')
-ps.save_fig("xstar_afs_first_optimal_times_density_01")
+# ps.setupfig()
+# plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200)
+# plt_95_ci(afs_agents_optimal_times_density_01, "AFS Optimal", 1, 4, 1200)
+# plt_95_ci(xstar_agents_first_times_density_01, "X* First", 2, 4, 1200)
+# plt_95_ci(afs_agents_first_times_density_01, "AFS First", 3, 4, 1200)
+# ps.grid()
+# ps.legend('br')
+# ps.save_fig("xstar_afs_first_optimal_times_density_01")
 
 ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200)
@@ -443,12 +485,28 @@ ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_afs_first_times_density_01")
 
-ps.setupfig(halfsize=True)
+ps.setupfig(thirdsize=True)
+draw_timeout_data(1200, xstar_agents_first_times_density_01)
+plt_bw(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200, True, 0)
+plt_bw(afs_agents_first_times_density_01, "AFS First", 1, 4, 1200, True, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_afs_first_times_density_01_bw")
+
+ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200)
 plt_95_ci(afs_agents_optimal_times_density_01, "AFS Optimal", 1, 4, 1200)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_afs_optimal_times_density_01")
+
+ps.setupfig(thirdsize=True)
+draw_timeout_data(1200, xstar_agents_optimal_times_density_01)
+plt_bw(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200, True, 0)
+plt_bw(afs_agents_optimal_times_density_01, "AFS Optimal", 1, 4, 1200, True, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_afs_optimal_times_density_01_bw")
 
 ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200, False)
@@ -458,11 +516,27 @@ ps.legend('br')
 ps.save_fig("xstar_cbs_first_times_density_01")
 
 ps.setupfig(thirdsize=True)
+draw_timeout_data(1200, xstar_agents_first_times_density_01)
+plt_bw(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200, False, 0)
+plt_bw(cbs_agents_times_density_01, "CBS First/Opt.", 2, 4, 1200, False, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_cbs_first_times_density_01_bw")
+
+ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200, False)
 plt_95_ci(cbs_agents_times_density_01, "CBS Optimal", 2, 4, 1200, False)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_cbs_optimal_times_density_01")
+
+ps.setupfig(thirdsize=True)
+draw_timeout_data(1200, xstar_agents_optimal_times_density_01)
+plt_bw(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200, False, 0)
+plt_bw(cbs_agents_times_density_01, "CBS Optimal", 2, 4, 1200, False, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_cbs_optimal_times_density_01_bw")
 
 ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200, False)
@@ -472,40 +546,56 @@ ps.legend('br')
 ps.save_fig("xstar_mstar_first_times_density_01")
 
 ps.setupfig(thirdsize=True)
+draw_timeout_data(1200, xstar_agents_first_times_density_01)
+plt_bw(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200, False, 0)
+plt_bw(mstar_agents_times_density_01, "M* First/Opt.", 3, 4, 1200, False, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_mstar_first_times_density_01_bw")
+
+ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200, False)
 plt_95_ci(mstar_agents_times_density_01, "M* Optimal", 3, 4, 1200, False)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_mstar_optimal_times_density_01")
 
-ps.setupfig(halfsize=True)
-plt_95_ci(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200)
-plt_95_ci(afs_agents_first_times_density_01, "AFS First", 1, 4, 1200)
-plt_95_ci(cbs_agents_times_density_01, "CBS First/Opt.", 2, 4, 1200)
-plt_95_ci(mstar_agents_times_density_01, "M* First/Opt.", 3, 4, 1200)
+ps.setupfig(thirdsize=True)
+draw_timeout_data(1200, xstar_agents_optimal_times_density_01)
+plt_bw(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200, False, 0)
+plt_bw(mstar_agents_times_density_01, "M* Optimal", 3, 4, 1200, False, 1)
 ps.grid()
 ps.legend('br')
-ps.save_fig("xstar_vs_all_first_times_density_01")
+ps.save_fig("xstar_mstar_optimal_times_density_01")
 
-ps.setupfig(halfsize=True)
-plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200)
-plt_95_ci(afs_agents_optimal_times_density_01, "AFS Optimal", 1, 4, 1200)
-plt_95_ci(cbs_agents_times_density_01, "CBS Optimal", 2, 4, 1200)
-plt_95_ci(mstar_agents_times_density_01, "M* Optimal", 3, 4, 1200)
-ps.grid()
-ps.legend('br')
-ps.save_fig("xstar_vs_all_optimal_times_density_01")
+# ps.setupfig(halfsize=True)
+# plt_95_ci(xstar_agents_first_times_density_01, "X* First", 0, 4, 1200)
+# plt_95_ci(afs_agents_first_times_density_01, "AFS First", 1, 4, 1200)
+# plt_95_ci(cbs_agents_times_density_01, "CBS First/Opt.", 2, 4, 1200)
+# plt_95_ci(mstar_agents_times_density_01, "M* First/Opt.", 3, 4, 1200)
+# ps.grid()
+# ps.legend('br')
+# ps.save_fig("xstar_vs_all_first_times_density_01")
+
+# ps.setupfig(halfsize=True)
+# plt_95_ci(xstar_agents_optimal_times_density_01, "X* Optimal", 0, 4, 1200)
+# plt_95_ci(afs_agents_optimal_times_density_01, "AFS Optimal", 1, 4, 1200)
+# plt_95_ci(cbs_agents_times_density_01, "CBS Optimal", 2, 4, 1200)
+# plt_95_ci(mstar_agents_times_density_01, "M* Optimal", 3, 4, 1200)
+# ps.grid()
+# ps.legend('br')
+# ps.save_fig("xstar_vs_all_optimal_times_density_01")
 
 # ======================================
 
-ps.setupfig(halfsize=True)
-plt_95_ci(xstar_agents_optimal_times_density_05, "X* Optimal", 0, 4, 1200)
-plt_95_ci(afs_agents_optimal_times_density_05, "AFS Optimal", 1, 4, 1200)
-plt_95_ci(xstar_agents_first_times_density_05, "X* First", 2, 4, 1200)
-plt_95_ci(afs_agents_first_times_density_05, "AFS First", 3, 4, 1200)
-ps.grid()
-ps.legend('br')
-ps.save_fig("xstar_afs_first_optimal_times_density_05")
+# ps.setupfig(halfsize=True)
+# plt_95_ci(xstar_agents_optimal_times_density_05, "X* Optimal", 0, 4, 1200)
+# plt_95_ci(afs_agents_optimal_times_density_05, "AFS Optimal", 1, 4, 1200)
+# plt_95_ci(xstar_agents_first_times_density_05, "X* First", 2, 4, 1200)
+# plt_95_ci(afs_agents_first_times_density_05, "AFS First", 3, 4, 1200)
+# ps.grid()
+# ps.legend('br')
+# ps.save_fig("xstar_afs_first_optimal_times_density_05")
 
 ps.setupfig(thirdsize=True)
 plt_95_ci(xstar_agents_first_times_density_05, "X* First", 0, 4, 1200)
@@ -549,23 +639,23 @@ ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_mstar_optimal_times_density_05")
 
-ps.setupfig(halfsize=True)
-plt_95_ci(xstar_agents_first_times_density_05, "X* First", 0, 4, 1200)
-plt_95_ci(afs_agents_first_times_density_05, "AFS First", 1, 4, 1200)
-plt_95_ci(cbs_agents_times_density_05, "CBS First/Opt.", 2, 4, 1200)
-plt_95_ci(mstar_agents_times_density_05, "M* First/Opt.", 3, 4, 1200)
-ps.grid()
-ps.legend('br')
-ps.save_fig("xstar_vs_all_first_times_density_05")
+# ps.setupfig(halfsize=True)
+# plt_95_ci(xstar_agents_first_times_density_05, "X* First", 0, 4, 1200)
+# plt_95_ci(afs_agents_first_times_density_05, "AFS First", 1, 4, 1200)
+# plt_95_ci(cbs_agents_times_density_05, "CBS First/Opt.", 2, 4, 1200)
+# plt_95_ci(mstar_agents_times_density_05, "M* First/Opt.", 3, 4, 1200)
+# ps.grid()
+# ps.legend('br')
+# ps.save_fig("xstar_vs_all_first_times_density_05")
 
-ps.setupfig(halfsize=True)
-plt_95_ci(xstar_agents_optimal_times_density_05, "X* Optimal", 0, 4, 1200)
-plt_95_ci(afs_agents_optimal_times_density_05, "AFS Optimal", 1, 4, 1200)
-plt_95_ci(cbs_agents_times_density_05, "CBS Optimal", 2, 4, 1200)
-plt_95_ci(mstar_agents_times_density_05, "M* Optimal", 3, 4, 1200)
-ps.grid()
-ps.legend('br')
-ps.save_fig("xstar_vs_all_optimal_times_density_05")
+# ps.setupfig(halfsize=True)
+# plt_95_ci(xstar_agents_optimal_times_density_05, "X* Optimal", 0, 4, 1200)
+# plt_95_ci(afs_agents_optimal_times_density_05, "AFS Optimal", 1, 4, 1200)
+# plt_95_ci(cbs_agents_times_density_05, "CBS Optimal", 2, 4, 1200)
+# plt_95_ci(mstar_agents_times_density_05, "M* Optimal", 3, 4, 1200)
+# ps.grid()
+# ps.legend('br')
+# ps.save_fig("xstar_vs_all_optimal_times_density_05")
 
 # ======================================
 

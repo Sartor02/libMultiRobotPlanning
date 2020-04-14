@@ -17,7 +17,14 @@ linewidth = 0.5
 minor_tick_color = (0.9, 0.9, 0.9)
 kFontSize = 6
 
+legend_handles = []
+legend_labels = []
+
 def setupfig(current_fig=None, halfsize=False, thirdsize=False, quartersize=False):
+    global legend_handles
+    global legend_labels
+    legend_handles = []
+    legend_labels = []
     if current_fig is None:
         plt.clf()
         fig = plt.gcf()
@@ -52,6 +59,12 @@ def alpha(color, val=0.5):
     r, g, b, a=color
     return (r, g, b, val)
 
+def add_legend(handle, label):
+    global legend_handles
+    global legend_labels
+    legend_handles.append(handle)
+    legend_labels.append(label)
+
 def legend(loc, plt=plt):
     if type(loc)  is str:
         if loc == 'ul':
@@ -60,7 +73,8 @@ def legend(loc, plt=plt):
             loc = 0
         else:
             assert(False)
-    leg = plt.legend(loc=loc, prop={'size': 4})
+    handles, labels = plt.gca().get_legend_handles_labels()
+    leg = plt.legend(handles + legend_handles, labels + legend_labels, loc=loc, prop={'size': 4})
     # set the linewidth of each legend object
     for legobj in leg.legendHandles:
         legobj.set_linewidth(linewidth * 3)
