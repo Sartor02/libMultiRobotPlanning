@@ -27,7 +27,12 @@ def clean_up():
         os.remove(f)
     for f in glob.glob("*.result"):
         os.remove(f)
-
+    for f in glob.glob("TEMPOUT*"):
+        os.remove(f)
+    for f in glob.glob("*.xml"):
+        os.remove(f)
+    for f in glob.glob("*_log"):
+        os.remove(f)
 
 def signal_handler(sig, frame):
     print(sys.argv[0], 'Signal caught')
@@ -60,7 +65,9 @@ def args_to_string(args):
 
 generic_map = "simple_test{}.yaml".format(args_to_string(args))
 afs_map = "afs_map_file{}.map".format(args_to_string(args))
-afs_agents = "afs_agents_file{}.agents".format(args_to_string(args))  
+afs_agents = "afs_agents_file{}.agents".format(args_to_string(args))
+pr_map = "pr_map_file{}.map".format(args_to_string(args))
+pr_agents = "pr_agents_file{}.agents".format(args_to_string(args))
 
 
 def get_line(ls, string, t):
@@ -158,11 +165,33 @@ def run_cbs(timeout):
     runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
     return runtime
 
+def run_pr(timeout):
+    cmd = "timeout {} release/cbs -i {} -o simple_test_cbs{}.result".format(timeout, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    if retcode != 0:
+        print("CBS timeout")
+        return 0, timeout
+    f = open("simple_test_cbs{}.result".format(args_to_string(args)))
+    opt_cost = [int(x.strip().replace("cost:", "")) for x in f.readlines() if "cost:" in x][0]
+
+
+    tempout = "TEMPOUT{}".format(args_to_string(args))
+    cmd = "timeout {} ../Push-and-Rotate--CBS--PrioritizedPlanning/build/ASearch {} > {}".format(pr_map, tempout)
+    retcode = run_with_current_proc(cmd)
+    if retcode != 0:
+        print("PR timeout")
+        return 0, timeout
+    f = open(tempout)
+    runtime = [float(x.strip().replace("Runtime:", "")) for x in f.readlines() if "Runtime:" in x][0]
+    planned_cost = [int(x.strip().replace("Cost:", "")) for x in f.readlines() if "Cost:" in x][0]
+    return (planned_cost / opt_cost, runtime)
+
 
 xstar_data_lst = []
 mstar_data_lst = []
 afs_data_lst = []
 cbs_data_lst = []
+pr_data_lst = []
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -207,16 +236,28 @@ for i in range(args.trials):
                                        args.timeout,
                                        mstar_runtime))
 
+    print("PR")
+    pr_bounds, pr_runtimes = run_pr(args.timeout)
+    pr_data_lst.append(sh.PRData(args.obs_density,
+                                   args.width,
+                                   args.height,
+                                   args.agents,
+                                   args.timeout,
+                                   pr_bounds,
+                                   pr_runtimes))
+
 
 sh.save_to_file("xstar_data_lst_{}".format(args_to_string(args)), xstar_data_lst)
 sh.save_to_file("cbs_data_lst_{}".format(args_to_string(args)), cbs_data_lst)
 sh.save_to_file("afs_data_lst_{}".format(args_to_string(args)), afs_data_lst)
 sh.save_to_file("mstar_data_lst_{}".format(args_to_string(args)), mstar_data_lst)
+sh.save_to_file("pr_data_lst_{}".format(args_to_string(args)), pr_data_lst)
 
 # Ensures data can be reloaded properly
 xstar_data_lst = sh.read_from_file("xstar_data_lst_{}".format(args_to_string(args)))
 cbs_data_lst = sh.read_from_file("cbs_data_lst_{}".format(args_to_string(args)))
 afs_data_lst = sh.read_from_file("afs_data_lst_{}".format(args_to_string(args)))
 mstar_data_lst = sh.read_from_file("mstar_data_lst_{}".format(args_to_string(args)))
+pr_data_lst = sh.read_from_file("pr_data_lst_{}".format(args_to_string(args)))
 
 clean_up()

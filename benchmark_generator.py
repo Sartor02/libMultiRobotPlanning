@@ -47,6 +47,8 @@ def get_args():
     parser.add_argument("cbs_out_file", type=str, help="CBS Output file")
     parser.add_argument("afs_map_file", type=str, help="AFS Map file")
     parser.add_argument("afs_agents_file", type=str, help="AFS Agents file")
+    parser.add_argument("pr_map_file", type=str, help="Push/Rotate Map file")
+    parser.add_argument("pr_agents_file", type=str, help="Push/Rotate Agents file")
     parser.add_argument("--seed", type=int, default=None, help="RNG Seed")
     return parser.parse_args()
 
@@ -99,6 +101,53 @@ def wite_afs_agents(agents, obstacles, width, height, f):
     for a in agents:
       f.write("{},{},{},{}\n".format(a.start[0] + 1,a.start[1] + 1,a.goal[0] + 1,a.goal[1] + 1))
 
+
+def write_pr_map(agents, obstacles, width, height, f, agents_filepath):
+    f.write("""<?xml version="1.0" ?>
+<root>
+<map>
+<width>{}</width>
+<height>{}</height>
+<grid>
+""".format(width, height))
+    for x in range(width):
+        f.write("<row>")
+        for y in range(height):
+            xy = [x, y]
+            if xy in obstacles:
+                f.write("1 ")
+            else:
+                f.write("0 ")
+        f.write("</row>\n")
+    f.write("</grid>\n</map>\n")
+    f.write("""<options>
+<algorithm>push_and_rotate</algorithm>
+<agents_file>{}</agents_file>
+<tasks_count>1</tasks_count>
+<agents_range min="{}" max="{}"/>
+<maxtime>1000</maxtime>
+<with_cat>true</with_cat>
+<with_card_conf>true</with_card_conf>
+<with_perfect_h>true</with_perfect_h>
+<pp_order>2</pp_order>
+<parallelize_paths>true</parallelize_paths>
+<single_execution>true</single_execution>
+<logpath />
+<logfilename />
+</options>
+</root>
+""".format(agents_filepath, len(agents), len(agents)))
+
+def write_pr_agents(agents, f):
+    f.write('<?xml version="1.0" ?>\n')
+    f.write("<root>\n")
+    for idx, a in enumerate(agents):
+        f.write('<agent id="{}" start_i="{}" start_j="{}" goal_i="{}" goal_j="{}"/>\n'.format(idx, a.start[1], a.start[0], a.goal[1], a.goal[0]))
+    f.write("</root>\n")
+
+
+
+
 f = open(args.cbs_out_file, "w")
 write_yaml(agents, obstacles, args.width, args.height, f)
 f.close()
@@ -109,4 +158,12 @@ f.close()
 
 f = open(args.afs_agents_file, "w")
 wite_afs_agents(agents, obstacles, args.width, args.height, f)
+f.close()
+
+f = open(args.pr_map_file, "w")
+write_pr_map(agents, obstacles, args.width, args.height, f, args.pr_agents_file)
+f.close()
+
+f = open(args.pr_agents_file + "-1.xml", "w")
+write_pr_agents(agents, f)
 f.close()

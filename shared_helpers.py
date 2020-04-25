@@ -6,6 +6,7 @@ XStarData = collections.namedtuple('XStarData', ['obs_density', 'width', 'height
 AFSData = collections.namedtuple('AFSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'bounds', 'runtimes',])
 CBSData = collections.namedtuple('CBSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes',])
 MStarData = collections.namedtuple('MStarData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes',])
+PRData = collections.namedtuple('PRData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'bounds', 'runtimes',])
 
 def get_args():
     parser = argparse.ArgumentParser()
