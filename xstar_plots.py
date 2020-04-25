@@ -45,8 +45,7 @@ def filename_to_filedata(l):
     try:
         match = matches[0]
     except:
-        print("Exception caught:")
-        print(l)
+        print("Exception caught:", l)
         return None
     agents = int(match.group(1))
     itr = int(match.group(2))
@@ -168,9 +167,11 @@ def read_from_file(name):
 def get_first_runtimes(data):
     return data.runtimes[0]
 
+kBoundsAgentCount = 30
 
 xstar_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.01*')]
 xstar_datas_density_01 = [x for lst in xstar_datas_density_01 for x in lst]
+xstar_agents_bounds_01 = [x.bounds for x in xstar_datas_density_01 if x.num_agents == kBoundsAgentCount]
 xstar_agents_first_times_density_01 = [(x.num_agents, x.runtimes[0]) for x in xstar_datas_density_01]
 xstar_agents_optimal_times_density_01 = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas_density_01]
 
@@ -180,6 +181,7 @@ cbs_agents_times_density_01 = [(x.num_agents, x.runtimes) for x in cbs_datas_den
 
 afs_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/afs_data_lst_*density0.01*')]
 afs_datas_density_01 = [x for lst in afs_datas_density_01 for x in lst]
+afs_agents_bounds_01 = [x.bounds for x in afs_datas_density_01 if x.num_agents == kBoundsAgentCount]
 afs_agents_first_times_density_01 = [(x.num_agents, x.runtimes[0]) for x in afs_datas_density_01]
 afs_agents_optimal_times_density_01 = [(x.num_agents, x.runtimes[-1]) for x in afs_datas_density_01]
 
@@ -189,6 +191,7 @@ mstar_agents_times_density_01 = [(x.num_agents, x.runtimes) for x in mstar_datas
 
 xstar_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.05*')]
 xstar_datas_density_05 = [x for lst in xstar_datas_density_05 for x in lst]
+xstar_agents_bounds_05 = [x.bounds for x in xstar_datas_density_05  if x.num_agents == kBoundsAgentCount]
 xstar_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in xstar_datas_density_05]
 xstar_agents_optimal_times_density_05 = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas_density_05]
 
@@ -198,6 +201,7 @@ cbs_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in cbs_datas_den
 
 afs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/afs_data_lst_*density0.05*')]
 afs_datas_density_05 = [x for lst in afs_datas_density_05 for x in lst]
+afs_agents_bounds_05 = [x.bounds for x in afs_datas_density_05 if x.num_agents == kBoundsAgentCount]
 afs_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in afs_datas_density_05]
 afs_agents_optimal_times_density_05 = [(x.num_agents, x.runtimes[-1]) for x in afs_datas_density_05]
 
@@ -208,6 +212,7 @@ mstar_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in mstar_datas
 xstar_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.1*')]
 xstar_datas_density_1 = [x for lst in xstar_datas_density_1 for x in lst]
 xstar_datas_density_1 = [x for x in xstar_datas_density_1 if int(x.num_agents) <= 60]
+xstar_agents_bounds_1 = [x.bounds for x in xstar_datas_density_1 if x.num_agents == kBoundsAgentCount]
 xstar_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in xstar_datas_density_1]
 xstar_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas_density_1]
 
@@ -219,6 +224,7 @@ cbs_agents_times_density_1 = [(x.num_agents, x.runtimes) for x in cbs_datas_dens
 afs_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/afs_data_lst_*density0.1*')]
 afs_datas_density_1 = [x for lst in afs_datas_density_1 for x in lst]
 afs_datas_density_1 = [x for x in afs_datas_density_1 if int(x.num_agents) <= 60]
+afs_agents_bounds_1 = [x.bounds for x in afs_datas_density_1 if x.num_agents == kBoundsAgentCount]
 afs_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in afs_datas_density_1]
 afs_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1]) for x in afs_datas_density_1]
 
@@ -382,6 +388,7 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, timeout, show_y_axis, pos_i
     colort = ps.alpha(color, 0.5)
     bplot = plt.boxplot(values, 
         patch_artist=True, 
+        whis=1.0,
         boxprops=dict(facecolor=colort, color=colort),
         flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
         capprops=dict(color=color),
@@ -463,6 +470,81 @@ def plt_percentiles(agents_times_lst, title, timeout=None):
 
     draw_timeout(timeout, xs)
 
+
+def plt_bounds(bounds_data, show_y_axis, planner_name):
+    for i in range(len(bounds_data)):
+        if bounds_data[i][-2:] == [1, 1]:
+            bounds_data[i] = bounds_data[i][:-1]
+        if (len(bounds_data[i]) < 20):
+            bounds_data[i] += ([bounds_data[i][-1]] * (20 - len(bounds_data[i])))
+
+    steps_bounds = {}
+
+    no_result = 0
+    for run in bounds_data:
+        if 0 in run:
+            no_result += 1
+            continue
+        for idx, bound in enumerate(run):
+            existing = steps_bounds.get(idx, [])
+            existing.append(bound)
+            steps_bounds[idx] = existing
+
+    print("Failures:", no_result)
+
+    plot_width = 0.3
+
+    steps_list = [k for k in sorted(steps_bounds.keys())[:20]]
+    bounds_list = [steps_bounds[k] for k in steps_list]
+
+    color = ps.color(0, 4)
+    colort = ps.alpha(color, 0.5)
+
+    bplot = plt.boxplot(bounds_list, 
+        patch_artist=True, 
+        whis=1.0,
+        boxprops=dict(facecolor=colort, color=colort),
+        flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
+        capprops=dict(color=color),
+        whiskerprops=dict(color=colort),
+        medianprops=dict(color=color),
+        widths=plot_width)
+
+    label_string = "{}".format(planner_name)
+    ps.add_legend(bplot["boxes"][0], label_string)
+
+    plt.gca().set_ylim(bottom=0.999)
+    plt.gca().set_ylim(top=1.0375)
+    plt.xticks([1,5,10,15, 20], [1,5,10,15, 20])
+    if show_y_axis:
+        plt.ylabel("$\epsilon$-suboptimality Bound")
+    plt.xlabel("{} Iterations".format(planner_name))
+
+
+
+###################
+# Bounds Plotting #
+###################
+
+print("Bounds Plotting")
+
+ps.setupfig(thirdsize=True)
+plt_bounds(xstar_agents_bounds_01, True, "X*")
+ps.grid()
+# ps.legend('br')
+ps.save_fig("xstar_bounds_01")
+
+ps.setupfig(thirdsize=True)
+plt_bounds(xstar_agents_bounds_05, False, "X*")
+ps.grid()
+# ps.legend('br')
+ps.save_fig("xstar_bounds_05")
+
+ps.setupfig(thirdsize=True)
+plt_bounds(xstar_agents_bounds_1, False, "X*")
+ps.grid()
+# ps.legend('br')
+ps.save_fig("xstar_bounds_1")
 
 ############################
 # Head to head comparisons #
@@ -879,7 +961,9 @@ def plt_window_agents_boxplot(num_agents_in_window_times_lst, title, timeout=Non
     colort = ps.alpha(color, 0.5)
 
 
-    plt.boxplot(vs, patch_artist=True, 
+    plt.boxplot(vs, 
+        patch_artist=True, 
+        whis=1.0,
         boxprops=dict(facecolor=colort, color=colort),
         flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
         capprops=dict(color=color),
