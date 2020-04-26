@@ -1,0 +1,96 @@
+Total time: 1.18689
+is_optimal: true
+optimality_bound: 1
+successive_bounds: [1.00283, 1.00283, 1.00283, 1.00283, 1.00189, 1.00189, 1.00189, 1.00189, 1.00189, 1.00189, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1.00094, 1, 1]
+successive_runtimes: [0.00608504, 0.00721759, 0.00833206, 0.00944137, 0.0104506, 0.0112764, 0.0119854, 0.0127744, 0.0135282, 0.0144658, 0.0156263, 0.0164407, 0.0172977, 0.0181919, 0.0191635, 0.0201305, 0.0211855, 0.0222725, 0.515063, 0.589171, 0.663004, 0.738934, 0.812869, 0.887007, 0.960696, 1.03426, 1.10765, 1.18087, 1.18151, 1.18217, 1.18281, 1.18345, 1.1841, 1.18689]
+num_agents: 30
+time_individual_plan: 0.00445206
+time_first_plan: 0.0009486
+num_max_agents_in_window_first_iteration: 2
+num_recWAMPF: 34
+timing_recWAMPF:
+    total_RecWAMPF: 1.18175
+    num_windows: 224
+    num_max_agents_in_window: 3
+    timing_gari:
+        total_GARI: 0.682683
+        time_path_btw_starts: 0.000571968
+        Stage1:
+            total_Stage1:0.00505616
+            time_add_x_to_o: 0.0026861
+            time_clear_x: 0.000322976
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.00203257
+                num_values_f_less_fmax:470
+                ASU Exp:
+                    total_ASUExp:0.00202663
+                    time_top_o:0.000127349
+                    time_check_in_c:0.000120036
+                    time_add_parent:7.8301e-05
+                    num_neighbors:3248
+                    time_add_neighbors_to_o:0.00143021
+        Stage2:
+            total_Stage2:0.00566693
+            num_len_path:179
+            time_expanding_s:9.947e-05
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.00548366
+                num_values_f_less_fmax:337
+                ASU Exp:
+                    total_ASUExp:0.00547831
+                    time_top_o:0.000113464
+                    time_check_in_c:8.0972e-05
+                    time_add_parent:0.000128141
+                    num_neighbors:9513
+                    time_add_neighbors_to_o:0.00468476
+        Stage3:
+            total_Stage3:0.671339
+            num_until_goal_expanded:774
+            timing_S3Exp:
+                total_S3Exp: 0.00869362
+                time_top_o: 0.000213819
+                time_check_in_c: 0.000143638
+                time_add_parent: 0.000243058
+                num_neighbors: 10463
+                time_add_neighbors_to_o: 0.00607398
+    timing_PIOW_overlapping:
+        total_PIOW: 0.491606
+        num_windows: 390
+        time_check_overlap: 2.26e-05
+        num_overlapping_windows: 1
+        time_merge_windows: 1.335e-06
+        time_remove_window: 3.27e-07
+        time_remove_window: 1.271e-06
+        timing_PlanIn:
+            total_PlanIn:0.491562
+            num_until_goal_expanded:5300
+            timing_expansions:
+                total_S3Exp: 0.49156
+                time_top_o: 0.0032858
+                time_check_in_c: 0.00117019
+                time_add_parent: 0.00287446
+                num_neighbors: 600904
+                time_add_neighbors_to_o: 0.456105
+    num_new_collisions: 4
+    timing_PIOW_new_collisions:
+        total_PIOW: 0.000568373
+        num_windows: 12
+        time_check_overlap: 4.36e-07
+        num_overlapping_windows: 0
+        time_merge_windows: 0
+        time_remove_window: 0
+        time_remove_window: 1.155e-06
+        timing_PlanIn:
+            total_PlanIn:0.000561534
+            num_until_goal_expanded:57
+            timing_expansions:
+                total_S3Exp: 0.000553255
+                time_top_o: 9.264e-06
+                time_check_in_c: 1.0821e-05
+                time_add_parent: 1.7389e-05
+                num_neighbors: 743
+                time_add_neighbors_to_o: 0.000417359
+    num_windows_should_quit: 2
+    time_should_quit: 9.29e-06
+    time_remove_window: 6.27e-07
+Complete!

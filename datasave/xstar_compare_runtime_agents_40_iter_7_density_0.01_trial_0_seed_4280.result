@@ -1,0 +1,96 @@
+Total time: 2.01044
+is_optimal: true
+optimality_bound: 1
+successive_bounds: [1.00944, 1.00831, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1.0068, 1]
+successive_runtimes: [0.0102802, 0.0215912, 0.14137, 0.309211, 0.382932, 0.444813, 0.500529, 0.556133, 0.608024, 0.658679, 0.716791, 0.772386, 0.822486, 0.868939, 0.912375, 0.95382, 0.994509, 1.03453, 1.07406, 1.1199, 1.15513, 1.18987, 1.22461, 1.25938, 1.29493, 1.32966, 1.36275, 1.3959, 1.42799, 1.46035, 1.49267, 1.525, 1.55686, 1.58918, 1.62155, 1.65396, 1.68635, 1.71871, 1.75111, 1.7835, 1.81584, 1.84821, 1.88055, 1.91299, 1.94555, 1.97805, 2.01044]
+num_agents: 40
+time_individual_plan: 0.00543453
+time_first_plan: 0.00418686
+num_max_agents_in_window_first_iteration: 2
+num_recWAMPF: 47
+timing_recWAMPF:
+    total_RecWAMPF: 2.00433
+    num_windows: 108
+    num_max_agents_in_window: 5
+    timing_gari:
+        total_GARI: 1.86034
+        time_path_btw_starts: 0.000712039
+        Stage1:
+            total_Stage1:0.138696
+            time_add_x_to_o: 0.111591
+            time_clear_x: 0.0270843
+            timing_AStarSearchUntil:
+                total_astar_search_until:1.1163e-05
+                num_values_f_less_fmax:0
+                ASU Exp:
+                    total_ASUExp:7.08e-06
+                    time_top_o:0
+                    time_check_in_c:0
+                    time_add_parent:0
+                    num_neighbors:0
+                    time_add_neighbors_to_o:0
+        Stage2:
+            total_Stage2:0.088905
+            num_len_path:49
+            time_expanding_s:0.00108309
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.0877394
+                num_values_f_less_fmax:53
+                ASU Exp:
+                    total_ASUExp:0.0877364
+                    time_top_o:4.8928e-05
+                    time_check_in_c:2.1746e-05
+                    time_add_parent:6.4047e-05
+                    num_neighbors:151575
+                    time_add_neighbors_to_o:0.0824694
+        Stage3:
+            total_Stage3:1.63199
+            num_until_goal_expanded:1440
+            timing_S3Exp:
+                total_S3Exp: 0.218666
+                time_top_o: 0.000947678
+                time_check_in_c: 0.000278445
+                time_add_parent: 0.000724301
+                num_neighbors: 200182
+                time_add_neighbors_to_o: 0.19102
+    timing_PIOW_overlapping:
+        total_PIOW: 0.0107782
+        num_windows: 180
+        time_check_overlap: 1.499e-06
+        num_overlapping_windows: 14
+        time_merge_windows: 1.1281e-05
+        time_remove_window: 2.19e-06
+        time_remove_window: 1.053e-05
+        timing_PlanIn:
+            total_PlanIn:0.0107428
+            num_until_goal_expanded:400
+            timing_expansions:
+                total_S3Exp: 0.0107122
+                time_top_o: 8.0282e-05
+                time_check_in_c: 7.5565e-05
+                time_add_parent: 0.000113491
+                num_neighbors: 14272
+                time_add_neighbors_to_o: 0.00947199
+    num_new_collisions: 17
+    timing_PIOW_new_collisions:
+        total_PIOW: 0.118331
+        num_windows: 212
+        time_check_overlap: 8.032e-06
+        num_overlapping_windows: 2
+        time_merge_windows: 0
+        time_remove_window: 0.0682495
+        time_remove_window: 1.2625e-05
+        timing_PlanIn:
+            total_PlanIn:0.118279
+            num_until_goal_expanded:387
+            timing_expansions:
+                total_S3Exp: 0.118248
+                time_top_o: 0.000119415
+                time_check_in_c: 8.0767e-05
+                time_add_parent: 0.000121936
+                num_neighbors: 135852
+                time_add_neighbors_to_o: 0.113243
+    num_windows_should_quit: 1
+    time_should_quit: 8.81e-06
+    time_remove_window: 2.86e-07
+Complete!

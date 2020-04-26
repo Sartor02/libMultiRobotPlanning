@@ -56,6 +56,7 @@ def get_args():
     return parser.parse_args()
 
 args = get_args()
+outfile_infix = "supplemental_"
 
 assert(os.path.isdir("./datasave"))
 
@@ -86,16 +87,19 @@ def get_line(ls, string, t):
 
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
-    ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} {} {} {} --seed {}".format(agents, width, height, obs_density, generic_map, afs_map, afs_agents, seed), shell=True)
+    ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} {} {} {} {} {} --seed {}".format(agents, width, height, obs_density, generic_map, afs_map, afs_agents, pr_map, pr_agents, seed), shell=True)
     if ret_val != 0:
         print("Genrate failed")
         exit(-1)
 
 
-def run_with_current_proc(cmd):
+def run_with_current_proc(cmd, shell=False):
     global current_proc
     FNULL = open(os.devnull, 'w')
-    current_proc = subprocess.Popen(shlex.split(cmd), stdout=FNULL, stderr=subprocess.STDOUT)
+    if not shell:
+        current_proc = subprocess.Popen(shlex.split(cmd), stdout=FNULL, stderr=subprocess.STDOUT)
+    else:
+        current_proc = subprocess.Popen(cmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
     current_proc.wait()
     retcode = current_proc.returncode
     current_proc = None
@@ -166,26 +170,34 @@ def run_cbs(timeout):
     return runtime
 
 def run_pr(timeout):
-    cmd = "timeout {} release/cbs -i {} -o simple_test_cbs{}.result".format(timeout, generic_map, args_to_string(args))
-    retcode = run_with_current_proc(cmd)
-    if retcode != 0:
-        print("CBS timeout")
-        return 0, timeout
-    f = open("simple_test_cbs{}.result".format(args_to_string(args)))
-    opt_cost = [int(x.strip().replace("cost:", "")) for x in f.readlines() if "cost:" in x][0]
-
-
     tempout = "TEMPOUT{}".format(args_to_string(args))
-    cmd = "timeout {} ../Push-and-Rotate--CBS--PrioritizedPlanning/build/ASearch {} > {}".format(pr_map, tempout)
-    retcode = run_with_current_proc(cmd)
+    cmd = "timeout {} Push-and-Rotate--CBS--PrioritizedPlanning/build/ASearch {} > {}".format(timeout, pr_map, tempout)
+    retcode = run_with_current_proc(cmd, shell=True)
     if retcode != 0:
         print("PR timeout")
         return 0, timeout
     f = open(tempout)
-    runtime = [float(x.strip().replace("Runtime:", "")) for x in f.readlines() if "Runtime:" in x][0]
-    planned_cost = [int(x.strip().replace("Cost:", "")) for x in f.readlines() if "Cost:" in x][0]
-    return (planned_cost / opt_cost, runtime)
+    lines = f.readlines()
+    f.close()
+    try:
+        runtime = [float(x.strip().replace("Runtime:", "")) for x in lines if "Runtime:" in x][0]
+    except:
+        return 0, timeout
+    try:
+        planned_cost = [int(x.strip().replace("Cost:", "")) for x in lines if "Cost:" in x][0]
+    except:
+        return 0, runtime
 
+
+    cmd = "timeout {} release/cbs -i {} -o simple_test_cbs{}.result".format(timeout*5, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    if retcode != 0:
+        print("CBS timeout")
+        return 0, runtime
+    f = open("simple_test_cbs{}.result".format(args_to_string(args)))
+    opt_cost = [int(x.strip().replace("cost:", "")) for x in f.readlines() if "cost:" in x][0]
+    f.close()
+    return (planned_cost / opt_cost, runtime)
 
 xstar_data_lst = []
 mstar_data_lst = []
@@ -208,33 +220,33 @@ for i in range(args.trials):
                                        xstar_bounds,
                                        xstar_runtimes))
 
-    print("AFS")  
-    afs_bounds, afs_runtimes  = run_afs(args.timeout)
-    afs_data_lst.append(sh.AFSData(args.obs_density,
-                                   args.width,
-                                   args.height,
-                                   args.agents,
-                                   args.timeout,
-                                   afs_bounds,
-                                   afs_runtimes))
+    # print("AFS")  
+    # afs_bounds, afs_runtimes  = run_afs(args.timeout)
+    # afs_data_lst.append(sh.AFSData(args.obs_density,
+    #                                args.width,
+    #                                args.height,
+    #                                args.agents,
+    #                                args.timeout,
+    #                                afs_bounds,
+    #                                afs_runtimes))
   
-    print("CBS")
-    cbs_runtime = run_cbs(args.timeout)
-    cbs_data_lst.append(sh.CBSData(args.obs_density,
-                                   args.width,
-                                   args.height,
-                                   args.agents,
-                                   args.timeout,
-                                   cbs_runtime))
+    # print("CBS")
+    # cbs_runtime = run_cbs(args.timeout)
+    # cbs_data_lst.append(sh.CBSData(args.obs_density,
+    #                                args.width,
+    #                                args.height,
+    #                                args.agents,
+    #                                args.timeout,
+    #                                cbs_runtime))
 
-    print("M*")
-    mstar_runtime = run_mstar(args.timeout)
-    mstar_data_lst.append(sh.MStarData(args.obs_density,
-                                       args.width,
-                                       args.height,
-                                       args.agents,
-                                       args.timeout,
-                                       mstar_runtime))
+    # print("M*")
+    # mstar_runtime = run_mstar(args.timeout)
+    # mstar_data_lst.append(sh.MStarData(args.obs_density,
+    #                                    args.width,
+    #                                    args.height,
+    #                                    args.agents,
+    #                                    args.timeout,
+    #                                    mstar_runtime))
 
     print("PR")
     pr_bounds, pr_runtimes = run_pr(args.timeout)
@@ -247,17 +259,17 @@ for i in range(args.trials):
                                    pr_runtimes))
 
 
-sh.save_to_file("xstar_data_lst_{}".format(args_to_string(args)), xstar_data_lst)
-sh.save_to_file("cbs_data_lst_{}".format(args_to_string(args)), cbs_data_lst)
-sh.save_to_file("afs_data_lst_{}".format(args_to_string(args)), afs_data_lst)
-sh.save_to_file("mstar_data_lst_{}".format(args_to_string(args)), mstar_data_lst)
-sh.save_to_file("pr_data_lst_{}".format(args_to_string(args)), pr_data_lst)
+sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
+sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
+sh.save_to_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), afs_data_lst)
+sh.save_to_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), mstar_data_lst)
+sh.save_to_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)), pr_data_lst)
 
 # Ensures data can be reloaded properly
-xstar_data_lst = sh.read_from_file("xstar_data_lst_{}".format(args_to_string(args)))
-cbs_data_lst = sh.read_from_file("cbs_data_lst_{}".format(args_to_string(args)))
-afs_data_lst = sh.read_from_file("afs_data_lst_{}".format(args_to_string(args)))
-mstar_data_lst = sh.read_from_file("mstar_data_lst_{}".format(args_to_string(args)))
-pr_data_lst = sh.read_from_file("pr_data_lst_{}".format(args_to_string(args)))
+xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+afs_data_lst = sh.read_from_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+mstar_data_lst = sh.read_from_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+pr_data_lst = sh.read_from_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 clean_up()

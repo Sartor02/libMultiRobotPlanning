@@ -11,6 +11,7 @@ from shared_helpers import XStarData
 from shared_helpers import MStarData
 from shared_helpers import CBSData
 from shared_helpers import AFSData
+from shared_helpers import PRData
 
 
 
@@ -175,6 +176,11 @@ xstar_agents_bounds_01 = [x.bounds for x in xstar_datas_density_01 if x.num_agen
 xstar_agents_first_times_density_01 = [(x.num_agents, x.runtimes[0]) for x in xstar_datas_density_01]
 xstar_agents_optimal_times_density_01 = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas_density_01]
 
+xstar_supp_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/xstar_supplemental_data_lst_*density0.01*')]
+xstar_supp_datas_density_01 = [x for lst in xstar_supp_datas_density_01 for x in lst]
+xstar_supp_agents_bounds_01 = [x.bounds for x in xstar_supp_datas_density_01 if x.num_agents == kBoundsAgentCount]
+xstar_supp_agents_first_times_density_01 = [(x.num_agents, x.runtimes[0]) for x in xstar_supp_datas_density_01]
+
 cbs_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/cbs_data_lst_*density0.01*')]
 cbs_datas_density_01 = [x for lst in cbs_datas_density_01 for x in lst]
 cbs_agents_times_density_01 = [(x.num_agents, x.runtimes) for x in cbs_datas_density_01]
@@ -188,6 +194,11 @@ afs_agents_optimal_times_density_01 = [(x.num_agents, x.runtimes[-1]) for x in a
 mstar_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/mstar_data_lst_*density0.01*')]
 mstar_datas_density_01 = [x for lst in mstar_datas_density_01 for x in lst]
 mstar_agents_times_density_01 = [(x.num_agents, x.runtimes) for x in mstar_datas_density_01]
+
+pr_supp_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/pr_supplemental_data_lst_*density0.01*')]
+pr_supp_datas_density_01 = [x for lst in pr_supp_datas_density_01 for x in lst]
+pr_supp_agents_bounds_01 = [x.bounds for x in pr_supp_datas_density_01 if x.num_agents == kBoundsAgentCount]
+pr_supp_agents_first_times_density_01 = [(x.num_agents, x.runtimes) for x in pr_supp_datas_density_01]
 
 xstar_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.05*')]
 xstar_datas_density_05 = [x for lst in xstar_datas_density_05 for x in lst]
@@ -521,6 +532,18 @@ def plt_bounds(bounds_data, show_y_axis, planner_name):
     plt.xlabel("{} Iterations".format(planner_name))
 
 
+########################
+# PR vs X* Performance #
+########################
+
+print("PR vs X* Plotting")
+ps.setupfig(thirdsize=True)
+draw_timeout_data(60, xstar_supp_agents_first_times_density_01)
+plt_bw(xstar_supp_agents_first_times_density_01, "X* Valid", 0, 4, 60, True, 0)
+plt_bw(pr_supp_agents_first_times_density_01, "PR Valid", 1, 4, 60, True, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_pr_first_times_density_01_bw")
 
 ###################
 # Bounds Plotting #
