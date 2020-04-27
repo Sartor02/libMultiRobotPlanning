@@ -87,7 +87,8 @@ def get_line(ls, string, t):
 
 
 def generate_new_scenario(agents, width, height, obs_density, seed):
-    ret_val = subprocess.call("./benchmark_generator.py {} {} {} {} {} {} {} {} {} --seed {}".format(agents, width, height, obs_density, generic_map, afs_map, afs_agents, pr_map, pr_agents, seed), shell=True)
+    cmd = "./benchmark_generator.py {} {} {} {} {} {} {} {} {} --seed {}".format(agents, width, height, obs_density, generic_map, afs_map, afs_agents, pr_map, pr_agents, seed)
+    ret_val = subprocess.call(cmd, shell=True)
     if ret_val != 0:
         print("Genrate failed")
         exit(-1)
@@ -182,10 +183,12 @@ def run_pr(timeout):
     try:
         runtime = [float(x.strip().replace("Runtime:", "")) for x in lines if "Runtime:" in x][0]
     except:
+        print("Failed to read runtime")
         return 0, timeout
     try:
         planned_cost = [int(x.strip().replace("Cost:", "")) for x in lines if "Cost:" in x][0]
     except:
+        print("Failed to get planned cost")
         return 0, runtime
 
 

@@ -206,6 +206,11 @@ xstar_agents_bounds_05 = [x.bounds for x in xstar_datas_density_05  if x.num_age
 xstar_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in xstar_datas_density_05]
 xstar_agents_optimal_times_density_05 = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas_density_05]
 
+xstar_supp_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/xstar_supplemental_data_lst_*density0.05*')]
+xstar_supp_datas_density_05 = [x for lst in xstar_supp_datas_density_05 for x in lst]
+xstar_supp_agents_bounds_05 = [x.bounds for x in xstar_supp_datas_density_05 if x.num_agents == kBoundsAgentCount]
+xstar_supp_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in xstar_supp_datas_density_05]
+
 cbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/cbs_data_lst_*density0.05*')]
 cbs_datas_density_05 = [x for lst in cbs_datas_density_05 for x in lst]
 cbs_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in cbs_datas_density_05]
@@ -220,12 +225,22 @@ mstar_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/mstar_d
 mstar_datas_density_05 = [x for lst in mstar_datas_density_05 for x in lst]
 mstar_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in mstar_datas_density_05]
 
+pr_supp_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/pr_supplemental_data_lst_*density0.05*')]
+pr_supp_datas_density_05 = [x for lst in pr_supp_datas_density_05 for x in lst]
+pr_supp_agents_bounds_05 = [x.bounds for x in pr_supp_datas_density_05 if x.num_agents == kBoundsAgentCount]
+pr_supp_agents_first_times_density_05 = [(x.num_agents, x.runtimes) for x in pr_supp_datas_density_05]
+
 xstar_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/xstar_data_lst_*density0.1*')]
 xstar_datas_density_1 = [x for lst in xstar_datas_density_1 for x in lst]
 xstar_datas_density_1 = [x for x in xstar_datas_density_1 if int(x.num_agents) <= 60]
 xstar_agents_bounds_1 = [x.bounds for x in xstar_datas_density_1 if x.num_agents == kBoundsAgentCount]
 xstar_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in xstar_datas_density_1]
 xstar_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1]) for x in xstar_datas_density_1]
+
+xstar_supp_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/xstar_supplemental_data_lst_*density0.1*')]
+xstar_supp_datas_density_1 = [x for lst in xstar_supp_datas_density_1 for x in lst]
+xstar_supp_agents_bounds_1 = [x.bounds for x in xstar_supp_datas_density_1 if x.num_agents == kBoundsAgentCount]
+xstar_supp_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in xstar_supp_datas_density_1]
 
 cbs_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/cbs_data_lst_*density0.1*')]
 cbs_datas_density_1 = [x for lst in cbs_datas_density_1 for x in lst]
@@ -243,6 +258,11 @@ mstar_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/mstar_da
 mstar_datas_density_1 = [x for lst in mstar_datas_density_1 for x in lst]
 mstar_datas_density_1 = [x for x in mstar_datas_density_1 if int(x.num_agents) <= 60]
 mstar_agents_times_density_1 = [(x.num_agents, x.runtimes) for x in mstar_datas_density_1]
+
+pr_supp_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/pr_supplemental_data_lst_*density0.1*')]
+pr_supp_datas_density_1 = [x for lst in pr_supp_datas_density_1 for x in lst]
+pr_supp_agents_bounds_1 = [x.bounds for x in pr_supp_datas_density_1 if x.num_agents == kBoundsAgentCount]
+pr_supp_agents_first_times_density_1 = [(x.num_agents, x.runtimes) for x in pr_supp_datas_density_1]
 
 constant_density_agents = [20, 40, 80, 160, 320]
 
@@ -537,6 +557,7 @@ def plt_bounds(bounds_data, show_y_axis, planner_name):
 ########################
 
 print("PR vs X* Plotting")
+
 ps.setupfig(thirdsize=True)
 draw_timeout_data(60, xstar_supp_agents_first_times_density_01)
 plt_bw(xstar_supp_agents_first_times_density_01, "X* Valid", 0, 4, 60, True, 0)
@@ -544,6 +565,22 @@ plt_bw(pr_supp_agents_first_times_density_01, "PR Valid", 1, 4, 60, True, 1)
 ps.grid()
 ps.legend('br')
 ps.save_fig("xstar_pr_first_times_density_01_bw")
+
+ps.setupfig(thirdsize=True)
+draw_timeout_data(60, xstar_supp_agents_first_times_density_05)
+plt_bw(xstar_supp_agents_first_times_density_05, "X* Valid", 0, 4, 60, False, 0)
+plt_bw(pr_supp_agents_first_times_density_05, "PR Valid", 1, 4, 60, False, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_pr_first_times_density_05_bw")
+
+ps.setupfig(thirdsize=True)
+draw_timeout_data(60, xstar_supp_agents_first_times_density_1)
+plt_bw(xstar_supp_agents_first_times_density_1, "X* Valid", 0, 4, 60, False, 0)
+plt_bw(pr_supp_agents_first_times_density_1, "PR Valid", 1, 4, 60, False, 1)
+ps.grid()
+ps.legend('br')
+ps.save_fig("xstar_pr_first_times_density_1_bw")
 
 ###################
 # Bounds Plotting #

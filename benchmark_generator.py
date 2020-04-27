@@ -142,7 +142,7 @@ def write_pr_agents(agents, f):
     f.write('<?xml version="1.0" ?>\n')
     f.write("<root>\n")
     for idx, a in enumerate(agents):
-        f.write('<agent id="{}" start_i="{}" start_j="{}" goal_i="{}" goal_j="{}"/>\n'.format(idx, a.start[1], a.start[0], a.goal[1], a.goal[0]))
+        f.write('<agent id="{}" start_i="{}" start_j="{}" goal_i="{}" goal_j="{}"/>\n'.format(idx, a.start[0], a.start[1], a.goal[0], a.goal[1]))
     f.write("</root>\n")
 
 
