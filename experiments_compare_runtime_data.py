@@ -192,7 +192,7 @@ def run_pr(timeout):
         return 0, runtime
 
 
-    cmd = "timeout {} release/cbs -i {} -o simple_test_cbs{}.result".format(timeout*5, generic_map, args_to_string(args))
+    cmd = "timeout {} release/cbs -i {} -o simple_test_cbs{}.result".format(timeout*2, generic_map, args_to_string(args))
     retcode = run_with_current_proc(cmd)
     if retcode != 0:
         print("CBS timeout")

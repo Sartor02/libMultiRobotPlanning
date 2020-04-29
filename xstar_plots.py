@@ -4,6 +4,7 @@ import glob
 import matplotlib
 import re
 from functools import reduce
+import numpy as np
 
 import plot_styling as ps
 from matplotlib import pyplot as plt
@@ -555,6 +556,14 @@ def plt_bounds(bounds_data, show_y_axis, planner_name):
 ########################
 # PR vs X* Performance #
 ########################
+
+print(np.median([e[0] for e in xstar_supp_agents_bounds_01 if e != [0]]))
+print(np.median([e[0] for e in xstar_supp_agents_bounds_05 if e != [0]]))
+print(np.median([e[0] for e in xstar_supp_agents_bounds_1 if e != [0]]))
+
+print(np.median([e for e in pr_supp_agents_bounds_01 if e != 0]))
+print(np.median([e for e in pr_supp_agents_bounds_05 if e != 0]))
+print(np.median([e for e in pr_supp_agents_bounds_1 if e != 0]))
 
 print("PR vs X* Plotting")
 
@@ -1190,6 +1199,40 @@ def plt_radius_vs_runtimes(data, printylabel, plt=plt, timeout=kRadiusTimeout):
 
     draw_timeout(timeout, xs, plt)
 
+def plt_radius_vs_runtimes_bw(data, printylabel, plt=plt, timeout=kRadiusTimeout):
+    data_dict = reduce(add_to_dict, data, dict())
+    for k in data_dict:
+        data_dict[k].sort()
+
+    print(data_dict.keys())
+
+    # keys = 
+
+    # color = ps.color(0, 4)
+    # colort = ps.alpha(color, 0.5)
+    # bplot = plt.boxplot(values, 
+    #     patch_artist=True, 
+    #     whis=1.0,
+    #     boxprops=dict(facecolor=colort, color=colort),
+    #     flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
+    #     capprops=dict(color=color),
+    #     whiskerprops=dict(color=colort),
+    #     medianprops=dict(color=color),
+    #     widths=plot_width,
+    #     positions=positions
+    #     # 
+    #     )
+    # label_string="{} Performance".format(name)
+
+    # handles, labels = plt.gca().get_legend_handles_labels()
+    # ps.add_legend(bplot["boxes"][0], label_string)
+
+    # plt.yscale('log')
+    # if show_y_axis:
+    #     plt.ylabel("Time (seconds)")
+    # plt.xlabel("Number of agents")
+    # plt.xticks([e + 1 for e in range(len(xs))], xs)
+    
 
 ######################
 # Density vs runtime #
@@ -1345,6 +1388,12 @@ plt_radius_vs_runtimes(xstar_radius_first_times, True)
 ps.grid()
 ps.legend('ul')
 ps.save_fig("radius_first_times")
+
+ps.setupfig(halfsize=True)
+plt_radius_vs_runtimes_bw(xstar_radius_first_times, True)
+ps.grid()
+ps.legend('ul')
+ps.save_fig("radius_first_times_bw")
 
 ps.setupfig(halfsize=True)
 plt_radius_vs_runtimes(xstar_radius_optimal_times, False)
