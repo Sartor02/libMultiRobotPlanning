@@ -81,7 +81,7 @@ def legend(loc, plt=plt):
 
 def save_fig(filename):
     print("Saving figout/{}.*".format(filename))
-    #plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
-    #plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=200)
+    plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
+    plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=400, transparent=True)
     plt.savefig("figout/{}.pdf".format(filename), bbox_inches='tight', pad_inches=0)
 
