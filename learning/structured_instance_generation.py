@@ -14,14 +14,14 @@ import run_mstar
 import run_afs
 
 kAgents = 5
-kNumSeeds = 1000
+kNumSeeds = 50000
 kTimeout = 10
-kMapName = "learning/Berlin_1_256.map"
+kMapName = "learning/Boston_0_256.map"
 
 def generate_new_scenario(agents, map_file, seed):
-  generic_map = "learning/fixed_building/data/seed{}_generic.map".format(seed)
-  afs_map = "learning/fixed_building/data/seed{}_afs.map".format(seed)
-  afs_agents = "learning/fixed_building/data/seed{}_afs.agents".format(seed)
+  generic_map = "learning/boston/data/seed{}_generic.map".format(seed)
+  afs_map = "learning/boston/data/seed{}_afs.map".format(seed)
+  afs_agents = "learning/boston/data/seed{}_afs.agents".format(seed)
   ret_val = subprocess.call("./structured_benchmark_generator.py {} {} {} {} {} --seed {}"\
     .format(agents, map_file, generic_map, afs_map, afs_agents, seed), shell=True)
   if ret_val != 0:
@@ -41,11 +41,11 @@ def write_labels(optimal_times, first_times, seed):
   d = dict()
   d["optimal_times"] = optimal_times
   d["first_times"] = first_times
-  f = open("learning/fixed_building/data/seed{}_label.labels".format(seed), 'w')
+  f = open("learning/boston/data/seed{}_label.labels".format(seed), 'w')
   f.write("{}\n".format(str(d)))
   f.close()
 
-for seed in range(kNumSeeds):
+for seed in range(1000, kNumSeeds):
   print("==================")
   print("Seed:", seed)
   generic_map, afs_map, afs_agents = generate_new_scenario(kAgents, kMapName, seed)
