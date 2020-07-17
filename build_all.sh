@@ -19,3 +19,10 @@ cd mstar_public/cpp;
 make clean;
 make -j`nproc`;
 cd ../../;
+cd Push-and-Rotate--CBS--PrioritizedPlanning;
+mkdir build;
+cd build;
+cmake -DCMAKE_BUILD_TYPE=Release ..;
+make clean;
+make -j`nproc`
+cd ../..;

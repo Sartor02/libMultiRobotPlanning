@@ -213,6 +213,9 @@ for i in range(args.trials):
     seed = (i + args.width) * args.agents
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
+    print(generic_map)
+    exit(0)
+
     print("X*")
     xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
     xstar_data_lst.append(sh.XStarData(args.obs_density,

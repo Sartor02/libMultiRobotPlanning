@@ -3,16 +3,35 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 def set_font(size):
+    fm = matplotlib.font_manager.json_load("/home/k/.cache/matplotlib/fontlist-v300.json")
+    fm.findfont("serif", rebuild_if_missing=False)
+    fm.findfont("serif", fontext="afm", rebuild_if_missing=False)
+
+    matplotlib.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+    # plt.rcParams['text.latex.preamble']=[r"\usepackage{fontenc}"]
     matplotlib.rcParams.update({# Use mathtext, not LaTeX
-                            'text.usetex': False,
+                            'text.usetex': True,
                             # Use the Computer modern font
-                            'font.family': 'serif',
-                            'font.serif': 'cmr10',
+                            # 'font.family': 'serif',
+                            # 'font.serif': ['Times'],#'cmr10',
                             'font.size' : size,
                             'mathtext.fontset': 'cm',
                             # Use ASCII minus
-                            'axes.unicode_minus': False,
+                            # 'axes.unicode_minus': False,
                             })
+
+    # print("SET FONT")
+    # matplotlib.rcParams.update({# Use mathtext, not LaTeX
+    #                         'text.usetex': True,
+    #                         # Use the Computer modern font
+    #                         # 'font.family': 'serif',
+    #                         'font.serif': 'Computer Modern Roman',
+    #                         # 'text.latex.unicode': True,
+    #                         'font.size' : size,
+    #                         'mathtext.fontset': 'cm',
+    #                         # Use ASCII minus
+    #                         'axes.unicode_minus': False,
+    #                         })
 linewidth = 0.5
 minor_tick_color = (0.9, 0.9, 0.9)
 kFontSize = 6
@@ -70,7 +89,7 @@ def legend(loc, plt=plt):
         if loc == 'ul':
             loc = 2
         elif loc == 'br':
-            loc = 0
+            loc = 4
         else:
             assert(False)
     handles, labels = plt.gca().get_legend_handles_labels()
