@@ -1,23 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+matplotlib.use('pgf')
 
 def set_font(size):
-    fm = matplotlib.font_manager.json_load("/home/k/.cache/matplotlib/fontlist-v300.json")
-    fm.findfont("serif", rebuild_if_missing=False)
-    fm.findfont("serif", fontext="afm", rebuild_if_missing=False)
-
-    matplotlib.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
-    # plt.rcParams['text.latex.preamble']=[r"\usepackage{fontenc}"]
     matplotlib.rcParams.update({# Use mathtext, not LaTeX
-                            'text.usetex': True,
+                            'text.usetex': False,
                             # Use the Computer modern font
-                            # 'font.family': 'serif',
-                            # 'font.serif': ['Times'],#'cmr10',
+                            'font.family': 'serif',
+                            # 'font.serif': ['cmr10'],
                             'font.size' : size,
                             'mathtext.fontset': 'cm',
                             # Use ASCII minus
-                            # 'axes.unicode_minus': False,
+                            'axes.unicode_minus': False,
                             })
 
     # print("SET FONT")
@@ -100,7 +95,7 @@ def legend(loc, plt=plt):
 
 def save_fig(filename):
     print("Saving figout/{}.*".format(filename))
-    plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight')
-    plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=400, transparent=True)
+    # plt.savefig("figout/{}.pgf".format(filename), bbox_inches='tight', pad_inches=0)
+    # plt.savefig("figout/{}.png".format(filename), bbox_inches='tight', dpi=400, transparent=True, pad_inches=0)
     plt.savefig("figout/{}.pdf".format(filename), bbox_inches='tight', pad_inches=0)
 
