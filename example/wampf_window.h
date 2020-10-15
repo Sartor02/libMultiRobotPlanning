@@ -32,9 +32,7 @@ struct Window {
            (agent_idxs_ == other.agent_idxs_);
   }
 
-  bool operator!=(const Window& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const Window& other) const { return !(*this == other); }
 
   Window(State min_pos, State max_pos, const std::vector<size_t> agent_idxs)
       : min_pos_(min_pos), max_pos_(max_pos), agent_idxs_(agent_idxs) {}

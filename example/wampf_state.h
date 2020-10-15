@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
+
 namespace libMultiRobotPlanning {
 
 struct State {

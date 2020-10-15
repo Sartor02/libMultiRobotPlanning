@@ -4,6 +4,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <libMultiRobotPlanning/neighbor.hpp>
+
 #include "wampf_state.h"
 
 namespace libMultiRobotPlanning {

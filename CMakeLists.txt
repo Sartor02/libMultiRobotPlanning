@@ -46,6 +46,7 @@ set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/planresult.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/sipp.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/wampf.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/wampf_utils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/individual_space_astar.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/a_star.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/a_star_epsilon.cpp
@@ -60,6 +61,7 @@ set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/example/shortest_path_heuristic.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/sipp.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_tester.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_individual.h
   ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_window.h
   ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_state.h
@@ -188,4 +190,16 @@ add_executable(wampf
 target_link_libraries(wampf
   ${Boost_LIBRARIES}
   yaml-cpp
+)
+
+## wampf_tester
+add_executable(wampf_tester
+  example/wampf_tester.cpp
+)
+target_link_libraries(wampf_tester
+  ${Boost_LIBRARIES}
+  yaml-cpp
+  gtest 
+  gtest_main
+  pthread
 )

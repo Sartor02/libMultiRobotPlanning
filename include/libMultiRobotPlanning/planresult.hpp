@@ -31,7 +31,7 @@ struct PlanResult {
 template <typename State, typename Action, typename Cost>
 std::ostream& operator<<(std::ostream& os,
                          const PlanResult<State, Action, Cost>& p) {
-  os << "PlanResult: [";
+  os << "PlanResult: (cost: " << p.cost << ") [";
   if (p.states.empty()) {
     os << "]";
     return os;
