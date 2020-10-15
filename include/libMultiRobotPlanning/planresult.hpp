@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "utils.hpp"
 
 namespace libMultiRobotPlanning {
 
@@ -26,5 +27,23 @@ struct PlanResult {
   //! lower bound of the cost (for suboptimal solvers)
   Cost fmin;
 };
+
+template <typename State, typename Action, typename Cost>
+std::ostream& operator<<(std::ostream& os,
+                         const PlanResult<State, Action, Cost>& p) {
+  os << "PlanResult: [";
+  if (p.states.empty()) {
+    os << "]";
+    return os;
+  }
+  NP_CHECK(p.states.size() == p.actions.size() + 1);
+  os << "(" << p.states.front().first << ", " << p.states.front().second << ")";
+  for (int i = 1; i < static_cast<int>(p.states.size()); ++i) {
+    os << ", <" << p.actions[i - 1].first << ", " << p.actions[i - 1].second
+       << ">, (" << p.states[i].first << ", " << p.states[i].second << ")";
+  }
+  os << "]";
+  return os;
+}
 
 }  // namespace libMultiRobotPlanning

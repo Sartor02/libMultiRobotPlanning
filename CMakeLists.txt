@@ -45,6 +45,8 @@ set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/next_best_assignment.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/planresult.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/sipp.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/wampf.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/libMultiRobotPlanning/individual_space_astar.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/a_star.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/a_star_epsilon.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/assignment.cpp
@@ -57,6 +59,10 @@ set(ALL_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/example/shortest_path_heuristic.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/shortest_path_heuristic.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/example/sipp.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_individual.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_window.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/wampf_state.h
   ${CMAKE_CURRENT_SOURCE_DIR}/example/timer.hpp
 )
 
@@ -73,11 +79,11 @@ add_custom_target(everything
   DEPENDS clang-format clang-tidy docs run-test
 )
 
-# Enable C++14 and warnings
-set(CMAKE_CXX_STANDARD 14)
+# Enable C++17 and warnings
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -g")
 
 # Creates compile database used by clang-tidy.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -171,6 +177,15 @@ add_executable(mapf_prioritized_sipp
   example/mapf_prioritized_sipp.cpp
 )
 target_link_libraries(mapf_prioritized_sipp
+  ${Boost_LIBRARIES}
+  yaml-cpp
+)
+
+## wampf
+add_executable(wampf
+  example/wampf.cpp
+)
+target_link_libraries(wampf
   ${Boost_LIBRARIES}
   yaml-cpp
 )
