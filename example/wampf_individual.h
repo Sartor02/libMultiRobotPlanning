@@ -10,7 +10,7 @@
 
 namespace libMultiRobotPlanning {
 
-enum class IndividualSpaceAction { Up, Down, Left, Right };
+enum class IndividualSpaceAction { Up, Down, Left, Right, Wait };
 
 std::ostream& operator<<(std::ostream& os, const IndividualSpaceAction& a) {
   switch (a) {
@@ -25,6 +25,9 @@ std::ostream& operator<<(std::ostream& os, const IndividualSpaceAction& a) {
       break;
     case IndividualSpaceAction::Right:
       os << "Right";
+      break;
+    case IndividualSpaceAction::Wait:
+      os << "Wait";
       break;
   }
   return os;

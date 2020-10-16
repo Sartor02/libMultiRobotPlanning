@@ -9,10 +9,13 @@
 
 #include "wampf_individual.h"
 #include "wampf_state.h"
+#include "wampf_window.h"
 
 using libMultiRobotPlanning::IndividualSpaceAction;
 using libMultiRobotPlanning::PlanResult;
 using libMultiRobotPlanning::State;
+using libMultiRobotPlanning::Window;
+using libMultiRobotPlanning::wampf::GetWindowStartGoalIndexes;
 using libMultiRobotPlanning::wampf::InsertPathRepair;
 using PR = PlanResult<State, IndividualSpaceAction, int>;
 using Action = IndividualSpaceAction;
@@ -46,6 +49,11 @@ void VerifyPathIntegrity(const PR& result) {
       }
       case Action::Right: {
         EXPECT_EQ(state_im1.x + 1, state_i.x);
+        EXPECT_EQ(state_im1.y, state_i.y);
+        break;
+      }
+      case Action::Wait: {
+        EXPECT_EQ(state_im1.x, state_i.x);
         EXPECT_EQ(state_im1.y, state_i.y);
         break;
       }
@@ -126,4 +134,50 @@ TEST(InsertShorterRepair, UpDownToStraight2) {
   PR result = InsertPathRepair(full_path, repair, repair_start, repair_end);
   EXPECT_EQ(result.cost, 4);
   VerifyPathIntegrity(result);
+}
+
+TEST(WindowIntersection, SimpleWindow) {
+  PR p1;
+  p1.states = {{{0, 0}, 0}, {{0, 1}, 1}, {{0, 2}, 2},
+               {{0, 3}, 3}, {{0, 4}, 4}, {{0, 5}, 5}};
+  p1.actions = {{Action::Up, 1},
+                {Action::Up, 1},
+                {Action::Up, 1},
+                {Action::Up, 1},
+                {Action::Up, 1}};
+  p1.cost = 5;
+  p1.fmin = 5;
+  VerifyPathIntegrity(p1);
+
+  PR p2;
+  p2.states = {{{0, 5}, 0}, {{0, 4}, 1}, {{0, 3}, 2},
+               {{0, 2}, 3}, {{0, 1}, 4}, {{0, 0}, 5}};
+  p2.actions = {{Action::Down, 1},
+                {Action::Down, 1},
+                {Action::Down, 1},
+                {Action::Down, 1},
+                {Action::Down, 1}};
+  p2.cost = 5;
+  p2.fmin = 5;
+  VerifyPathIntegrity(p2);
+
+  // Overlaps the window but not involved in indices
+  PR p3;
+  p3.states = {{{0, 3}, 0}};
+  p3.cost = 0;
+  p3.fmin = 0;
+
+  using W = Window<1, 1>;
+
+  W w(/*State=*/{0, 3}, /*Indices=*/{0, 1});
+
+  EXPECT_EQ(w.max_pos_, State(1, 4));
+  EXPECT_EQ(w.min_pos_, State(-1, 2));
+
+  const auto res = GetWindowStartGoalIndexes<State, Action, W>({p1, p2, p3}, w);
+  EXPECT_EQ(res.size(), 2);
+  const auto expected1 = std::pair<int, int>(2, 4);
+  EXPECT_EQ(res.front(), expected1);
+  const auto expected2 = std::pair<int, int>(1, 3);
+  EXPECT_EQ(res.back(), expected2);
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <libMultiRobotPlanning/planresult.hpp>
 #include <libMultiRobotPlanning/utils.hpp>
 
@@ -65,6 +67,44 @@ PlanResult<State, Action, int> InsertPathRepair(
   NP_CHECK_EQ(current_path.states.size(), current_path.actions.size() + 1);
 
   return current_path;
+}
+
+// Assumes that the given path is one of the paths involved in the window.
+template <typename State, typename Action, typename Window>
+std::optional<std::pair<int, int>> GetWindowStartGoalIndex(
+    const PlanResult<State, Action, int>& path, const Window& window) {
+  int start_idx = -1;
+  int end_idx = -1;
+  for (int i = 0; i < static_cast<int>(path.states.size()); ++i) {
+    const auto& s = path.states[i].first;
+    if (!window.Contains(s)) {
+      continue;
+    }
+    if (start_idx == -1) {
+      start_idx = i;
+    }
+    end_idx = i;
+  }
+  if (start_idx != end_idx) {
+    return {{start_idx, end_idx}};
+  }
+  // Either only one state in the window or both indexes are -1.
+  return {};
+}
+
+template <typename State, typename Action, typename Window>
+std::vector<std::pair<int, int>> GetWindowStartGoalIndexes(
+    const std::vector<PlanResult<State, Action, int>>& joint_path,
+    const Window& window) {
+  std::vector<std::pair<int, int>> idxs;
+  for (const auto& idx : window.agent_idxs_) {
+    NP_CHECK(idx < joint_path.size());
+    const auto& path = joint_path[idx];
+    const auto res = GetWindowStartGoalIndex(path, window);
+    NP_CHECK(res);
+    idxs.emplace_back(std::move(*res));
+  }
+  return idxs;
 }
 
 }  // namespace wampf

@@ -7,18 +7,16 @@
 
 namespace libMultiRobotPlanning {
 
+template <int kStartRadius = 2, int kRadiusGrowth = 1>
 struct Window {
  private:
   Window() = delete;
 
+ public:
   State min_pos_;
   State max_pos_;
   std::vector<size_t> agent_idxs_;
 
-  static constexpr int kStartRadius = 2;
-  static constexpr int kRadiusGrowth = 1;
-
- public:
   Window(State state, const std::vector<size_t> agent_idxs)
       : min_pos_(state), max_pos_(state), agent_idxs_(agent_idxs) {
     min_pos_.x -= kStartRadius;
@@ -113,6 +111,13 @@ struct Window {
       return true;
     }
     return false;
+  }
+
+  void Grow() {
+    min_pos_.x -= kRadiusGrowth;
+    min_pos_.y -= kRadiusGrowth;
+    max_pos_.x += kRadiusGrowth;
+    max_pos_.y += kRadiusGrowth;
   }
 
   bool ShouldQuit() const { return false; }

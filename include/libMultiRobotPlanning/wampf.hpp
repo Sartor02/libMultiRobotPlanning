@@ -24,7 +24,7 @@ class WAMPF {
  public:
   WAMPF(size_t dimx, size_t dimy, std::unordered_set<State> obstacles,
         const JointState& start, const JointState& goal)
-      : pi_(), W_(), impl_(dimx, dimy, obstacles, start, goal, pi_) {
+      : pi_(), W_(), impl_(dimx, dimy, obstacles, start, goal, &pi_) {
     pi_ = IndividualPlanner(dimx, dimy, obstacles, start, goal).Search();
     W_ = {};
     std::cout << "Individual space plan: " << pi_;
@@ -44,7 +44,7 @@ class WAMPF {
     }
 
     auto collision_res = impl_.FirstCollisionWindow();
-    while (!collision_res) {
+    while (collision_res) {
       W_.emplace_back(std::move(*collision_res));
       PlanInOverlapWindows(W_.back());
       collision_res = impl_.FirstCollisionWindow();
