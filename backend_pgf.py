@@ -2,6 +2,7 @@ import atexit
 import codecs
 import datetime
 import functools
+from io import BytesIO
 import logging
 import math
 import os
@@ -10,7 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
+from tempfile import TemporaryDirectory
 import weakref
 
 from PIL import Image
@@ -87,16 +88,6 @@ mpl_in_to_pt = 1. / mpl_pt_to_in
 
 NO_ESCAPE = r"(?<!\\)(?:\\\\)*"
 re_mathsep = re.compile(NO_ESCAPE + r"\$")
-
-
-@cbook.deprecated("3.2")
-def repl_escapetext(m):
-    return "\\" + m.group(1)
-
-
-@cbook.deprecated("3.2")
-def repl_mathdefault(m):
-    return m.group(0)[:-len(m.group(1))]
 
 
 _replace_escapetext = functools.partial(
@@ -224,7 +215,6 @@ class LatexManager:
     determining the metrics of text elements. The LaTeX environment can be
     modified by setting fonts and/or a custom preamble in `.rcParams`.
     """
-    _unclean_instances = weakref.WeakSet()
 
     @staticmethod
     def _build_latex_header():
@@ -261,12 +251,6 @@ class LatexManager:
     def _get_cached_or_new_impl(cls, header):  # Helper for _get_cached_or_new.
         return cls()
 
-    @staticmethod
-    def _cleanup_remaining_instances():
-        unclean_instances = list(LatexManager._unclean_instances)
-        for latex_manager in unclean_instances:
-            latex_manager._cleanup()
-
     def _stdin_writeln(self, s):
         if self.latex is None:
             self._setup_latex_process()
@@ -292,13 +276,10 @@ class LatexManager:
         return self._expect("\n*")
 
     def __init__(self):
-        # store references for __del__
-        self._os_path = os.path
-        self._shutil = shutil
-
-        # create a tmp directory for running latex, remember to cleanup
-        self.tmpdir = tempfile.mkdtemp(prefix="mpl_pgf_lm_")
-        LatexManager._unclean_instances.add(self)
+        # create a tmp directory for running latex, register it for deletion
+        self._tmpdir = TemporaryDirectory()
+        self.tmpdir = self._tmpdir.name
+        self._finalize_tmpdir = weakref.finalize(self, self._tmpdir.cleanup)
 
         # test the LaTeX setup to ensure a clean startup of the subprocess
         self.texcommand = mpl.rcParams["pgf.texsystem"]
@@ -329,11 +310,21 @@ class LatexManager:
         self.str_cache = {}  # cache for strings already processed
 
     def _setup_latex_process(self):
-        # open LaTeX process for real work
+        # Open LaTeX process for real work; register it for deletion.  On
+        # Windows, we must ensure that the subprocess has quit before being
+        # able to delete the tmpdir in which it runs; in order to do so, we
+        # must first `kill()` it, and then `communicate()` with it.
         self.latex = subprocess.Popen(
             [self.texcommand, "-halt-on-error"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             encoding="utf-8", cwd=self.tmpdir)
+
+        def finalize_latex(latex):
+            latex.kill()
+            latex.communicate()
+
+        self._finalize_latex = weakref.finalize(
+            self, finalize_latex, self.latex)
         # write header with 'pgf_backend_query_start' token
         self._stdin_writeln(self._build_latex_header())
         # read all lines until our 'pgf_backend_query_start' token appears
@@ -443,21 +434,17 @@ class RendererPgf(RendererBase):
             File handle for the output of the drawing commands.
         """
 
-        RendererBase.__init__(self)
+        super().__init__()
         self.dpi = figure.dpi
         self.fh = fh
         self.figure = figure
         self.image_counter = 0
-
-        self._latexManager = LatexManager._get_cached_or_new()  # deprecated
 
         if dummy:
             # dummy==True deactivate all methods
             for m in RendererPgf.__dict__:
                 if m.startswith("draw_"):
                     self.__dict__[m] = lambda *args, **kwargs: None
-
-    latexManager = cbook._deprecate_privatize_attribute("3.2")
 
     def draw_markers(self, gc, marker_path, marker_trans, path, trans,
                      rgbFace=None):
@@ -806,16 +793,25 @@ class GraphicsContextPgf(GraphicsContextBase):
     pass
 
 
+@cbook.deprecated("3.4")
 class TmpDirCleaner:
-    remaining_tmpdirs = set()
+    _remaining_tmpdirs = set()
+
+    @cbook._classproperty
+    @cbook.deprecated("3.4")
+    def remaining_tmpdirs(cls):
+        return cls._remaining_tmpdirs
 
     @staticmethod
+    @cbook.deprecated("3.4")
     def add(tmpdir):
-        TmpDirCleaner.remaining_tmpdirs.add(tmpdir)
+        TmpDirCleaner._remaining_tmpdirs.add(tmpdir)
 
     @staticmethod
+    @cbook.deprecated("3.4")
+    @atexit.register
     def cleanup_remaining_tmpdirs():
-        for tmpdir in TmpDirCleaner.remaining_tmpdirs:
+        for tmpdir in TmpDirCleaner._remaining_tmpdirs:
             error_message = "error deleting tmp directory {}".format(tmpdir)
             shutil.rmtree(
                 tmpdir,
@@ -831,14 +827,7 @@ class FigureCanvasPgf(FigureCanvasBase):
         return 'pdf'
 
     @_check_savefig_extra_args
-    @cbook._delete_parameter("3.2", "dryrun")
-    def _print_pgf_to_fh(self, fh, *,
-                         dryrun=False, bbox_inches_restore=None):
-
-        if dryrun:
-            renderer = RendererPgf(self.figure, None, dummy=True)
-            self.figure.draw(renderer)
-            return
+    def _print_pgf_to_fh(self, fh, *, bbox_inches_restore=None):
 
         header_text = """%% Creator: Matplotlib, PGF backend
 %%
@@ -903,9 +892,6 @@ class FigureCanvasPgf(FigureCanvasBase):
         Output pgf macros for drawing the figure so it can be included and
         rendered in latex documents.
         """
-        if kwargs.get("dryrun", False):
-            self._print_pgf_to_fh(None, *args, **kwargs)
-            return
         with cbook.open_file_cm(fname_or_fh, "w", encoding="utf-8") as file:
             if not cbook.file_requires_unicode(file):
                 file = codecs.getwriter("utf-8")(file)
@@ -918,18 +904,12 @@ class FigureCanvasPgf(FigureCanvasBase):
         hyperref_options = ','.join(
             _metadata_to_str(k, v) for k, v in info_dict.items())
 
-        try:
-            # create temporary directory for compiling the figure
-            tmpdir = tempfile.mkdtemp(prefix="mpl_pgf_")
-            fname_pgf = os.path.join(tmpdir, "figure.pgf")
-            fname_tex = os.path.join(tmpdir, "figure.tex")
-            fname_pdf = os.path.join(tmpdir, "figure.pdf")
+        with TemporaryDirectory() as tmpdir:
+            tmppath = pathlib.Path(tmpdir)
 
             # print figure to pgf and compile it with latex
-            self.print_pgf(fname_pgf, *args, **kwargs)
+            self.print_pgf(tmppath / "figure.pgf", *args, **kwargs)
 
-            latex_preamble = get_preamble()
-            latex_fontspec = get_fontspec()
             latexcode = """
 \\PassOptionsToPackage{pdfinfo={%s}}{hyperref}
 \\RequirePackage{hyperref}
@@ -942,56 +922,35 @@ class FigureCanvasPgf(FigureCanvasBase):
 \\begin{document}
 \\centering
 \\input{figure.pgf}
-\\end{document}""" % (hyperref_options, w, h, latex_preamble, latex_fontspec)
-            pathlib.Path(fname_tex).write_text(latexcode, encoding="utf-8")
+\\end{document}""" % (hyperref_options, w, h, get_preamble(), get_fontspec())
+            (tmppath / "figure.tex").write_text(latexcode, encoding="utf-8")
 
             texcommand = mpl.rcParams["pgf.texsystem"]
             cbook._check_and_log_subprocess(
                 [texcommand, "-interaction=nonstopmode", "-halt-on-error",
                  "figure.tex"], _log, cwd=tmpdir)
 
-            # copy file contents to target
-            with open(fname_pdf, "rb") as fh_src:
-                shutil.copyfileobj(fh_src, fh)
-        finally:
-            try:
-                shutil.rmtree(tmpdir)
-            except:
-                TmpDirCleaner.add(tmpdir)
+            with (tmppath / "figure.pdf").open("rb") as fh_src:
+                shutil.copyfileobj(fh_src, fh)  # copy file contents to target
 
     def print_pdf(self, fname_or_fh, *args, **kwargs):
         """Use LaTeX to compile a Pgf generated figure to PDF."""
-        if kwargs.get("dryrun", False):
-            self._print_pgf_to_fh(None, *args, **kwargs)
-            return
         with cbook.open_file_cm(fname_or_fh, "wb") as file:
             self._print_pdf_to_fh(file, *args, **kwargs)
 
     def _print_png_to_fh(self, fh, *args, **kwargs):
         converter = make_pdf_to_png_converter()
-
-        try:
-            # create temporary directory for pdf creation and png conversion
-            tmpdir = tempfile.mkdtemp(prefix="mpl_pgf_")
-            fname_pdf = os.path.join(tmpdir, "figure.pdf")
-            fname_png = os.path.join(tmpdir, "figure.png")
-            # create pdf and try to convert it to png
-            self.print_pdf(fname_pdf, *args, **kwargs)
-            converter(fname_pdf, fname_png, dpi=self.figure.dpi)
-            # copy file contents to target
-            with open(fname_png, "rb") as fh_src:
-                shutil.copyfileobj(fh_src, fh)
-        finally:
-            try:
-                shutil.rmtree(tmpdir)
-            except:
-                TmpDirCleaner.add(tmpdir)
+        with TemporaryDirectory() as tmpdir:
+            tmppath = pathlib.Path(tmpdir)
+            pdf_path = tmppath / "figure.pdf"
+            png_path = tmppath / "figure.png"
+            self.print_pdf(pdf_path, *args, **kwargs)
+            converter(pdf_path, png_path, dpi=self.figure.dpi)
+            with png_path.open("rb") as fh_src:
+                shutil.copyfileobj(fh_src, fh)  # copy file contents to target
 
     def print_png(self, fname_or_fh, *args, **kwargs):
         """Use LaTeX to compile a pgf figure to pdf and convert it to png."""
-        if kwargs.get("dryrun", False):
-            self._print_pgf_to_fh(None, *args, **kwargs)
-            return
         with cbook.open_file_cm(fname_or_fh, "wb") as file:
             self._print_png_to_fh(file, *args, **kwargs)
 
@@ -1005,14 +964,6 @@ FigureManagerPgf = FigureManagerBase
 @_Backend.export
 class _BackendPgf(_Backend):
     FigureCanvas = FigureCanvasPgf
-
-
-def _cleanup_all():
-    LatexManager._cleanup_remaining_instances()
-    TmpDirCleaner.cleanup_remaining_tmpdirs()
-
-
-atexit.register(_cleanup_all)
 
 
 class PdfPages:
@@ -1031,17 +982,14 @@ class PdfPages:
     ...     pdf.savefig()
     """
     __slots__ = (
-        '_outputfile',
+        '_output_name',
         'keep_empty',
-        '_tmpdir',
-        '_basename',
-        '_fname_tex',
-        '_fname_pdf',
         '_n_figures',
         '_file',
         '_info_dict',
         '_metadata',
     )
+    metadata = cbook.deprecated('3.3')(property(lambda self: self._metadata))
 
     def __init__(self, filename, *, keep_empty=True, metadata=None):
         """
@@ -1052,9 +1000,11 @@ class PdfPages:
         filename : str or path-like
             Plots using `PdfPages.savefig` will be written to a file at this
             location. Any older file with the same name is overwritten.
+
         keep_empty : bool, default: True
             If set to False, then empty pdf files will be deleted automatically
             when closed.
+
         metadata : dict, optional
             Information dictionary object (see PDF reference section 10.2.1
             'Document Information Dictionary'), e.g.:
@@ -1065,7 +1015,7 @@ class PdfPages:
             'Trapped'. Values have been predefined for 'Creator', 'Producer'
             and 'CreationDate'. They can be removed by setting them to `None`.
         """
-        self._outputfile = filename
+        self._output_name = filename
         self._n_figures = 0
         self.keep_empty = keep_empty
         self._metadata = (metadata or {}).copy()
@@ -1083,18 +1033,7 @@ class PdfPages:
                         f'set {canonical} instead of {key}.')
                     self._metadata[canonical] = self._metadata.pop(key)
         self._info_dict = _create_pdf_info_dict('pgf', self._metadata)
-
-        # create temporary directory for compiling the figure
-        self._tmpdir = tempfile.mkdtemp(prefix="mpl_pgf_pdfpages_")
-        self._basename = 'pdf_pages'
-        self._fname_tex = os.path.join(self._tmpdir, self._basename + ".tex")
-        self._fname_pdf = os.path.join(self._tmpdir, self._basename + ".pdf")
-        self._file = open(self._fname_tex, 'wb')
-
-    @cbook.deprecated('3.3')
-    @property
-    def metadata(self):
-        return self._metadata
+        self._file = BytesIO()
 
     def _write_header(self, width_inches, height_inches):
         hyperref_options = ','.join(
@@ -1141,27 +1080,22 @@ class PdfPages:
         and moving the final pdf file to *filename*.
         """
         self._file.write(rb'\end{document}\n')
-        self._file.close()
-
         if self._n_figures > 0:
-            try:
-                self._run_latex()
-            finally:
-                try:
-                    shutil.rmtree(self._tmpdir)
-                except:
-                    TmpDirCleaner.add(self._tmpdir)
+            self._run_latex()
         elif self.keep_empty:
-            open(self._outputfile, 'wb').close()
+            open(self._output_name, 'wb').close()
+        self._file.close()
 
     def _run_latex(self):
         texcommand = mpl.rcParams["pgf.texsystem"]
-        cbook._check_and_log_subprocess(
-            [texcommand, "-interaction=nonstopmode", "-halt-on-error",
-             os.path.basename(self._fname_tex)],
-            _log, cwd=self._tmpdir)
-        # copy file contents to target
-        shutil.copyfile(self._fname_pdf, self._outputfile)
+        with TemporaryDirectory() as tmpdir:
+            tex_source = pathlib.Path(tmpdir, "pdf_pages.tex")
+            tex_source.write_bytes(self._file.getvalue())
+            cbook._check_and_log_subprocess(
+                [texcommand, "-interaction=nonstopmode", "-halt-on-error",
+                 tex_source],
+                _log, cwd=tmpdir)
+            shutil.move(tex_source.with_suffix(".pdf"), self._output_name)
 
     def savefig(self, figure=None, **kwargs):
         """

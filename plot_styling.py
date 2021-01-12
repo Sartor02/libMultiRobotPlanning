@@ -8,12 +8,28 @@ def set_font(size):
                             'text.usetex': False,
                             # Use the Computer modern font
                             'font.family': 'serif',
-                            # 'font.serif': ['cmr10'],
+                            'font.serif': ['cmr10'],
                             'font.size' : size,
                             'mathtext.fontset': 'cm',
                             # Use ASCII minus
                             'axes.unicode_minus': False,
                             })
+
+    # matplotlib.rcParams.update({# Use mathtext, not LaTeX
+    #                         'text.usetex': False,
+    #                         # Use the Computer modern font
+    #                         'font.family': 'serif',
+    #                         'font.serif': ['Linux Libertine O'],
+    #                         'font.size' : size,
+    #                         'mathtext.fontset': 'cm',
+    #                         # Use ASCII minus
+    #                         'axes.unicode_minus': False,
+    #                         'text.latex.preamble': [
+    #     r"\usepackage{libertine}"
+    #     r"\usepackage{libertinust1math}"
+    #     r"\usepackage[T1]{fontenc}",
+    #  ]
+    #                         })
 
     # print("SET FONT")
     # matplotlib.rcParams.update({# Use mathtext, not LaTeX
