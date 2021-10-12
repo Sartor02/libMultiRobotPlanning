@@ -52,8 +52,8 @@ add_custom_target(everything
   DEPENDS clang-format clang-tidy docs run-test
 )
 
-set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CXX_COMPILER "g++")
+set(CMAKE_C_COMPILER "gcc")
 message(STATUS "Build mode: " ${CMAKE_BUILD_TYPE})
 message(STATUS "C++ Compiler: " ${CMAKE_CXX_COMPILER})
 message(STATUS "C Compiler: " ${CMAKE_C_COMPILER})

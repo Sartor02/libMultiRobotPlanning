@@ -5,6 +5,8 @@ Runtime = collections.namedtuple('Runtime', ['datalst',])
 XStarData = collections.namedtuple('XStarData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'bounds', 'runtimes',])
 AFSData = collections.namedtuple('AFSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'bounds', 'runtimes',])
 CBSData = collections.namedtuple('CBSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes',])
+ACBSData = collections.namedtuple('ACBSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes', 'ratios',])
+NWCBSData = collections.namedtuple('NWCBSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes', 'ratios',])
 MStarData = collections.namedtuple('MStarData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes',])
 PRData = collections.namedtuple('PRData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'bounds', 'runtimes',])
 

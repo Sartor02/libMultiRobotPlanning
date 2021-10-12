@@ -7,6 +7,7 @@ import sys
 import os
 import glob
 import argparse
+import pandas as pd
 cwd = os.getcwd()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -170,11 +171,65 @@ def run_cbs(timeout):
     runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
     return runtime
 
+def run_acbs(timeout):
+    cmd = "timeout {} release/acbs -i {} -o simple_test_acbs{}.result".format(timeout, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    df = pd.read_csv("simple_test_acbs{}.result".format(args_to_string(args)))
+    runtimes = list(df['Runtime'])
+    
+    ratios = list(df['Ratio'])
+    if len(runtimes) == 0:
+        print('ACBS no first solution')
+        return [timeout], [-1]
+    if runtimes[-1] != -1:
+        print('ACBS no optimal')
+        runtimes.append(timeout)
+        ratios.append(-1)
+    if retcode != 0:
+        print('ACBS timeout')
+    return runtimes, ratios
+
+def run_nrwcbs(timeout):
+    cmd = "timeout {} release/nrwcbs -i {} -o simple_test_nrwcbs{}.result".format(timeout, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    df = pd.read_csv("simple_test_nrwcbs{}.result".format(args_to_string(args)))
+    runtimes = list(df['Runtime'])
+    
+    ratios = list(df['Ratio'])
+    if len(runtimes) == 0:
+        print('NRWCBS no first solution')
+        return [timeout], [-1]
+    if runtimes[-1] != -1:
+        print('NRWCBS no optimal')
+        runtimes.append(timeout)
+        ratios.append(-1)
+    if retcode != 0:
+        print('NRWCBS timeout')
+    return runtimes, ratios
+
+def run_nwcbs(timeout):
+    cmd = "timeout {} release/nwcbs -i {} -o simple_test_nwcbs{}.result".format(timeout, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    df = pd.read_csv("simple_test_nwcbs{}.result".format(args_to_string(args)))
+    runtimes = list(df['Runtime'])
+    ratios = list(df['Ratio'])
+    if len(runtimes) == 0:
+        print('NWCBS no first solution')
+        return [timeout], [-1]
+    if runtimes[-1] != -1:
+        print('NWCBS no optimal')
+        runtimes.append(timeout)
+        ratios.append(-1)
+    if retcode != 0:
+        print('NWCBS timeout')
+    return runtimes, ratios
+
 def run_pr(timeout):
     tempout = "TEMPOUT{}".format(args_to_string(args))
     cmd = "timeout {} Push-and-Rotate--CBS--PrioritizedPlanning/build/ASearch {} > {}".format(timeout, pr_map, tempout)
     retcode = run_with_current_proc(cmd, shell=True)
     if retcode != 0:
+        print(retcode)
         print("PR timeout")
         return 0, timeout
     f = open(tempout)
@@ -206,7 +261,16 @@ xstar_data_lst = []
 mstar_data_lst = []
 afs_data_lst = []
 cbs_data_lst = []
+acbs_data_lst = []
+nrwcbs_data_lst = []
+nwcbs_data_lst = []
 pr_data_lst = []
+
+# xstar_first_list = []
+# acbs_first_list = []
+# cbs_list = []
+# acbs_list = []
+# xstar_list = []
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -214,17 +278,17 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
-    exit(0)
+    # exit(0)
 
-    print("X*")
-    xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
-    xstar_data_lst.append(sh.XStarData(args.obs_density,
-                                       args.width,
-                                       args.height,
-                                       args.agents,
-                                       args.timeout,
-                                       xstar_bounds,
-                                       xstar_runtimes))
+    # print("X*")
+    # xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
+    # xstar_data_lst.append(sh.XStarData(args.obs_density,
+    #                                    args.width,
+    #                                    args.height,
+    #                                    args.agents,
+    #                                    args.timeout,
+    #                                    xstar_bounds,
+    #                                    xstar_runtimes))
 
     # print("AFS")  
     # afs_bounds, afs_runtimes  = run_afs(args.timeout)
@@ -245,6 +309,45 @@ for i in range(args.trials):
     #                                args.timeout,
     #                                cbs_runtime))
 
+    print("ACBS")
+    acbs_runtimes, acbs_ratios = run_acbs(args.timeout)
+    acbs_data_lst.append(sh.ACBSData(args.obs_density,
+                                   args.width,
+                                   args.height,
+                                   args.agents,
+                                   args.timeout,
+                                   acbs_runtimes,
+                                   acbs_ratios))
+    if len(acbs_runtimes) > 2:
+        acbs_runt = acbs_runtimes[-2]
+
+    print("NRWCBS")
+    nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
+    nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
+                                   args.width,
+                                   args.height,
+                                   args.agents,
+                                   args.timeout,
+                                   acbs_runtimes,
+                                   acbs_ratios))
+    
+    if len(nrwcbs_runtimes) > 2:
+        nrw_runt = nrwcbs_runtimes[-2]
+
+    # print("NWCBS")
+    # nwcbs_runtimes, nwcbs_ratios = run_nwcbs(args.timeout)
+    # nwcbs_data_lst.append(sh.NWCBSData(args.obs_density,
+    #                                args.width,
+    #                                args.height,
+    #                                args.agents,
+    #                                args.timeout,
+    #                                nwcbs_runtimes,
+    #                                nwcbs_ratios))
+    if len(acbs_runtimes) > 2 and len(nrwcbs_runtimes) > 2 and acbs_runt > 2.5* nrw_runt:
+        print("acbs: " + str(acbs_runt))
+        print("nrw: " + str(nrw_runt))
+        exit(0)
+
     # print("M*")
     # mstar_runtime = run_mstar(args.timeout)
     # mstar_data_lst.append(sh.MStarData(args.obs_density,
@@ -254,28 +357,34 @@ for i in range(args.trials):
     #                                    args.timeout,
     #                                    mstar_runtime))
 
-    print("PR")
-    pr_bounds, pr_runtimes = run_pr(args.timeout)
-    pr_data_lst.append(sh.PRData(args.obs_density,
-                                   args.width,
-                                   args.height,
-                                   args.agents,
-                                   args.timeout,
-                                   pr_bounds,
-                                   pr_runtimes))
+    # print("PR")
+    # pr_bounds, pr_runtimes = run_pr(args.timeout)
+    # pr_data_lst.append(sh.PRData(args.obs_density,
+    #                                args.width,
+    #                                args.height,
+    #                                args.agents,
+    #                                args.timeout,
+    #                                pr_bounds,
+    #                                pr_runtimes))
 
 
-sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
-sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
-sh.save_to_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), afs_data_lst)
-sh.save_to_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), mstar_data_lst)
-sh.save_to_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)), pr_data_lst)
+# sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
+# sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
+# sh.save_to_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), afs_data_lst)
+# sh.save_to_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), mstar_data_lst)
+# sh.save_to_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)), pr_data_lst)
+sh.save_to_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), acbs_data_lst)
+# sh.save_to_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nwcbs_data_lst)
+sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
 
 # Ensures data can be reloaded properly
-xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-afs_data_lst = sh.read_from_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-mstar_data_lst = sh.read_from_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-pr_data_lst = sh.read_from_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+acbs_data_lst = sh.read_from_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# nwcbs_data_lst = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# afs_data_lst = sh.read_from_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# mstar_data_lst = sh.read_from_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# pr_data_lst = sh.read_from_file("pra_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 clean_up()
