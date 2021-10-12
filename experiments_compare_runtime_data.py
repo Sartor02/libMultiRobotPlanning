@@ -280,15 +280,15 @@ for i in range(args.trials):
     print(generic_map)
     # exit(0)
 
-    # print("X*")
-    # xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
-    # xstar_data_lst.append(sh.XStarData(args.obs_density,
-    #                                    args.width,
-    #                                    args.height,
-    #                                    args.agents,
-    #                                    args.timeout,
-    #                                    xstar_bounds,
-    #                                    xstar_runtimes))
+    print("X*")
+    xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
+    xstar_data_lst.append(sh.XStarData(args.obs_density,
+                                       args.width,
+                                       args.height,
+                                       args.agents,
+                                       args.timeout,
+                                       xstar_bounds,
+                                       xstar_runtimes))
 
     # print("AFS")  
     # afs_bounds, afs_runtimes  = run_afs(args.timeout)
@@ -300,26 +300,26 @@ for i in range(args.trials):
     #                                afs_bounds,
     #                                afs_runtimes))
   
-    # print("CBS")
-    # cbs_runtime = run_cbs(args.timeout)
-    # cbs_data_lst.append(sh.CBSData(args.obs_density,
-    #                                args.width,
-    #                                args.height,
-    #                                args.agents,
-    #                                args.timeout,
-    #                                cbs_runtime))
-
-    print("ACBS")
-    acbs_runtimes, acbs_ratios = run_acbs(args.timeout)
-    acbs_data_lst.append(sh.ACBSData(args.obs_density,
+    print("CBS")
+    cbs_runtime = run_cbs(args.timeout)
+    cbs_data_lst.append(sh.CBSData(args.obs_density,
                                    args.width,
                                    args.height,
                                    args.agents,
                                    args.timeout,
-                                   acbs_runtimes,
-                                   acbs_ratios))
-    if len(acbs_runtimes) > 2:
-        acbs_runt = acbs_runtimes[-2]
+                                   cbs_runtime))
+
+    # print("ACBS")
+    # acbs_runtimes, acbs_ratios = run_acbs(args.timeout)
+    # acbs_data_lst.append(sh.ACBSData(args.obs_density,
+    #                                args.width,
+    #                                args.height,
+    #                                args.agents,
+    #                                args.timeout,
+    #                                acbs_runtimes,
+    #                                acbs_ratios))
+    # if len(acbs_runtimes) > 2:
+    #     acbs_runt = acbs_runtimes[-2]
 
     print("NRWCBS")
     nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
@@ -328,25 +328,25 @@ for i in range(args.trials):
                                    args.height,
                                    args.agents,
                                    args.timeout,
-                                   acbs_runtimes,
-                                   acbs_ratios))
+                                   nrwcbs_runtimes,
+                                   nrwcbs_ratios))
     
-    if len(nrwcbs_runtimes) > 2:
-        nrw_runt = nrwcbs_runtimes[-2]
+    # if len(nrwcbs_runtimes) > 2:
+    #     nrw_runt = nrwcbs_runtimes[-2]
 
-    # print("NWCBS")
-    # nwcbs_runtimes, nwcbs_ratios = run_nwcbs(args.timeout)
-    # nwcbs_data_lst.append(sh.NWCBSData(args.obs_density,
-    #                                args.width,
-    #                                args.height,
-    #                                args.agents,
-    #                                args.timeout,
-    #                                nwcbs_runtimes,
-    #                                nwcbs_ratios))
-    if len(acbs_runtimes) > 2 and len(nrwcbs_runtimes) > 2 and acbs_runt > 2.5* nrw_runt:
-        print("acbs: " + str(acbs_runt))
-        print("nrw: " + str(nrw_runt))
-        exit(0)
+    print("NWCBS")
+    nwcbs_runtimes, nwcbs_ratios = run_nwcbs(args.timeout)
+    nwcbs_data_lst.append(sh.NWCBSData(args.obs_density,
+                                   args.width,
+                                   args.height,
+                                   args.agents,
+                                   args.timeout,
+                                   nwcbs_runtimes,
+                                   nwcbs_ratios))
+    # if len(acbs_runtimes) > 2 and len(nrwcbs_runtimes) > 2 and acbs_runt > 2.5* nrw_runt:
+    #     print("acbs: " + str(acbs_runt))
+    #     print("nrw: " + str(nrw_runt))
+    #     exit(0)
 
     # print("M*")
     # mstar_runtime = run_mstar(args.timeout)
@@ -368,20 +368,20 @@ for i in range(args.trials):
     #                                pr_runtimes))
 
 
-# sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
-# sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
+sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
+sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
 # sh.save_to_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), afs_data_lst)
 # sh.save_to_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), mstar_data_lst)
 # sh.save_to_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)), pr_data_lst)
-sh.save_to_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), acbs_data_lst)
-# sh.save_to_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nwcbs_data_lst)
+# sh.save_to_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), acbs_data_lst)
+sh.save_to_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nwcbs_data_lst)
 sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
 
 # Ensures data can be reloaded properly
-# xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-# cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-acbs_data_lst = sh.read_from_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-# nwcbs_data_lst = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+# acbs_data_lst = sh.read_from_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+nwcbs_data_lst = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # afs_data_lst = sh.read_from_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # mstar_data_lst = sh.read_from_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))

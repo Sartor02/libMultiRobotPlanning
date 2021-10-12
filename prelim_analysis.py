@@ -21,7 +21,7 @@ outfile_infix = "supplemental_"
 
 xstar_data = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 cbs_data = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-acbs_data = sh.read_from_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+acbs_data = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 nwcbs_data = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 # cbs_c = 0
