@@ -15,6 +15,10 @@ def get_args():
 def args_to_string(args):
     return str(args).replace('(', '').replace(')', '').replace(' ', '').replace('=', '').replace(',', '')
 
+def args_to_title(args):
+    return str(args.width) + "x" + str(args.height) + ", " + str(args.agents) + " Agents, " + str(args.obs_density * 100) + "% Obst"
+
+fig_path = '../../Pictures/acbs_figs/'
 
 args = get_args()
 outfile_infix = "supplemental_"
@@ -76,19 +80,19 @@ acbs_list = [i.runtimes[-1] if i.runtimes[-1] != -1 else i.runtimes[-2] for i in
 xstar_list = [i.runtimes[-1] for i in xstar_data]
 nwcbs_list = [i.runtimes[-1] if i.runtimes[-1] != -1 else i.runtimes[-2] for i in nwcbs_data]
 
-acb = 0
-xst = 0
-cbb= 0
-for i in range(len(cbs_list)):
-    if acbs_list[i] < 1:
-        acb += 1
-    if xstar_list[i] < 1:
-        xst += 1
-    if cbs_list[i] < 1:
-        cbb += 1
-print('acbs less than 1: ' +str(acb))
-print('xstar less than 1: '+str(xst))
-print('cbs less than 1: ' + str(cbb))
+# acb = 0
+# xst = 0
+# cbb= 0
+# for i in range(len(cbs_list)):
+#     if acbs_list[i] < 1:
+#         acb += 1
+#     if xstar_list[i] < 1:
+#         xst += 1
+#     if cbs_list[i] < 1:
+#         cbb += 1
+# print('acbs less than 1: ' +str(acb))
+# print('xstar less than 1: '+str(xst))
+# print('cbs less than 1: ' + str(cbb))
 
 n, bins, patches = plt.hist(cbs_list, 100, facecolor='red', alpha=0.5)
 n2, bins2, patches2 = plt.hist(acbs_list, 100, facecolor='green', alpha=0.5)
@@ -100,7 +104,7 @@ n5, bins5, patches5 = plt.hist(acbs_first_list, 100, facecolor='blue', alpha=0.5
 n6, bins6, patches6 = plt.hist(nwcbs_first_list, 100, facecolor='purple', alpha=0.5)
 n7, bins7, patches7 = plt.hist(nwcbs_list, 100, facecolor='purple', alpha=0.5)
 
-plt.show()
+plt.clf()
 
 logbins = np.logspace(np.log10(bins[0]),np.log10(bins[-1]),len(bins))       # cbs
 logbins2 = np.logspace(np.log10(bins2[0]),np.log10(bins2[-1]),len(bins2))   # acbs
@@ -128,9 +132,12 @@ plt.hist(xstar_list, logbins3, density=1, histtype='step',color='blue',
 
 plt.grid()
 plt.legend(loc='upper left')
-plt.title("Cumulative Optimal Solution Histograms, 50x50 Grid, 10% Obstacles")
+plt.title("Optimal Cumulative Histograms " + args_to_title(args)) #agents width height density trials
 plt.xlabel("Runtime [s]")
-plt.show()
+# plt.show()
+plt.savefig(fig_path+args_to_string(args)+"Opt.png")
+
+plt.clf()
 
 # CUMULATIVE HISTOGRAMS FOR FIRST RUNTIMES
 plt.xscale('log')
@@ -138,16 +145,17 @@ plt.hist(cbs_list, logbins,  density=1, histtype='step',color='red',
          cumulative=True, label='CBS')
 
 plt.hist(xstar_first_list, logbins4, density=1, histtype='step',color='blue',
-         cumulative=True, label='X* First Solution')
+         cumulative=True, label='X*')
 
 plt.hist(acbs_first_list, logbins5, density=1, histtype='step', color='green',
-         cumulative=True, label='ACBS First Solution')
+         cumulative=True, label='ACBS')
 
 plt.hist(acbs_first_list, logbins6, density=1, histtype='step', color='purple',
-         cumulative=True, label='Naive ACBS First Solution')
+         cumulative=True, label='Naive ACBS')
 
 plt.grid()
 plt.legend(loc='upper left')
-plt.title("Cumulative First Solution Histograms, 50x50 Grid, 10% Obstacles")
+plt.title("First Solution Cumulative Histograms: " + args_to_title(args))
 plt.xlabel("Runtime [s]")
-plt.show()
+# plt.show()
+plt.savefig(fig_path+args_to_string(args)+"First.png")
