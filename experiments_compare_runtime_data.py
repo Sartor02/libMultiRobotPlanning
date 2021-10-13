@@ -191,6 +191,7 @@ def run_acbs(timeout):
 
 def run_nrwcbs(timeout):
     cmd = "timeout {} release/nrwcbs -i {} -o simple_test_nrwcbs{}.result".format(timeout, generic_map, args_to_string(args))
+    # sys.exit()
     retcode = run_with_current_proc(cmd)
     df = pd.read_csv("simple_test_nrwcbs{}.result".format(args_to_string(args)))
     runtimes = list(df['Runtime'])
@@ -278,7 +279,6 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
-    # exit(0)
 
     print("X*")
     xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
