@@ -18,7 +18,7 @@ def args_to_string(args):
 def args_to_title(args):
     return str(args.width) + "x" + str(args.height) + ", " + str(args.agents) + " Agents, " + str(args.obs_density * 100) + "% Obst"
 
-fig_path = '../../Pictures/acbs_figs/'
+fig_path = '../'
 
 args = get_args()
 outfile_infix = "supplemental_"
