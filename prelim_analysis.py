@@ -28,45 +28,6 @@ cbs_data = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_s
 acbs_data = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 nwcbs_data = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
-# cbs_c = 0
-# acbs_c = 0
-# xstar_c = 0
-# acbs_c_f = 0
-# cbs_c_f = 0
-# xstar_c_f = 0
-
-
-# for i in range(len(cbs_data)):
-#     if xstar_data[i].runtimes[-1] < cbs_data[i].runtimes:
-#         if xstar_data[i].runtimes[-1] < acbs_data[i].runtimes[-1]:
-#             xstar_c+=1
-#         elif xstar_data[i].runtimes[-1] == xstar_data[i].timeout:
-#             pass
-#         else:
-#             acbs_c += 1
-#     elif acbs_data[i].runtimes[-1] < cbs_data[i].runtimes:
-#         acbs_c += 1
-#     elif acbs_data[i].runtimes[-1] > cbs_data[i].runtimes:
-#         cbs_c += 1
-
-#     if xstar_data[i].runtimes[0] < cbs_data[i].runtimes:
-#         if xstar_data[i].runtimes[0] < acbs_data[i].runtimes[0]:
-#             xstar_c_f+=1
-#         elif xstar_data[i].runtimes[0] > acbs_data[i].runtimes[0]:
-#             acbs_c_f += 1
-#     elif acbs_data[i].runtimes[0] < cbs_data[i].runtimes:
-#         acbs_c_f += 1
-#     elif acbs_data[i].runtimes[0] > cbs_data[i].runtimes:
-#         cbs_c_f += 1
-    
-# print("cbs faster: " + str(cbs_c))
-# print("xstar faster: " + str(xstar_c))
-# print("acbs faster: " + str(acbs_c))
-# print("")
-# print("cbs first faster: " + str(cbs_c_f))
-# print("xstar first faster: " + str(xstar_c_f))
-# print("acbs first faster: " + str(acbs_c_f))
-
 import matplotlib.pyplot as plt
 import numpy as np
 import math
