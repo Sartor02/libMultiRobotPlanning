@@ -150,7 +150,7 @@ nrwcbs_agents_first_times_density_01 = [(x.num_agents, x.runtimes[0]) for x in n
 nrwcbs_agents_optimal_times_density_01 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nrwcbs_datas_density_01]
 
 
-# 5 percent obstacle density32
+# 5 percent obstacle density
 xstar_supp_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/xstar_supplemental_data_lst_*density0.05timeout10*')]
 xstar_supp_datas_density_05 = [x for lst in xstar_supp_datas_density_05 for x in lst]
 xstar_agents_bounds_05 = [x.bounds for x in xstar_supp_datas_density_05 if x.num_agents == kBoundsAgentCount]
@@ -168,9 +168,9 @@ nrwcbs_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in n
 nrwcbs_agents_optimal_times_density_05 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nrwcbs_datas_density_05]
 
 
-nwcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/nwcbs_supplemental_data_lst_*density0.05timeout10*')]
-nwcbs_datas_density_05 = [x for lst in nwcbs_datas_density_05 for x in lst]
-nwcbs_agents_bounds_05 = [x.ratios for x in nwcbs_datas_density_05 if x.num_agents == kBoundsAgentCount]
+# nwcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/nwcbs_supplemental_data_lst_*density0.05timeout10*')]
+# nwcbs_datas_density_05 = [x for lst in nwcbs_datas_density_05 for x in lst]
+# nwcbs_agents_bounds_05 = [x.ratios for x in nwcbs_datas_density_05 if x.num_agents == kBoundsAgentCount]
 
 # fails = 0
 # for x, a in zip(xstar_agents_bounds_05, nrwcbs_agents_bounds_05):
@@ -184,17 +184,17 @@ nwcbs_agents_bounds_05 = [x.ratios for x in nwcbs_datas_density_05 if x.num_agen
 #     print(l-lx, end=", ")
 # print("fails: " + str(fails))
 
-fails = 0
-ct = 0
-for bounds in nwcbs_agents_bounds_05:
-    print("Trial {}".format(ct))
-    ct += 1
-    for i in range(1, len(bounds)):
-        if bounds[i] > bounds[i-1]:
-            print(str(bounds[i-1]) + ", " + str(bounds[i]))
-            fails += 1
-    print("\n", end="")
-print("fails: " + str(fails))
+# fails = 0
+# ct = 0
+# for bounds in nwcbs_agents_bounds_05:
+#     print("Trial {}".format(ct))
+#     ct += 1
+#     for i in range(1, len(bounds)):
+#         if bounds[i] > bounds[i-1]:
+#             print(str(bounds[i-1]) + ", " + str(bounds[i]))
+#             fails += 1
+#     print("\n", end="")
+# print("fails: " + str(fails))
 
 # 10 percent obstacle density
 xstar_supp_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/xstar_supplemental_data_lst_*density0.1timeout10*')]
@@ -267,11 +267,15 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
 def plt_bounds(bounds_data, show_y_axis, planner_name, acbs=False):
     num_iters = 80
 
+    print(bounds_data)
+
     for i in range(len(bounds_data)):
         if bounds_data[i][-2:] == [1, 1]:
             bounds_data[i] = bounds_data[i][:-1]
         if (len(bounds_data[i]) < num_iters):
             bounds_data[i] += ([bounds_data[i][-1]] * (num_iters - len(bounds_data[i])))
+
+    print(bounds_data)
 
     steps_bounds = {}
 
