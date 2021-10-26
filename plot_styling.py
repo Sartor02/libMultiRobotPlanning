@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('pgf')
+# matplotlib.use('pgf')
 
 def set_font(size):
     matplotlib.rcParams.update({# Use mathtext, not LaTeX
