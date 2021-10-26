@@ -1,0 +1,96 @@
+Total time: 6.55313
+is_optimal: false
+optimality_bound: 1.00061
+successive_bounds: [1.00545, 1.00272, 1.00212, 1.00151, 1.00121, 1.00121, 1.00121, 1.00121, 1.00061, 1.00061]
+successive_runtimes: [0.022607, 0.0340748, 0.0426884, 0.0491151, 0.0688196, 0.0806985, 0.0886898, 0.0975798, 0.107324, 6.55313]
+num_agents: 50
+time_individual_plan: 0.0110535
+time_first_plan: 0.0110346
+num_max_agents_in_window_first_iteration: 3
+num_recWAMPF: 10
+timing_recWAMPF:
+    total_RecWAMPF: 6.54155
+    num_windows: 170
+    num_max_agents_in_window: 6
+    timing_gari:
+        total_GARI: 0.0685252
+        time_path_btw_starts: 0.000536812
+        Stage1:
+            total_Stage1:0.0329722
+            time_add_x_to_o: 0.0180157
+            time_clear_x: 0.00255443
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.0123923
+                num_values_f_less_fmax:4626
+                ASU Exp:
+                    total_ASUExp:0.0123882
+                    time_top_o:0.00114832
+                    time_check_in_c:0.000740227
+                    time_add_parent:0.000498483
+                    num_neighbors:21037
+                    time_add_neighbors_to_o:0.00785033
+        Stage2:
+            total_Stage2:0.00576992
+            num_len_path:170
+            time_expanding_s:0.000338216
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.00537967
+                num_values_f_less_fmax:334
+                ASU Exp:
+                    total_ASUExp:0.00537611
+                    time_top_o:8.6261e-05
+                    time_check_in_c:0.00051329
+                    time_add_parent:0.000163691
+                    num_neighbors:11091
+                    time_add_neighbors_to_o:0.00415842
+        Stage3:
+            total_Stage3:0.028987
+            num_until_goal_expanded:3682
+            timing_S3Exp:
+                total_S3Exp: 0.0196897
+                time_top_o: 0.000924568
+                time_check_in_c: 0.000464511
+                time_add_parent: 0.000851007
+                num_neighbors: 35565
+                time_add_neighbors_to_o: 0.0135685
+    timing_PIOW_overlapping:
+        total_PIOW: 6.44831
+        num_windows: 772
+        time_check_overlap: 2.4627e-05
+        num_overlapping_windows: 4
+        time_merge_windows: 8.834e-06
+        time_remove_window: 1.504e-06
+        time_remove_window: 8.604e-06
+        timing_PlanIn:
+            total_PlanIn:6.44825
+            num_until_goal_expanded:21210
+            timing_expansions:
+                total_S3Exp: 6.44824
+                time_top_o: 0.0135849
+                time_check_in_c: 0.00532875
+                time_add_parent: 0.0110965
+                num_neighbors: 9186636
+                time_add_neighbors_to_o: 6.12875
+    num_new_collisions: 13
+    timing_PIOW_new_collisions:
+        total_PIOW: 0.0130636
+        num_windows: 150
+        time_check_overlap: 4.318e-06
+        num_overlapping_windows: 3
+        time_merge_windows: 0
+        time_remove_window: 0.119114
+        time_remove_window: 3.767e-06
+        timing_PlanIn:
+            total_PlanIn:0.0130364
+            num_until_goal_expanded:882
+            timing_expansions:
+                total_S3Exp: 0.0129906
+                time_top_o: 0.00015219
+                time_check_in_c: 0.000158699
+                time_add_parent: 0.000224046
+                num_neighbors: 22290
+                time_add_neighbors_to_o: 0.0107872
+    num_windows_should_quit: 0
+    time_should_quit: 8.887e-06
+    time_remove_window: 0
+Complete!
