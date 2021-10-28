@@ -264,87 +264,33 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
     plt.xlabel("Number of agents")
     plt.xticks([e + 1 for e in range(len(xs))], xs)
 
-# def plt_bounds(bounds_data, show_y_axis, planner_name, acbs=False):
-#     num_iters = 35
-
-#     for i in range(len(bounds_data)):
-#         if bounds_data[i][-2:] == [1, 1]:
-#             bounds_data[i] = bounds_data[i][:-1]
-#         if (len(bounds_data[i]) < num_iters):
-#             bounds_data[i] += ([bounds_data[i][-1]] * (num_iters - len(bounds_data[i])))
-
-#     steps_bounds = {}
-
-#     no_result = 0
-#     for run in bounds_data:
-#         if not acbs and 0 in run:
-#             no_result += 1
-#             continue
-#         elif acbs and -1 not in run:
-#             no_result += 1
-#             continue
-#         for idx, bound in enumerate(run):
-#             existing = steps_bounds.get(idx, [])
-#             existing.append(bound)
-#             steps_bounds[idx] = existing
-
-#     print("Failures:", no_result)
-
-#     plot_width = 0.3
-
-#     steps_list = [k for k in sorted(steps_bounds.keys())[:num_iters]]
-#     if acbs:
-#         steps_list = [k for k in sorted(steps_bounds.keys())[:num_iters]]
-#     bounds_list = [steps_bounds[k] for k in steps_list]
-
-#     color = ps.color(0, 4)
-#     colort = ps.alpha(color, 0.5)
-
-#     bplot = plt.boxplot(bounds_list, 
-#         patch_artist=True, 
-#         whis=1.0,
-#         boxprops=dict(facecolor=colort, color=colort),
-#         flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
-#         capprops=dict(color=color),
-#         whiskerprops=dict(color=colort),
-#         medianprops=dict(color=color),
-#         widths=plot_width)
-
-#     label_string = "{}".format(planner_name)
-#     ps.add_legend(bplot["boxes"][0], label_string)
-
-#     plt.gca().set_ylim(bottom=0.999)
-#     plt.gca().set_ylim(top=1.0375)
-#     # plt.xticks([1,5,10,15, 20, 25,30,35,40,45,50,55,60,65,70,75,80], [1,5,10,15, 20, 25,30,35,40,45,50,55,60,65,70,75,80])
-#     plt.xticks([1,5,10,15, 20, 25,30,35], [1,5,10,15, 20, 25,30,35])
-#     if show_y_axis:
-#         plt.ylabel("$\epsilon$-suboptimality Bound")
-#     plt.xlabel("{} Iterations".format(planner_name))
-
-
 def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
-    num_iters = 35
-
-    print(bounds_data)
+    num_iters = 85
 
     for i in range(len(bounds_data)):
+        if acbs and bounds_data[i][-1] == -1:
+            if len(bounds_data[i]) == 1:
+                bounds_data[i][0] = 0
+            else:
+                bounds_data[i] = bounds_data[i][:-1]
+                if bounds_data[i][-1] != 1:
+                    print(bounds_data[i][-1 ])
+        # elif acbs and bounds_data[i][-1] != 1:
+        #     print(bounds_data[i])
+
         if bounds_data[i][-2:] == [1, 1]:
             bounds_data[i] = bounds_data[i][:-1]
         if (len(bounds_data[i]) < num_iters):
             bounds_data[i] += ([bounds_data[i][-1]] * (num_iters - len(bounds_data[i])))
 
-    print(bounds_data)
-
     steps_bounds = {}
 
     no_result = 0
     for run in bounds_data:
-        if not acbs and 0 in run:
+        if 0 in run:
             no_result += 1
             continue
-        elif acbs and -1 not in run:
-            no_result += 1
-            continue
+
         for idx, bound in enumerate(run):
             existing = steps_bounds.get(idx, [])
             existing.append(bound)
@@ -375,7 +321,7 @@ def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
 
     plt.gca().set_ylim(bottom=0.999)
     plt.gca().set_ylim(top=1.0375)
-    plt.xticks([1,5,10,15, 20,25,30,35], [1,5,10,15, 20,25,30,35])
+    plt.xticks(   [1] + [i for i in range(5, num_iters+5, 5)]   , [1] + [i for i in range(5, num_iters+5, 5)])
     if show_y_axis:
         plt.ylabel("$\epsilon$-suboptimality Bound")
     plt.xlabel("{} Iterations".format(planner_name))
