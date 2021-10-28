@@ -194,9 +194,9 @@ def run_nrwcbs(timeout):
     # sys.exit()
     retcode = run_with_current_proc(cmd)
     df = pd.read_csv("simple_test_nrwcbs{}.result".format(args_to_string(args)))
-    runtimes = list(df['Runtime'])
-    
+    runtimes = list(df['Runtime'])    
     ratios = list(df['Ratio'])
+    
     if len(runtimes) == 0:
         print('NRWCBS no first solution')
         return [timeout], [-1]
@@ -273,6 +273,11 @@ pr_data_lst = []
 # acbs_list = []
 # xstar_list = []
 
+DO_X = 0
+DO_NRWCBS = 0
+DO_CBS = 0
+DO_NWCBS = 1
+
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
     seed = (i + args.width) * args.agents
@@ -280,15 +285,16 @@ for i in range(args.trials):
 
     print(generic_map)
 
-    # print("X*")
-    # xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
-    # xstar_data_lst.append(sh.XStarData(args.obs_density,
-    #                                    args.width,
-    #                                    args.height,
-    #                                    args.agents,
-    #                                    args.timeout,
-    #                                    xstar_bounds,
-    #                                    xstar_runtimes))
+    if DO_X:
+        print("X*")
+        xstar_bounds, xstar_runtimes = run_xstar(args.timeout, i)
+        xstar_data_lst.append(sh.XStarData(args.obs_density,
+                                        args.width,
+                                        args.height,
+                                        args.agents,
+                                        args.timeout,
+                                        xstar_bounds,
+                                        xstar_runtimes))
 
     # print("AFS")  
     # afs_bounds, afs_runtimes  = run_afs(args.timeout)
@@ -299,15 +305,16 @@ for i in range(args.trials):
     #                                args.timeout,
     #                                afs_bounds,
     #                                afs_runtimes))
-  
-    # print("CBS")
-    # cbs_runtime = run_cbs(args.timeout)
-    # cbs_data_lst.append(sh.CBSData(args.obs_density,
-    #                                args.width,
-    #                                args.height,
-    #                                args.agents,
-    #                                args.timeout,
-    #                                cbs_runtime))
+    
+    if DO_CBS:
+        print("CBS")
+        cbs_runtime = run_cbs(args.timeout)
+        cbs_data_lst.append(sh.CBSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    cbs_runtime))
 
     # print("ACBS")
     # acbs_runtimes, acbs_ratios = run_acbs(args.timeout)
@@ -321,33 +328,41 @@ for i in range(args.trials):
     # if len(acbs_runtimes) > 2:
     #     acbs_runt = acbs_runtimes[-2]
 
-    # print("NRWCBS")
-    # nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
-    # nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
-    #                                args.width,
-    #                                args.height,
-    #                                args.agents,
-    #                                args.timeout,
-    #                                nrwcbs_runtimes,
-    #                                nrwcbs_ratios))
+    if DO_NRWCBS:
+        print("NRWCBS")
+        nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
+        nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    nrwcbs_runtimes,
+                                    nrwcbs_ratios))
+        for i in range(1, len(nrwcbs_ratios)):
+            if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
+                print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
+                sys.exit()
+
+    # print(nrwcbs_runtimes, nrwcbs_ratios)
     
     # if len(nrwcbs_runtimes) > 2:
     #     nrw_runt = nrwcbs_runtimes[-2]
 
-    print("NWCBS")
-    nwcbs_runtimes, nwcbs_ratios = run_nwcbs(args.timeout)
-    nwcbs_data_lst.append(sh.NWCBSData(args.obs_density,
-                                   args.width,
-                                   args.height,
-                                   args.agents,
-                                   args.timeout,
-                                   nwcbs_runtimes,
-                                   nwcbs_ratios))
+    if DO_NWCBS:
+        print("NWCBS")
+        nwcbs_runtimes, nwcbs_ratios = run_nwcbs(args.timeout)
+        nwcbs_data_lst.append(sh.NWCBSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    nwcbs_runtimes,
+                                    nwcbs_ratios))
 
-    for i in range(1, len(nwcbs_ratios)):
-        if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
-            print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
-            sys.exit()
+        for i in range(1, len(nwcbs_ratios)):
+            if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
+                print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
+                sys.exit()
             
     
     # if len(acbs_runtimes) > 2 and len(nrwcbs_runtimes) > 2 and acbs_runt > 2.5* nrw_runt:

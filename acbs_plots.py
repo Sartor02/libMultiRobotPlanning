@@ -17,7 +17,9 @@ from shared_helpers import AFSData
 from shared_helpers import PRData
 
 PLOT_AGENTS_DENSITY = False
-PLOT_BOUNDS = True
+PLOT_BOUNDS = False
+
+PLOT_SANDBOX = True
 
 
 
@@ -167,6 +169,9 @@ nrwcbs_agents_bounds_05 = [x.ratios for x in nrwcbs_datas_density_05 if x.num_ag
 nrwcbs_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in nrwcbs_datas_density_05]
 nrwcbs_agents_optimal_times_density_05 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nrwcbs_datas_density_05]
 
+nwcbs_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/nwcbs_supplemental_data_lst_*density0.01timeout10*')]
+nwcbs_datas_density_01 = [x for lst in nwcbs_datas_density_01 for x in lst]
+nwcbs_agents_bounds_01 = [x.ratios for x in nwcbs_datas_density_01 if x.num_agents == kBoundsAgentCount]
 
 # nwcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/nwcbs_supplemental_data_lst_*density0.05timeout10*')]
 # nwcbs_datas_density_05 = [x for lst in nwcbs_datas_density_05 for x in lst]
@@ -273,8 +278,8 @@ def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
                 bounds_data[i][0] = 0
             else:
                 bounds_data[i] = bounds_data[i][:-1]
-                if bounds_data[i][-1] != 1:
-                    print(bounds_data[i][-1 ])
+                # if bounds_data[i][-1] != 1:
+                #     print(bounds_data[i][-1 ])
         # elif acbs and bounds_data[i][-1] != 1:
         #     print(bounds_data[i])
 
@@ -473,3 +478,10 @@ if PLOT_BOUNDS:
     plt_bounds(nrwcbs_agents_bounds_1, False, "ACBS", True)
     ps.grid()
     ps.save_fig("acbs_bounds_1")
+
+if PLOT_SANDBOX:
+    # SUBOPTIMALITY BOUNDS NWCBS
+    ps.setupfig(thirdsize=True)
+    plt_bounds(nwcbs_agents_bounds_01, True, "NWCBS", True)
+    ps.grid()
+    ps.save_fig("nwcbs_bounds_01")
