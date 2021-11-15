@@ -5,6 +5,7 @@ import yaml_to_movingai as yaml2mvai
 import signal
 import shlex
 import sys
+import io
 import os
 import glob
 import argparse
@@ -110,6 +111,10 @@ def run_with_current_proc(cmd, shell=False):
     current_proc = None
     return retcode
 
+def run_and_get_output(cmd):
+    # return subprocess.run(shlex.split(cmd), capture_output=True, text=True).stdout
+    return subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE).stdout.decode('utf-8')
+
 
 def run_mstar(timeout):
     cmd = "timeout {} mstar_public/cpp/main -i {} -o simple_test_mstar{}.result".format(timeout, generic_map, args_to_string(args))
@@ -213,11 +218,12 @@ def run_nrwcbs(timeout):
 
 def run_lns(timeout):
     yaml2mvai.yaml_to_mvai(generic_map, lns_map, lns_agents)
-    cmd = "release/lns -m {} -a {} -o temp.csv -k {} -t {} -s 1 > simple_test_lns{}.result".format(lns_map, lns_agents, args.agents, timeout, args_to_string(args))
-    retcode = run_with_current_proc(cmd)
+    cmd = "release/lns -m {} -a {} -o temp.csv -k {} -t {} -s 1".format(lns_map, lns_agents, args.agents, timeout)
+    data = run_and_get_output(cmd)
     print(cmd)
-    
-    df = pd.read_csv("simple_test_lns{}.result".format(args_to_string(args)))
+    df = pd.read_csv(io.StringIO(data))
+
+    print(df)
     sys.exit()
     runtimes = list(df['Runtime'])
     costs = list(df['Cost'])
@@ -292,11 +298,11 @@ lns_data_lst = []
 # acbs_list = []
 # xstar_list = []
 
-DO_X = 1
+DO_X = 0
 DO_NRWCBS = 1
-DO_CBS = 1
-DO_NWCBS = 1
-DO_LNS = 0
+DO_CBS = 0
+DO_NWCBS = 0
+DO_LNS = 1
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -358,10 +364,11 @@ for i in range(args.trials):
                                     args.timeout,
                                     nrwcbs_runtimes,
                                     nrwcbs_ratios))
-        for i in range(1, len(nrwcbs_ratios)):
-            if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
-                print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
-                sys.exit()
+        print(nrwcbs_runtimes)
+        # for i in range(1, len(nrwcbs_ratios)):
+        #     if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
+        #         print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
+        #         sys.exit()
 
     # print(nrwcbs_runtimes, nrwcbs_ratios)
     
@@ -420,26 +427,38 @@ for i in range(args.trials):
     #                                pr_bounds,
     #                                pr_runtimes))
 
+if DO_X:
+    sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
+    xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
-sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
-sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
+if DO_CBS:
+    sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
+    cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # sh.save_to_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), afs_data_lst)
 # sh.save_to_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), mstar_data_lst)
 # sh.save_to_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)), pr_data_lst)
 # sh.save_to_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), acbs_data_lst)
-sh.save_to_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nwcbs_data_lst)
-sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
-sh.save_to_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
+
+if DO_NWCBS:
+    sh.save_to_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nwcbs_data_lst)
+    nwcbs_data_lst = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+if DO_NRWCBS:
+    sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
+    nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+if DO_LNS:
+    sh.save_to_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
+    lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
 
 # Ensures data can be reloaded properly
-xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
+
 # acbs_data_lst = sh.read_from_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-nwcbs_data_lst = sh.read_from_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
+
 # afs_data_lst = sh.read_from_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # mstar_data_lst = sh.read_from_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # pr_data_lst = sh.read_from_file("pra_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
 
 clean_up()
