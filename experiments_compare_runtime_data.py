@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import subprocess
 import shared_helpers as sh
+import yaml_to_movingai as yaml2mvai
 import signal
 import shlex
 import sys
@@ -70,6 +71,8 @@ afs_map = "afs_map_file{}.map".format(args_to_string(args))
 afs_agents = "afs_agents_file{}.agents".format(args_to_string(args))
 pr_map = "pr_map_file{}.map".format(args_to_string(args))
 pr_agents = "pr_agents_file{}.agents".format(args_to_string(args))
+lns_map = "lns_map_file{}.map".format(args_to_string(args))
+lns_agents = "lns_agents_file{}.agents".format(args_to_string(args))
 
 
 def get_line(ls, string, t):
@@ -208,6 +211,21 @@ def run_nrwcbs(timeout):
         print('NRWCBS timeout')
     return runtimes, ratios
 
+def run_lns(timeout):
+    yaml2mvai.yaml_to_mvai(generic_map, lns_map, lns_agents)
+    cmd = "release/lns -m {} -a {} -o temp.csv -k {} -t {} -s 1 > simple_test_lns{}.result".format(lns_map, lns_agents, args.agents, timeout, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    print(cmd)
+    
+    df = pd.read_csv("simple_test_lns{}.result".format(args_to_string(args)))
+    sys.exit()
+    runtimes = list(df['Runtime'])
+    costs = list(df['Cost'])
+    if len(runtimes) == 0:
+        print('LNS no first solution')
+        return [timeout], [-1]
+    return runtimes, costs
+
 def run_nwcbs(timeout):
     cmd = "timeout {} release/nwcbs -i {} -o simple_test_nwcbs{}.result".format(timeout, generic_map, args_to_string(args))
     retcode = run_with_current_proc(cmd)
@@ -266,6 +284,7 @@ acbs_data_lst = []
 nrwcbs_data_lst = []
 nwcbs_data_lst = []
 pr_data_lst = []
+lns_data_lst = []
 
 # xstar_first_list = []
 # acbs_first_list = []
@@ -273,10 +292,11 @@ pr_data_lst = []
 # acbs_list = []
 # xstar_list = []
 
-DO_X = 0
-DO_NRWCBS = 0
-DO_CBS = 0
+DO_X = 1
+DO_NRWCBS = 1
+DO_CBS = 1
 DO_NWCBS = 1
+DO_LNS = 0
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -348,6 +368,17 @@ for i in range(args.trials):
     # if len(nrwcbs_runtimes) > 2:
     #     nrw_runt = nrwcbs_runtimes[-2]
 
+    if DO_LNS:
+        print("LNS")
+        lns_runtimes, lns_costs = run_lns(args.timeout)
+        lns_data_lst.append(sh.LNSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    lns_runtimes,
+                                    lns_costs))
+
     if DO_NWCBS:
         print("NWCBS")
         nwcbs_runtimes, nwcbs_ratios = run_nwcbs(args.timeout)
@@ -398,6 +429,7 @@ sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)),
 # sh.save_to_file("acbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), acbs_data_lst)
 sh.save_to_file("nwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nwcbs_data_lst)
 sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
+sh.save_to_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
 
 # Ensures data can be reloaded properly
 xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
@@ -408,5 +440,6 @@ nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix,
 # afs_data_lst = sh.read_from_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # mstar_data_lst = sh.read_from_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # pr_data_lst = sh.read_from_file("pra_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 clean_up()

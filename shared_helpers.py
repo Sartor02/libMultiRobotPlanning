@@ -9,6 +9,7 @@ ACBSData = collections.namedtuple('ACBSData', ['obs_density', 'width', 'height',
 NWCBSData = collections.namedtuple('NWCBSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes', 'ratios',])
 MStarData = collections.namedtuple('MStarData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes',])
 PRData = collections.namedtuple('PRData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'bounds', 'runtimes',])
+LNSData = collections.namedtuple('LNSData', ['obs_density', 'width', 'height', 'num_agents', 'timeout', 'runtimes', 'costs',])
 
 def get_args():
     parser = argparse.ArgumentParser()
