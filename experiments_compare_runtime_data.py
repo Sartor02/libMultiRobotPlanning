@@ -220,11 +220,9 @@ def run_lns(timeout):
     yaml2mvai.yaml_to_mvai(generic_map, lns_map, lns_agents)
     cmd = "release/lns -m {} -a {} -o temp.csv -k {} -t {} -s 1".format(lns_map, lns_agents, args.agents, timeout)
     data = run_and_get_output(cmd)
-    print(cmd)
+    # print(data[:100])
     df = pd.read_csv(io.StringIO(data))
-
-    print(df)
-    sys.exit()
+    # print(df.head())
     runtimes = list(df['Runtime'])
     costs = list(df['Cost'])
     if len(runtimes) == 0:
@@ -364,7 +362,8 @@ for i in range(args.trials):
                                     args.timeout,
                                     nrwcbs_runtimes,
                                     nrwcbs_ratios))
-        print(nrwcbs_runtimes)
+        # if (len(nrwcbs_runtimes) > 0):
+        #     print(nrwcbs_runtimes[0])
         # for i in range(1, len(nrwcbs_ratios)):
         #     if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
         #         print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
@@ -385,6 +384,9 @@ for i in range(args.trials):
                                     args.timeout,
                                     lns_runtimes,
                                     lns_costs))
+        
+        # if (len(lns_runtimes) > 0):
+        #     print(lns_runtimes[0])
 
     if DO_NWCBS:
         print("NWCBS")
@@ -397,12 +399,11 @@ for i in range(args.trials):
                                     nwcbs_runtimes,
                                     nwcbs_ratios))
 
-        for i in range(1, len(nwcbs_ratios)):
-            if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
-                print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
-                sys.exit()
+        # for i in range(1, len(nwcbs_ratios)):
+        #     if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
+        #         print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
+        #         sys.exit()
             
-    
     # if len(acbs_runtimes) > 2 and len(nrwcbs_runtimes) > 2 and acbs_runt > 2.5* nrw_runt:
     #     print("acbs: " + str(acbs_runt))
     #     print("nrw: " + str(nrw_runt))
@@ -426,6 +427,7 @@ for i in range(args.trials):
     #                                args.timeout,
     #                                pr_bounds,
     #                                pr_runtimes))
+
 
 if DO_X:
     sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)

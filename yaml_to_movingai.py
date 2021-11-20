@@ -2,13 +2,13 @@
 import yaml
 
 def yaml_to_mvai(yaml_fname, map_fname, agents_fname):
-    data = yaml.load(open(yaml_fname))
+    data = yaml.load(open(yaml_fname), yaml.Loader)
 
     map = data["map"]
     mf = open(map_fname, "w")
     asci = [['.' for _ in range(map['dimensions'][1])] for _ in range(map['dimensions'][0])]
     for ob in map["obstacles"]:
-        asci[map['dimensions'][0] - 1 - ob[0]][ob[1]] = '@'
+        asci[ob[1]][ob[0]] = '@'
     mf.write("the first char has to be t\n")
     mf.write("height {}\n".format(map["dimensions"][0]))
     mf.write("width {}\n".format(map["dimensions"][1]))
@@ -26,5 +26,5 @@ def yaml_to_mvai(yaml_fname, map_fname, agents_fname):
         agf.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(0, map_fname, map["dimensions"][0], map["dimensions"][1], i["start"][0], i['start'][1], i['goal'][0], i['goal'][1], 1729))
 
 if __name__ == "__main__":
-    yamlfname = "./simple_testNamespaceagents30height100memory_limit16obs_density0.01timeout10trials30width100.yaml"
-    yaml_to_mvai(yamlfname, 0, 0)
+    yamlfname = "./parsetest.yaml"
+    yaml_to_mvai(yamlfname, "parsetest.map", "parsetest.agents")
