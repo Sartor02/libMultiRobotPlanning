@@ -298,11 +298,11 @@ lns_data_lst = []
 # acbs_list = []
 # xstar_list = []
 
-DO_X = 0
+DO_X = 1
 DO_NRWCBS = 1
-DO_CBS = 0
-DO_NWCBS = 0
-DO_LNS = 1
+DO_CBS = 1
+DO_NWCBS = 1
+DO_LNS = 0
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -364,7 +364,7 @@ for i in range(args.trials):
                                     args.timeout,
                                     nrwcbs_runtimes,
                                     nrwcbs_ratios))
-        print(nrwcbs_runtimes)
+        # print(nrwcbs_runtimes)
         # for i in range(1, len(nrwcbs_ratios)):
         #     if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
         #         print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
@@ -397,10 +397,10 @@ for i in range(args.trials):
                                     nwcbs_runtimes,
                                     nwcbs_ratios))
 
-        for i in range(1, len(nwcbs_ratios)):
-            if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
-                print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
-                sys.exit()
+        # for i in range(1, len(nwcbs_ratios)):
+        #     if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
+        #         print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
+        #         sys.exit()
             
     
     # if len(acbs_runtimes) > 2 and len(nrwcbs_runtimes) > 2 and acbs_runt > 2.5* nrw_runt:

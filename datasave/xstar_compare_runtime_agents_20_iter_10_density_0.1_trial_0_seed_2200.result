@@ -1,0 +1,96 @@
+Total time: 0.315798
+is_optimal: false
+optimality_bound: 1.00156
+successive_bounds: [1.00468, 1.00312, 1.00312, 1.00312, 1.00312, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156, 1.00156]
+successive_runtimes: [0.0056228, 0.00702682, 0.00849598, 0.0113966, 0.0160391, 0.0217029, 0.0269728, 0.0338225, 0.0397912, 0.044533, 0.0491473, 0.0540181, 0.0589818, 0.0640947, 0.0694399, 0.0745304, 0.0797694, 0.0857875, 0.0927508, 0.098948, 0.104985, 0.111073, 0.116856, 0.122276, 0.127978, 0.134981, 0.142148, 0.150419, 0.171519, 0.1866, 0.202867, 0.220291, 0.238384, 0.254593, 0.269357, 0.282049, 0.293904, 0.304909, 0.315798]
+num_agents: 20
+time_individual_plan: 0.004406
+time_first_plan: 0.000688907
+num_max_agents_in_window_first_iteration: 2
+num_recWAMPF: 39
+timing_recWAMPF:
+    total_RecWAMPF: 0.310858
+    num_windows: 205
+    num_max_agents_in_window: 2
+    timing_gari:
+        total_GARI: 0.305767
+        time_path_btw_starts: 0.000424687
+        Stage1:
+            total_Stage1:0.174594
+            time_add_x_to_o: 0.0561496
+            time_clear_x: 0.0113559
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.107074
+                num_values_f_less_fmax:39102
+                ASU Exp:
+                    total_ASUExp:0.107068
+                    time_top_o:0.0130501
+                    time_check_in_c:0.00767272
+                    time_add_parent:0.00407538
+                    num_neighbors:186464
+                    time_add_neighbors_to_o:0.0689375
+        Stage2:
+            total_Stage2:0.0086459
+            num_len_path:167
+            time_expanding_s:7.5418e-05
+            timing_AStarSearchUntil:
+                total_astar_search_until:0.00849335
+                num_values_f_less_fmax:695
+                ASU Exp:
+                    total_ASUExp:0.00848907
+                    time_top_o:0.000197769
+                    time_check_in_c:0.000135831
+                    time_add_parent:0.000204181
+                    num_neighbors:18094
+                    time_add_neighbors_to_o:0.00723483
+        Stage3:
+            total_Stage3:0.122063
+            num_until_goal_expanded:9193
+            timing_S3Exp:
+                total_S3Exp: 0.0532858
+                time_top_o: 0.00288127
+                time_check_in_c: 0.00170459
+                time_add_parent: 0.00328452
+                num_neighbors: 78198
+                time_add_neighbors_to_o: 0.031867
+    timing_PIOW_overlapping:
+        total_PIOW: 2.1169e-05
+        num_windows: 277
+        time_check_overlap: 1.18e-05
+        num_overlapping_windows: 0
+        time_merge_windows: 0
+        time_remove_window: 0
+        time_remove_window: 0
+        timing_PlanIn:
+            total_PlanIn:0
+            num_until_goal_expanded:0
+            timing_expansions:
+                total_S3Exp: 0
+                time_top_o: 0
+                time_check_in_c: 0
+                time_add_parent: 0
+                num_neighbors: 0
+                time_add_neighbors_to_o: 0
+    num_new_collisions: 3
+    timing_PIOW_new_collisions:
+        total_PIOW: 0.000483813
+        num_windows: 6
+        time_check_overlap: 3.87e-07
+        num_overlapping_windows: 0
+        time_merge_windows: 0
+        time_remove_window: 0
+        time_remove_window: 8.92e-07
+        timing_PlanIn:
+            total_PlanIn:0.000479253
+            num_until_goal_expanded:76
+            timing_expansions:
+                total_S3Exp: 0.000472946
+                time_top_o: 9.304e-06
+                time_check_in_c: 1.2921e-05
+                time_add_parent: 1.9131e-05
+                num_neighbors: 733
+                time_add_neighbors_to_o: 0.000331683
+    num_windows_should_quit: 1
+    time_should_quit: 8.707e-06
+    time_remove_window: 1.7e-07
+Complete!
