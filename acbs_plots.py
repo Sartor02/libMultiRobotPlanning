@@ -15,11 +15,12 @@ from shared_helpers import NWCBSData
 from shared_helpers import CBSData
 from shared_helpers import AFSData
 from shared_helpers import PRData
+from shared_helpers import LNSData
 
-PLOT_AGENTS_DENSITY = True
+PLOT_AGENTS_DENSITY = False
 PLOT_BOUNDS = False
 
-PLOT_SANDBOX = False
+PLOT_SANDBOX = True
 
 FileData = collections.namedtuple('FileData', ['filename',
                                                'agents',
@@ -166,6 +167,15 @@ nrwcbs_datas_density_05 = [x for lst in nrwcbs_datas_density_05 for x in lst]
 nrwcbs_agents_bounds_05 = [x.ratios for x in nrwcbs_datas_density_05 if x.num_agents == kBoundsAgentCount]
 nrwcbs_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in nrwcbs_datas_density_05]
 nrwcbs_agents_optimal_times_density_05 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nrwcbs_datas_density_05]
+
+lns_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/lns_supplemental_data_lst_*density0.05timeout{}*'.format(2))]
+lns_datas_density_05 = [x for lst in lns_datas_density_05 for x in lst]
+lns_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in lns_datas_density_05]
+
+nrwcbs2_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/nrwcbs_supplemental_data_lst_*density0.05timeout{}*'.format(2))]
+nrwcbs2_datas_density_05 = [x for lst in nrwcbs2_datas_density_05 for x in lst]
+nrwcbs2_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in nrwcbs2_datas_density_05]
+
 
 nwcbs_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/nwcbs_supplemental_data_lst_*density0.01timeout{}*'.format(kTimeout))]
 nwcbs_datas_density_01 = [x for lst in nwcbs_datas_density_01 for x in lst]
@@ -336,14 +346,14 @@ max_time = 2000
 
 if PLOT_AGENTS_DENSITY:
     # XSTAR AND ACBS FIRST SOLUTION
-    # ps.setupfig(thirdsize=True)
-    # draw_timeout_data(10, xstar_agents_first_times_density_01)
-    # plt_bw(xstar_agents_first_times_density_01, "X* Valid", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("xstar_acbs_first_times_density_01_bw")
+    ps.setupfig(thirdsize=True)
+    draw_timeout_data(10, xstar_agents_first_times_density_01)
+    plt_bw(xstar_agents_first_times_density_01, "X* Valid", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("xstar_acbs_first_times_density_01_bw")
 
     ps.setupfig(thirdsize=True)
     draw_timeout_data(10, xstar_agents_first_times_density_05)
@@ -354,25 +364,25 @@ if PLOT_AGENTS_DENSITY:
     plt.ylim(min_time, max_time)
     ps.save_fig("xstar_acbs_first_times_density_05_bw")
 
-    # ps.setupfig(thirdsize=True)
-    # draw_timeout_data(10, xstar_agents_first_times_density_1)
-    # plt_bw(xstar_agents_first_times_density_1, "X* Valid", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("xstar_acbs_first_times_density_1_bw")
+    ps.setupfig(thirdsize=True)
+    draw_timeout_data(10, xstar_agents_first_times_density_1)
+    plt_bw(xstar_agents_first_times_density_1, "X* Valid", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("xstar_acbs_first_times_density_1_bw")
 
 
     # XSTAR AND ACBS OPTIMAL
-    # ps.setupfig(thirdsize=True)
-    # draw_timeout_data(10, xstar_agents_optimal_times_density_01)
-    # plt_bw(xstar_agents_optimal_times_density_01, "X* Opt", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("xstar_acbs_optimal_times_density_01_bw")
+    ps.setupfig(thirdsize=True)
+    draw_timeout_data(10, xstar_agents_optimal_times_density_01)
+    plt_bw(xstar_agents_optimal_times_density_01, "X* Opt", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("xstar_acbs_optimal_times_density_01_bw")
 
     ps.setupfig(thirdsize=True)
     draw_timeout_data(10, xstar_agents_optimal_times_density_05)
@@ -384,23 +394,23 @@ if PLOT_AGENTS_DENSITY:
     ps.save_fig("xstar_acbs_optimal_times_density_05_bw")
 
     # ps.setupfig(thirdsize=True)
-    # draw_timeout_data(10, xstar_agents_optimal_times_density_1)
-    # plt_bw(xstar_agents_optimal_times_density_1, "X* Opt", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("xstar_acbs_optimal_times_density_1_bw")
+    draw_timeout_data(10, xstar_agents_optimal_times_density_1)
+    plt_bw(xstar_agents_optimal_times_density_1, "X* Opt", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("xstar_acbs_optimal_times_density_1_bw")
 
 
     # CBS AND ACBS FIRST SOLUTION
-    # ps.setupfig(thirdsize=True)
-    # plt_bw(cbs_agents_times_density_01, "CBS Valid/Opt.", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("cbs_acbs_first_times_density_01_bw")
+    ps.setupfig(thirdsize=True)
+    plt_bw(cbs_agents_times_density_01, "CBS Valid/Opt.", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("cbs_acbs_first_times_density_01_bw")
 
     ps.setupfig(thirdsize=True)
     plt_bw(cbs_agents_times_density_05, "CBS Valid/Opt.", 0, 4, False, 0)
@@ -410,23 +420,23 @@ if PLOT_AGENTS_DENSITY:
     plt.ylim(min_time, max_time)
     ps.save_fig("cbs_acbs_first_times_density_05_bw")
 
-    # ps.setupfig(thirdsize=True)
-    # plt_bw(cbs_agents_times_density_1, "CBS Valid/Opt.", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("cbs_acbs_first_times_density_1_bw")
+    ps.setupfig(thirdsize=True)
+    plt_bw(cbs_agents_times_density_1, "CBS Valid/Opt.", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("cbs_acbs_first_times_density_1_bw")
 
 
     # CBS AND ACBS OPTIMAL
-    # ps.setupfig(thirdsize=True)
-    # plt_bw(cbs_agents_times_density_01, "CBS Opt", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("cbs_acbs_optimal_times_density_01_bw")
+    ps.setupfig(thirdsize=True)
+    plt_bw(cbs_agents_times_density_01, "CBS Opt", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("cbs_acbs_optimal_times_density_01_bw")
 
     ps.setupfig(thirdsize=True)
     plt_bw(cbs_agents_times_density_05, "CBS Opt", 0, 4, False, 0)
@@ -436,13 +446,13 @@ if PLOT_AGENTS_DENSITY:
     plt.ylim(min_time, max_time)
     ps.save_fig("cbs_acbs_optimal_times_density_05_bw")
 
-    # ps.setupfig(thirdsize=True)
-    # plt_bw(cbs_agents_times_density_1, "CBS Opt", 0, 4, False, 0)
-    # plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt", 2, 4, False, 1)
-    # ps.grid()
-    # ps.legend('br')
-    # plt.ylim(min_time, max_time)
-    # ps.save_fig("cbs_acbs_optimal_times_density_1_bw")
+    ps.setupfig(thirdsize=True)
+    plt_bw(cbs_agents_times_density_1, "CBS Opt", 0, 4, False, 0)
+    plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("cbs_acbs_optimal_times_density_1_bw")
 
 if PLOT_BOUNDS:
     # SUBOPTIMALITY BOUNDS XSTAR
@@ -479,7 +489,15 @@ if PLOT_BOUNDS:
 
 if PLOT_SANDBOX:
     # SUBOPTIMALITY BOUNDS NWCBS
+    # ps.setupfig(thirdsize=True)
+    # plt_bounds(nwcbs_agents_bounds_01, True, "NWCBS", True)
+    # ps.grid()
+    # ps.save_fig("nwcbs_bounds_01")
+
     ps.setupfig(thirdsize=True)
-    plt_bounds(nwcbs_agents_bounds_01, True, "NWCBS", True)
+    plt_bw(lns_agents_first_times_density_05, "LNS Valid", 0, 4, False, 0)
+    plt_bw(nrwcbs2_agents_first_times_density_05, "ACBS Valid", 2, 4, False, 1)
     ps.grid()
-    ps.save_fig("nwcbs_bounds_01")
+    ps.legend('br')
+    plt.ylim(min_time, 10)
+    ps.save_fig("lns_acbs_first_times_density_05_bw")
