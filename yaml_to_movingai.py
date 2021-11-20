@@ -8,7 +8,7 @@ def yaml_to_mvai(yaml_fname, map_fname, agents_fname):
     mf = open(map_fname, "w")
     asci = [['.' for _ in range(map['dimensions'][1])] for _ in range(map['dimensions'][0])]
     for ob in map["obstacles"]:
-        asci[ob[0]][ob[1]] = '@'
+        asci[map['dimensions'][0] - 1 - ob[0]][ob[1]] = '@'
     mf.write("the first char has to be t\n")
     mf.write("height {}\n".format(map["dimensions"][0]))
     mf.write("width {}\n".format(map["dimensions"][1]))
