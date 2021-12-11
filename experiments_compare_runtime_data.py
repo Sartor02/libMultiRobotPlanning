@@ -174,10 +174,26 @@ def run_cbs(timeout):
     retcode = run_with_current_proc(cmd)
     if retcode != 0:
         print("CBS timeout")
-        return timeout
+        return timeout, -1, -1
     f = open("simple_test_cbs{}.result".format(args_to_string(args)))
-    runtime = [float(x.strip().replace("runtime:", "")) for x in f.readlines() if "runtime:" in x][0]
-    return runtime
+    lines = f.readlines()
+    runtime = [float(x.strip().replace("runtime:", "")) for x in lines if "runtime:" in x][0]
+    hlex = [float(x.strip().replace("highLevelExpanded:", "")) for x in lines if "highLevelExpanded:" in x][0]
+    llex = [float(x.strip().replace("lowLevelExpanded:", "")) for x in lines if "lowLevelExpanded:" in x][0]
+    return runtime, hlex, llex
+
+def run_dcbs(timeout):
+    cmd = "timeout {} release/dcbs -i {} -o simple_test_dcbs{}.result".format(timeout, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    if retcode != 0:
+        print("DCBS timeout")
+        return timeout, -1, -1
+    f = open("simple_test_dcbs{}.result".format(args_to_string(args)))
+    lines = f.readlines()
+    runtime = [float(x.strip().replace("runtime:", "")) for x in lines if "runtime:" in x][0]
+    hlex = [float(x.strip().replace("highLevelExpanded:", "")) for x in lines if "highLevelExpanded:" in x][0]
+    llex = [float(x.strip().replace("lowLevelExpanded:", "")) for x in lines if "lowLevelExpanded:" in x][0]
+    return runtime, hlex, llex
 
 def run_acbs(timeout):
     cmd = "timeout {} release/acbs -i {} -o simple_test_acbs{}.result".format(timeout, generic_map, args_to_string(args))
@@ -284,6 +300,7 @@ xstar_data_lst = []
 mstar_data_lst = []
 afs_data_lst = []
 cbs_data_lst = []
+dcbs_data_lst = []
 acbs_data_lst = []
 nrwcbs_data_lst = []
 nwcbs_data_lst = []
@@ -297,10 +314,11 @@ lns_data_lst = []
 # xstar_list = []
 
 DO_X = 0
-DO_NRWCBS = 1
-DO_CBS = 0
+DO_NRWCBS = 0
+DO_CBS = 1
 DO_NWCBS = 0
-DO_LNS = 1
+DO_LNS = 0
+DO_DCBS = 1
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -308,6 +326,9 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
+
+    if i == 0:
+        continue
 
     if DO_X:
         print("X*")
@@ -332,13 +353,31 @@ for i in range(args.trials):
     
     if DO_CBS:
         print("CBS")
-        cbs_runtime = run_cbs(args.timeout)
-        cbs_data_lst.append(sh.CBSData(args.obs_density,
+        cbs_runtime, chlex, cllex = run_cbs(args.timeout)
+        cbs_data_lst.append(sh.DCBSData(args.obs_density,
                                     args.width,
                                     args.height,
                                     args.agents,
                                     args.timeout,
-                                    cbs_runtime))
+                                    cbs_runtime,
+                                    chlex,
+                                    cllex))
+        print("{} {}".format(chlex, cllex))
+        print(cbs_runtime)
+
+    if DO_DCBS:
+        print("DCBS")
+        dcbs_runtime, dhlex, dllex = run_dcbs(args.timeout)
+        dcbs_data_lst.append(sh.DCBSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    dcbs_runtime,
+                                    dhlex,
+                                    dllex))
+        print("{} {}".format(dhlex, dllex))
+        print(dcbs_runtime)
 
     # print("ACBS")
     # acbs_runtimes, acbs_ratios = run_acbs(args.timeout)
@@ -434,8 +473,13 @@ if DO_X:
     xstar_data_lst = sh.read_from_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 if DO_CBS:
+    print(type(cbs_data_lst[0]))
     sh.save_to_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), cbs_data_lst)
     cbs_data_lst = sh.read_from_file("cbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
+if DO_DCBS:
+    sh.save_to_file("dcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), dcbs_data_lst)
+    dcbs_data_lst = sh.read_from_file("dcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 # sh.save_to_file("afs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), afs_data_lst)
 # sh.save_to_file("mstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), mstar_data_lst)
 # sh.save_to_file("pr_{}data_lst_{}".format(outfile_infix, args_to_string(args)), pr_data_lst)
