@@ -354,11 +354,14 @@ def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
 
 min_time = 1 / 200000
 max_time = 2000
-PLOT_AGENTS_DENSITY = 1
-PLOT_BOUNDS = 1
+PLOT_AGENTS_DENSITY = 0
+PLOT_BOUNDS = 0
 PLOT_SANDBOX = 1
 
 if PLOT_AGENTS_DENSITY:
+    # ALL FIRST SOLUTIONS
+
+
     # XSTAR AND ACBS FIRST SOLUTION
     ps.setupfig(quartersize=True)
     draw_timeout_data(kTimeout, xstar_agents_first_times_density_01)
@@ -571,10 +574,22 @@ if PLOT_SANDBOX:
     # ps.grid()
     # ps.save_fig("nwcbs_bounds_01")
 
-    ps.setupfig(quartersize=True)
-    plt_bw(lns_agents_first_times_density_05, "LNS Valid", 0, 4, False, 0)
-    plt_bw(nrwcbs2_agents_first_times_density_05, "ACBS Valid", 2, 4, False, 1)
+    # ps.setupfig(quartersize=True)
+    # plt_bw(lns_agents_first_times_density_05, "LNS Valid", 0, 4, False, 0)
+    # plt_bw(nrwcbs2_agents_first_times_density_05, "ACBS Valid", 2, 4, False, 1)
+    # ps.grid()
+    # ps.legend('br')
+    # plt.ylim(min_time, 10)
+    # ps.save_fig("lns_acbs_first_times_density_05_bw")
+
+    ps.setupfig(halfsize=True)
+    draw_timeout_data(kTimeout, xstar_agents_first_times_density_05)
+    plt_bw(nrwcbs_agents_first_times_density_05, "ACBS Valid", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_05, "NWCBS Valid", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(lns_agents_first_times_density_05, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_first_times_density_05, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_05, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
     ps.grid()
     ps.legend('br')
-    plt.ylim(min_time, 10)
-    ps.save_fig("lns_acbs_first_times_density_05_bw")
+    plt.ylim(min_time, max_time)
+    ps.save_fig("all_first_times_density_05_bw")
