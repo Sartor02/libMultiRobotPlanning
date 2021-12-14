@@ -16,6 +16,7 @@ from shared_helpers import CBSData
 from shared_helpers import AFSData
 from shared_helpers import PRData
 from shared_helpers import LNSData
+from shared_helpers import DCBSData
 
 
 
@@ -238,6 +239,21 @@ nwcbs_agents_bounds_1 = [x.ratios for x in nwcbs_datas_density_1 if x.num_agents
 nwcbs_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in nwcbs_datas_density_1]
 nwcbs_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nwcbs_datas_density_1]
 
+# print(glob.glob('datasave/cbs_supplemental_data_lst_*density0.1timeout{}*'.format(10)))
+fp_data_c1 = [read_from_file(f) for f in glob.glob('datasave/cbs_supplemental_data_lst_*density0.01timeout{}*'.format(10))]
+fp_data_c1 = [x for lst in fp_data_c1 for x in lst]
+fp_data_c1 = [x for x in fp_data_c1 if int(x.num_agents) <= 40]
+fp_cbs_times = [(x.num_agents, x.runtimes) for x in fp_data_c1]
+fp_cbs_lln = [(x.num_agents, x.llnex) for x in fp_data_c1]
+fp_cbs_hlln = [(x.num_agents, x.llnex / x.hlnex) for x in fp_data_c1]
+
+fp_data_d1 = [read_from_file(f) for f in glob.glob('datasave/dcbs_supplemental_data_lst_*density0.01timeout{}*'.format(10))]
+fp_data_d1 = [x for lst in fp_data_d1 for x in lst]
+fp_data_d1 = [x for x in fp_data_d1 if int(x.num_agents) <= 40]
+fp_dcbs_times = [(x.num_agents, x.runtimes) for x in fp_data_d1]
+fp_dcbs_lln = [(x.num_agents, x.llnex) for x in fp_data_d1]
+fp_dcbs_hlln = [(x.num_agents, x.llnex / x.hlnex) for x in fp_data_d1]
+
 kRadiusTimeout = 300
 
 def draw_timeout(timeout, xs, plt=plt):
@@ -356,7 +372,18 @@ min_time = 1 / 200000
 max_time = 2000
 PLOT_AGENTS_DENSITY = 0
 PLOT_BOUNDS = 0
-PLOT_SANDBOX = 1
+PLOT_SANDBOX = 0
+PLOT_DCBS = 0
+
+if PLOT_DCBS:
+    ps.setupfig(quartersize=True)
+    draw_timeout_data(10, xstar_agents_first_times_density_01)
+    plt_bw(fp_cbs_times, "CBS", 0, 4, False, 0)
+    plt_bw(fp_dcbs_times, "LRCBS", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("lrcbs_times")
 
 if PLOT_AGENTS_DENSITY:
     # ALL FIRST SOLUTIONS
