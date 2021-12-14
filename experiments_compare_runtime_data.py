@@ -236,7 +236,6 @@ def run_lns(timeout):
     yaml2mvai.yaml_to_mvai(generic_map, lns_map, lns_agents)
     cmd = "release/lns -m {} -a {} -o temp.csv -k {} -t {} -s 1".format(lns_map, lns_agents, args.agents, timeout)
     data = run_and_get_output(cmd)
-    # print(data[:100])
     df = pd.read_csv(io.StringIO(data))
     # print(df.head())
     runtimes = list(df['Runtime'])
@@ -323,11 +322,21 @@ DO_DCBS = 0
 LNS_ACBS_BOUNDS = 0
 
 for i in range(args.trials):
+    # if i == 16:
+    #     sys.exit()
+    # i = 15
     print("Trial {}:==============================================".format(i))
     seed = (i + args.width) * args.agents
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
+
+    if i == 15 and args.agents == 20:
+        continue
+    
+    if i == 9 and args.agents == 60:
+        continue 
+    
 
     if DO_X:
         print("X*")
@@ -391,7 +400,7 @@ for i in range(args.trials):
     #     acbs_runt = acbs_runtimes[-2]
 
     if LNS_ACBS_BOUNDS:
-        print('ACBS')
+        print('NRWCBS')
         nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
         nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
                                     args.width,
@@ -431,8 +440,10 @@ for i in range(args.trials):
                                     args.timeout,
                                     nrwcbs_runtimes,
                                     nrwcbs_ratios))
-        if (len(nrwcbs_runtimes) > 0):
+        if (len(nrwcbs_runtimes) > 1):
             print(nrwcbs_runtimes[-2])
+        else:
+            print(nrwcbs_runtimes)
         # for i in range(1, len(nrwcbs_ratios)):
         #     if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
         #         print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
