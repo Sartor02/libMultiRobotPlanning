@@ -176,6 +176,14 @@ lns_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/lns_suppl
 lns_datas_density_05 = [x for lst in lns_datas_density_05 for x in lst]
 lns_agents_first_times_density_05 = [(x.num_agents, x.runtimes[0]) for x in lns_datas_density_05]
 
+lns_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/lns_supplemental_data_lst_*density0.1timeout{}*'.format(2))]
+lns_datas_density_1 = [x for lst in lns_datas_density_1 for x in lst]
+lns_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in lns_datas_density_1]
+
+lns_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/lns_supplemental_data_lst_*density0.01timeout{}*'.format(2))]
+lns_datas_density_01 = [x for lst in lns_datas_density_01 for x in lst]
+lns_agents_first_times_density_01 = [(x.num_agents, x.runtimes[0]) for x in lns_datas_density_01]
+
 # For Comparing against LNS
 nrwcbs2_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/nrwcbs_supplemental_data_lst_*density0.05timeout{}*'.format(2))]
 nrwcbs2_datas_density_05 = [x for lst in nrwcbs2_datas_density_05 for x in lst]
@@ -238,21 +246,6 @@ nwcbs_datas_density_1 = [x for lst in nwcbs_datas_density_1 for x in lst]
 nwcbs_agents_bounds_1 = [x.ratios for x in nwcbs_datas_density_1 if x.num_agents == kBoundsAgentCount]
 nwcbs_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in nwcbs_datas_density_1]
 nwcbs_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nwcbs_datas_density_1]
-
-# print(glob.glob('datasave/cbs_supplemental_data_lst_*density0.1timeout{}*'.format(10)))
-fp_data_c1 = [read_from_file(f) for f in glob.glob('datasave/cbs_supplemental_data_lst_*density0.01timeout{}*'.format(10))]
-fp_data_c1 = [x for lst in fp_data_c1 for x in lst]
-fp_data_c1 = [x for x in fp_data_c1 if int(x.num_agents) <= 40]
-fp_cbs_times = [(x.num_agents, x.runtimes) for x in fp_data_c1]
-fp_cbs_lln = [(x.num_agents, x.llnex) for x in fp_data_c1]
-fp_cbs_hlln = [(x.num_agents, x.llnex / x.hlnex) for x in fp_data_c1]
-
-fp_data_d1 = [read_from_file(f) for f in glob.glob('datasave/dcbs_supplemental_data_lst_*density0.01timeout{}*'.format(10))]
-fp_data_d1 = [x for lst in fp_data_d1 for x in lst]
-fp_data_d1 = [x for x in fp_data_d1 if int(x.num_agents) <= 40]
-fp_dcbs_times = [(x.num_agents, x.runtimes) for x in fp_data_d1]
-fp_dcbs_lln = [(x.num_agents, x.llnex) for x in fp_data_d1]
-fp_dcbs_hlln = [(x.num_agents, x.llnex / x.hlnex) for x in fp_data_d1]
 
 kRadiusTimeout = 300
 
@@ -372,18 +365,7 @@ min_time = 1 / 200000
 max_time = 2000
 PLOT_AGENTS_DENSITY = 0
 PLOT_BOUNDS = 0
-PLOT_SANDBOX = 0
-PLOT_DCBS = 0
-
-if PLOT_DCBS:
-    ps.setupfig(quartersize=True)
-    draw_timeout_data(10, xstar_agents_first_times_density_01)
-    plt_bw(fp_cbs_times, "CBS", 0, 4, False, 0)
-    plt_bw(fp_dcbs_times, "LRCBS", 2, 4, False, 1)
-    ps.grid()
-    ps.legend('br')
-    plt.ylim(min_time, max_time)
-    ps.save_fig("lrcbs_times")
+PLOT_SANDBOX = 1
 
 if PLOT_AGENTS_DENSITY:
     # ALL FIRST SOLUTIONS
@@ -610,13 +592,25 @@ if PLOT_SANDBOX:
     # ps.save_fig("lns_acbs_first_times_density_05_bw")
 
     ps.setupfig(halfsize=True)
-    draw_timeout_data(kTimeout, xstar_agents_first_times_density_05)
-    plt_bw(nrwcbs_agents_first_times_density_05, "ACBS Valid", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_first_times_density_05, "NWCBS Valid", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(lns_agents_first_times_density_05, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(xstar_agents_first_times_density_05, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(cbs_agents_times_density_05, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
+    draw_timeout_data(kTimeout, xstar_agents_first_times_density_01)
+    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_01, "NWCBS Valid", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(lns_agents_first_times_density_01, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_first_times_density_01, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_01, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
     ps.grid()
     ps.legend('br')
     plt.ylim(min_time, max_time)
-    ps.save_fig("all_first_times_density_05_bw")
+    ps.save_fig("all_first_times_density_01_bw")
+
+    ps.setupfig(halfsize=True)
+    draw_timeout_data(kTimeout, xstar_agents_first_times_density_1)
+    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_1, "NWCBS Valid", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(lns_agents_first_times_density_1, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_first_times_density_1, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_1, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("all_first_times_density_1_bw")
