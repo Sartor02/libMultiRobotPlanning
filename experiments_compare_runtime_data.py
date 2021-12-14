@@ -315,10 +315,12 @@ lns_data_lst = []
 
 DO_X = 0
 DO_NRWCBS = 0
-DO_CBS = 1
+DO_CBS = 0
 DO_NWCBS = 0
-DO_LNS = 0
-DO_DCBS = 1
+DO_LNS = 1
+DO_DCBS = 0
+
+LNS_ACBS_BOUNDS = 0
 
 for i in range(args.trials):
     print("Trial {}:==============================================".format(i))
@@ -326,9 +328,6 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
-
-    if i == 0:
-        continue
 
     if DO_X:
         print("X*")
@@ -391,6 +390,37 @@ for i in range(args.trials):
     # if len(acbs_runtimes) > 2:
     #     acbs_runt = acbs_runtimes[-2]
 
+    if LNS_ACBS_BOUNDS:
+        print('ACBS')
+        nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
+        nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    nrwcbs_runtimes,
+                                    nrwcbs_ratios))
+        if (len(nrwcbs_runtimes) > 0):
+            print(nrwcbs_runtimes[0])
+        
+        try:
+            print(nrwcbs_runtimes[-2])
+            lns_timeout = nrwcbs_runtimes[-2]
+        except:
+            lns_timeout = args.timeout
+        print("LNS")
+        lns_runtimes, lns_costs = run_lns(lns_timeout)
+        lns_data_lst.append(sh.LNSData(args.obs_density,
+                                    args.width,
+                                    args.height,
+                                    args.agents,
+                                    args.timeout,
+                                    lns_runtimes,
+                                    lns_costs))
+        
+        if (len(lns_runtimes) > 0):
+            print(lns_runtimes[0])
+
     if DO_NRWCBS:
         print("NRWCBS")
         nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
@@ -402,7 +432,7 @@ for i in range(args.trials):
                                     nrwcbs_runtimes,
                                     nrwcbs_ratios))
         if (len(nrwcbs_runtimes) > 0):
-            print(nrwcbs_runtimes[0])
+            print(nrwcbs_runtimes[-2])
         # for i in range(1, len(nrwcbs_ratios)):
         #     if nrwcbs_ratios[i] > nrwcbs_ratios[i-1]:
         #         print("{}, {}".format(nrwcbs_ratios[i-1], nrwcbs_ratios[i]))
@@ -492,6 +522,12 @@ if DO_NRWCBS:
     sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
     nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 if DO_LNS:
+    sh.save_to_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
+    lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
+if LNS_ACBS_BOUNDS:
+    sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
+    nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
     sh.save_to_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
     lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
