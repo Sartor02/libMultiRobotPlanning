@@ -220,6 +220,7 @@ def run_nrwcbs(timeout):
     df = pd.read_csv("simple_test_nrwcbs{}.result".format(args_to_string(args)))
     runtimes = list(df['Runtime'])    
     ratios = list(df['Ratio'])
+    costs = list(df['Cost'])
     
     if len(runtimes) == 0:
         print('NRWCBS no first solution')
@@ -230,7 +231,7 @@ def run_nrwcbs(timeout):
         ratios.append(-1)
     if retcode != 0:
         print('NRWCBS timeout')
-    return runtimes, ratios
+    return runtimes, ratios, costs
 
 def run_lns(timeout):
     yaml2mvai.yaml_to_mvai(generic_map, lns_map, lns_agents)
@@ -316,10 +317,10 @@ DO_X = 0
 DO_NRWCBS = 0
 DO_CBS = 0
 DO_NWCBS = 0
-DO_LNS = 1
+DO_LNS = 0
 DO_DCBS = 0
 
-LNS_ACBS_BOUNDS = 0
+LNS_ACBS_BOUNDS = 1
 
 for i in range(args.trials):
     # if i == 16:
@@ -330,6 +331,9 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
+
+    if i == 4:
+        continue
 
     if i == 15 and args.agents == 20:
         continue
@@ -401,14 +405,15 @@ for i in range(args.trials):
 
     if LNS_ACBS_BOUNDS:
         print('NRWCBS')
-        nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
+        nrwcbs_runtimes, nrwcbs_ratios, nrwcbs_costs = run_nrwcbs(args.timeout)
         nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
                                     args.width,
                                     args.height,
                                     args.agents,
                                     args.timeout,
                                     nrwcbs_runtimes,
-                                    nrwcbs_ratios))
+                                    nrwcbs_ratios,
+                                    nrwcbs_costs))
         if (len(nrwcbs_runtimes) > 0):
             print(nrwcbs_runtimes[0])
         
@@ -432,14 +437,15 @@ for i in range(args.trials):
 
     if DO_NRWCBS:
         print("NRWCBS")
-        nrwcbs_runtimes, nrwcbs_ratios = run_nrwcbs(args.timeout)
+        nrwcbs_runtimes, nrwcbs_ratios, nrwcbs_costs = run_nrwcbs(args.timeout)
         nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
                                     args.width,
                                     args.height,
                                     args.agents,
                                     args.timeout,
                                     nrwcbs_runtimes,
-                                    nrwcbs_ratios))
+                                    nrwcbs_ratios,
+                                    nrwcbs_costs))
         if (len(nrwcbs_runtimes) > 1):
             print(nrwcbs_runtimes[-2])
         else:
