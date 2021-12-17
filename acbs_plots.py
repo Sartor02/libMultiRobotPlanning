@@ -17,6 +17,7 @@ from shared_helpers import AFSData
 from shared_helpers import PRData
 from shared_helpers import LNSData
 from shared_helpers import DCBSData
+from shared_helpers import CostsNRWCBSData
 
 
 
@@ -247,6 +248,16 @@ nwcbs_agents_bounds_1 = [x.ratios for x in nwcbs_datas_density_1 if x.num_agents
 nwcbs_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in nwcbs_datas_density_1]
 nwcbs_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nwcbs_datas_density_1]
 
+lns_costs_05 = read_from_file("datasave/lns_bounds.datasave")
+nrwcbs_costs_05 = read_from_file("datasave/nrwcbs_bounds.datasave")
+
+nrwcbs_costs_05 = [[[inst.runtimes], [inst.costs]] for inst in nrwcbs_costs_05]
+lns_costs_05 = [[[inst.runtimes], [inst.costs]] for inst in lns_costs_05]
+
+# [each instance [[runtimes (x)], [cost/optimal (y)]]]
+
+print(lns_costs_05)
+
 kRadiusTimeout = 300
 
 def draw_timeout(timeout, xs, plt=plt):
@@ -296,6 +307,12 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
         plt.ylabel("Time (seconds)")
     plt.xlabel("Number of agents")
     plt.xticks([e + 1 for e in range(len(xs))], xs)
+
+def plt_costs(lns_runtimes, lns_costs, acbs_runtimes, acbs_costs):
+    plt.plot(lns_runtimes, lns_costs)
+    plt.plot(acbs_runtimes, acbs_costs)
+    plt.xscale('log')
+
 
 def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
     num_iters = 85
@@ -365,7 +382,13 @@ min_time = 1 / 200000
 max_time = 2000
 PLOT_AGENTS_DENSITY = 0
 PLOT_BOUNDS = 0
-PLOT_SANDBOX = 1
+PLOT_SANDBOX = 0
+PLOT_COSTS = 1
+
+if PLOT_COSTS:
+    ps.setupfig(halfsize = True)
+    plt_costs(lns_costs_05[0][0], lns_costs_05[0][1], nrwcbs_costs_05[0][0], nrwcbs_costs_05[0][1])
+    ps.save_fig("costs_test")
 
 if PLOT_AGENTS_DENSITY:
     # ALL FIRST SOLUTIONS
@@ -544,37 +567,41 @@ if PLOT_AGENTS_DENSITY:
     ps.save_fig("nwcbs_acbs_first_times_density_1_bw")
 
 if PLOT_BOUNDS:
+  pass
     # SUBOPTIMALITY BOUNDS XSTAR
-    ps.setupfig(quartersize=True)
-    plt_bounds(xstar_agents_bounds_01, True, "X*")
-    ps.grid()
-    ps.save_fig("xstar_bounds_01")
+    # ps.setupfig(quartersize=True)
+    # plt_bounds(xstar_agents_bounds_01, True, "X*")
+    # ps.grid()
+    # ps.save_fig("xstar_bounds_01")
 
-    ps.setupfig(quartersize=True)
-    plt_bounds(xstar_agents_bounds_05, False, "X*")
-    ps.grid()
-    ps.save_fig("xstar_bounds_05")
+    # ps.setupfig(quartersize=True)
+    # plt_bounds(xstar_agents_bounds_05, False, "X*")
+    # ps.grid()
+    # ps.save_fig("xstar_bounds_05")
 
-    ps.setupfig(quartersize=True)
-    plt_bounds(xstar_agents_bounds_1, False, "X*")
-    ps.grid()
-    ps.save_fig("xstar_bounds_1")
+    # ps.setupfig(quartersize=True)
+    # plt_bounds(xstar_agents_bounds_1, False, "X*")
+    # ps.grid()
+    # ps.save_fig("xstar_bounds_1")
 
     # SUBOPTIMALITY BOUNDS ACBS
-    ps.setupfig(quartersize=True)
-    plt_bounds(nrwcbs_agents_bounds_01, True, "ACBS", True)
-    ps.grid()
-    ps.save_fig("acbs_bounds_01")
+    # ps.setupfig(quartersize=True)
+    # plt_bounds(nrwcbs_agents_bounds_01, True, "ACBS", True)
+    # ps.grid()
+    # ps.save_fig("acbs_bounds_01")
 
-    ps.setupfig(quartersize=True)
-    plt_bounds(nrwcbs_agents_bounds_05, False, "ACBS", True)
-    ps.grid()
-    ps.save_fig("acbs_bounds_05")
+    # ps.setupfig(quartersize=True)
+    # plt_bounds(nrwcbs_agents_bounds_05, False, "ACBS", True)
+    # ps.grid()
+    # ps.save_fig("acbs_bounds_05")
 
-    ps.setupfig(quartersize=True)
-    plt_bounds(nrwcbs_agents_bounds_1, False, "ACBS", True)
-    ps.grid()
-    ps.save_fig("acbs_bounds_1")
+    # ps.setupfig(quartersize=True)
+    # plt_bounds(nrwcbs_agents_bounds_1, False, "ACBS", True)
+    # ps.grid()
+    # ps.save_fig("acbs_bounds_1")
+
+
+
 
 if PLOT_SANDBOX:
     # SUBOPTIMALITY BOUNDS NWCBS

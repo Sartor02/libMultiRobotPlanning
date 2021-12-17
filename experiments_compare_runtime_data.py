@@ -406,7 +406,7 @@ for i in range(args.trials):
     if LNS_ACBS_BOUNDS:
         print('NRWCBS')
         nrwcbs_runtimes, nrwcbs_ratios, nrwcbs_costs = run_nrwcbs(args.timeout)
-        nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
+        nrwcbs_data_lst.append(sh.CostsNRWCBSData(args.obs_density,
                                     args.width,
                                     args.height,
                                     args.agents,
@@ -438,7 +438,7 @@ for i in range(args.trials):
     if DO_NRWCBS:
         print("NRWCBS")
         nrwcbs_runtimes, nrwcbs_ratios, nrwcbs_costs = run_nrwcbs(args.timeout)
-        nrwcbs_data_lst.append(sh.ACBSData(args.obs_density,
+        nrwcbs_data_lst.append(sh.CostsNRWCBSData(args.obs_density,
                                     args.width,
                                     args.height,
                                     args.agents,
