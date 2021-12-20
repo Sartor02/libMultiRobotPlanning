@@ -251,12 +251,26 @@ nwcbs_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1] if x.runti
 lns_costs_05 = read_from_file("datasave/lns_bounds.datasave")
 nrwcbs_costs_05 = read_from_file("datasave/nrwcbs_bounds.datasave")
 
-nrwcbs_costs_05 = [[[inst.runtimes], [inst.costs]] for inst in nrwcbs_costs_05]
-lns_costs_05 = [[[inst.runtimes], [inst.costs]] for inst in lns_costs_05]
+nrwcbs_costs_05_t = [[inst.runtimes, inst.costs] for inst in nrwcbs_costs_05]
+lns_costs_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
 
-# [each instance [[runtimes (x)], [cost/optimal (y)]]]
+nrwcbs_costs_05 = []
+lns_costs_05 = []
 
-print(lns_costs_05)
+print(nrwcbs_costs_05_t)
+
+for i in range(len(lns_costs_05_t)):
+    if nrwcbs_costs_05_t[i][1][-1] == -1:
+        print('hi')
+        nrwcbs_costs_05.append([nrwcbs_costs_05_t[i][0][:-1], nrwcbs_costs_05_t[i][1][:-1]])
+        lns_costs_05.append(lns_costs_05_t[i])
+
+for i in range(len(lns_costs_05)):
+    opt_cost = nrwcbs_costs_05[i][1][-1]
+    for j in range(len(lns_costs_05[i][1])):
+        lns_costs_05[i][1][j] /= opt_cost
+    for j in range(len(nrwcbs_costs_05[i][1])):
+        nrwcbs_costs_05[i][1][j] /= opt_cost
 
 kRadiusTimeout = 300
 
@@ -308,10 +322,25 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
     plt.xlabel("Number of agents")
     plt.xticks([e + 1 for e in range(len(xs))], xs)
 
-def plt_costs(lns_runtimes, lns_costs, acbs_runtimes, acbs_costs):
-    plt.plot(lns_runtimes, lns_costs)
-    plt.plot(acbs_runtimes, acbs_costs)
+def plt_costs(lns, nrwcbs):
+    size = 1
+    for i in range(7):
+        color = ps.color(0, 4)
+        colort = ps.alpha(color, 0.4)
+        plt.plot(lns[i][0], lns[i][1], markersize=size, c=colort, marker='o')
+        color = ps.color(2, 4)
+        colort = ps.alpha(color, 0.4)
+        plt.plot(nrwcbs[i][0], nrwcbs[i][1], markersize=size, c=colort, marker='o')
+    for i in range(9, 19):
+        color = ps.color(0, 4)
+        colort = ps.alpha(color, 0.4)
+        plt.plot(lns[i][0], lns[i][1], markersize=size, c=colort, marker='o')
+        color = ps.color(2, 4)
+        colort = ps.alpha(color, 0.4)
+        plt.plot(nrwcbs[i][0], nrwcbs[i][1], markersize=size, c=colort, marker='o')
     plt.xscale('log')
+    plt.plot()
+    
 
 
 def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
@@ -387,7 +416,7 @@ PLOT_COSTS = 1
 
 if PLOT_COSTS:
     ps.setupfig(halfsize = True)
-    plt_costs(lns_costs_05[0][0], lns_costs_05[0][1], nrwcbs_costs_05[0][0], nrwcbs_costs_05[0][1])
+    plt_costs(lns_costs_05, nrwcbs_costs_05)
     ps.save_fig("costs_test")
 
 if PLOT_AGENTS_DENSITY:
