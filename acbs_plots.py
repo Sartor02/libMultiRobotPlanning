@@ -256,8 +256,6 @@ lns_costs_05 = [[[inst.runtimes], [inst.costs]] for inst in lns_costs_05]
 
 # [each instance [[runtimes (x)], [cost/optimal (y)]]]
 
-print(lns_costs_05)
-
 kRadiusTimeout = 300
 
 def draw_timeout(timeout, xs, plt=plt):
