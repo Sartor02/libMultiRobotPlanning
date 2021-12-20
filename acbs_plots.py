@@ -248,6 +248,15 @@ nwcbs_agents_bounds_1 = [x.ratios for x in nwcbs_datas_density_1 if x.num_agents
 nwcbs_agents_first_times_density_1 = [(x.num_agents, x.runtimes[0]) for x in nwcbs_datas_density_1]
 nwcbs_agents_optimal_times_density_1 = [(x.num_agents, x.runtimes[-1] if x.runtimes[-1] != -1 else x.runtimes[-2]) for x in nwcbs_datas_density_1]
 
+cbs2_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/cbs_supplemental_data_lst_*density0.05timeout10*'.format(kTimeout))]
+cbs2_datas_density_05 = [x for lst in cbs2_datas_density_05 for x in lst]
+cbs2_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in cbs2_datas_density_05]
+
+bpcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/bpcbs_supplemental_data_lst_*density0.05timeout10*'.format(kTimeout))]
+bpcbs_datas_density_05 = [x for lst in bpcbs_datas_density_05 for x in lst]
+bpcbs_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in bpcbs_datas_density_05]
+
+
 lns_costs_05 = read_from_file("datasave/lns_bounds.datasave")
 nrwcbs_costs_05 = read_from_file("datasave/nrwcbs_bounds.datasave")
 
@@ -412,7 +421,20 @@ max_time = 2000
 PLOT_AGENTS_DENSITY = 0
 PLOT_BOUNDS = 0
 PLOT_SANDBOX = 0
-PLOT_COSTS = 1
+PLOT_COSTS = 0
+PLOT_BPCBS = 1
+
+if PLOT_BPCBS:
+    min_time = 1 / 20000
+    max_time = 20
+    ps.setupfig(quartersize=True)
+    draw_timeout_data(10, cbs_agents_times_density_01)
+    plt_bw(cbs_agents_times_density_01, "CBS", 0, 4, False, 0)
+    plt_bw(bpcbs_agents_times_density_01, "BP-CBS", 2, 4, False, 1)
+    ps.grid()
+    ps.legend('br')
+    plt.ylim(min_time, max_time)
+    ps.save_fig("cbs_bpcbs_times_density_05_bw")
 
 if PLOT_COSTS:
     ps.setupfig(halfsize = True)
