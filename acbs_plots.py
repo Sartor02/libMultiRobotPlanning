@@ -428,9 +428,9 @@ if PLOT_BPCBS:
     min_time = 1 / 20000
     max_time = 20
     ps.setupfig(quartersize=True)
-    draw_timeout_data(10, cbs_agents_times_density_01)
-    plt_bw(cbs_agents_times_density_01, "CBS", 0, 4, False, 0)
-    plt_bw(bpcbs_agents_times_density_01, "BP-CBS", 2, 4, False, 1)
+    draw_timeout_data(10, cbs2_agents_times_density_05)
+    plt_bw(cbs2_agents_times_density_05, "CBS", 0, 4, False, 0)
+    plt_bw(bpcbs_agents_times_density_05, "BP-CBS", 2, 4, False, 1)
     ps.grid()
     ps.legend('br')
     plt.ylim(min_time, max_time)
