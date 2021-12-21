@@ -145,6 +145,7 @@ def run_xstar(timeout, iteration):
         ls = f.readlines()
         bounds = get_line(ls, "successive_bounds", eval)
         times = get_line(ls, "successive_runtimes", eval)
+        print(times)
         return (bounds, times)
     except:
         return ([0], [args.timeout])
@@ -175,7 +176,10 @@ def run_cbs(timeout):
     if retcode != 0:
         print("CBS timeout")
         return timeout, -1, -1
-    f = open("simple_test_cbs{}.result".format(args_to_string(args)))
+    try:
+        f = open("simple_test_cbs{}.result".format(args_to_string(args)))
+    except:
+        return timeout, -1, -1
     lines = f.readlines()
     runtime = [float(x.strip().replace("runtime:", "")) for x in lines if "runtime:" in x][0]
     hlex = [float(x.strip().replace("highLevelExpanded:", "")) for x in lines if "highLevelExpanded:" in x][0]
@@ -221,10 +225,10 @@ def run_nrwcbs(timeout):
     runtimes = list(df['Runtime'])    
     ratios = list(df['Ratio'])
     costs = list(df['Cost'])
-    
+    print(costs)
     if len(runtimes) == 0:
         print('NRWCBS no first solution')
-        return [timeout], [-1]
+        return [timeout], [-1], [-1]
     if runtimes[-1] != -1:
         print('NRWCBS no optimal')
         runtimes.append(timeout)
@@ -237,7 +241,10 @@ def run_lns(timeout):
     yaml2mvai.yaml_to_mvai(generic_map, lns_map, lns_agents)
     cmd = "release/lns -m {} -a {} -o temp.csv -k {} -t {} -s 1".format(lns_map, lns_agents, args.agents, timeout)
     data = run_and_get_output(cmd)
-    df = pd.read_csv(io.StringIO(data))
+    try:
+        df = pd.read_csv(io.StringIO(data))
+    except:
+        return [timeout], [-1]
     # print(df.head())
     runtimes = list(df['Runtime'])
     costs = list(df['Cost'])
@@ -325,12 +332,14 @@ LNS_ACBS_BOUNDS = 1
 for i in range(args.trials):
     # if i == 16:
     #     sys.exit()
-    # i = 15
     print("Trial {}:==============================================".format(i))
     seed = (i + args.width) * args.agents
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
+
+    if args.agents == 50 and i == 15:
+        continue
 
     if DO_X:
         print("X*")

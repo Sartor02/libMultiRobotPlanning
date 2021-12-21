@@ -256,9 +256,11 @@ bpcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/bpcbs_s
 bpcbs_datas_density_05 = [x for lst in bpcbs_datas_density_05 for x in lst]
 bpcbs_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in bpcbs_datas_density_05]
 
+lns_bounds_filename = "datasave/bounds_lns_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.01timeout10trials10width100.datasave"
+nrwcbs_bounds_filename = "datasave/bounds_nrwcbs_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.01timeout10trials10width100.datasave"
 
-lns_costs_05 = read_from_file("datasave/lns_bounds.datasave")
-nrwcbs_costs_05 = read_from_file("datasave/nrwcbs_bounds.datasave")
+lns_costs_05 = read_from_file(lns_bounds_filename)
+nrwcbs_costs_05 = read_from_file(nrwcbs_bounds_filename)
 
 nrwcbs_costs_05_t = [[inst.runtimes, inst.costs] for inst in nrwcbs_costs_05]
 lns_costs_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
@@ -266,14 +268,16 @@ lns_costs_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
 nrwcbs_suboptimality_05_t = [[inst.runtimes, inst.ratios] for inst in nrwcbs_costs_05]
 lns_suboptimality_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
 
-nrwcbs_costs_05 = []
-lns_costs_05 = []
+# nrwcbs_costs_05 = []
+# lns_costs_05 = []
 
 nrwcbs_suboptimality_05 = []
 lns_suboptimality_05 = []
 
 # for suboptimality bounds
 for i in range(len(lns_suboptimality_05_t)):
+    if (len(nrwcbs_costs_05_t[i][0]) < 2):
+        continue
     denominator = nrwcbs_costs_05_t[i][1][0] / nrwcbs_suboptimality_05_t[i][1][0]
     nrwcbs_suboptimality_05.append([nrwcbs_suboptimality_05_t[i][0][:-1], nrwcbs_suboptimality_05_t[i][1][:-1]])
     suboptimality_bounds = []
@@ -281,17 +285,17 @@ for i in range(len(lns_suboptimality_05_t)):
         suboptimality_bounds.append(cost / denominator) 
     lns_suboptimality_05.append([lns_suboptimality_05_t[i][0], suboptimality_bounds])
 
-for i in range(len(lns_costs_05_t)):
-    if nrwcbs_costs_05_t[i][1][-1] == -1:
-        nrwcbs_costs_05.append([nrwcbs_costs_05_t[i][0][:-1], nrwcbs_costs_05_t[i][1][:-1]])
-        lns_costs_05.append(lns_costs_05_t[i])
+# for i in range(len(lns_costs_05_t)):
+#     if nrwcbs_costs_05_t[i][1][-1] == -1:
+#         nrwcbs_costs_05.append([nrwcbs_costs_05_t[i][0][:-1], nrwcbs_costs_05_t[i][1][:-1]])
+#         lns_costs_05.append(lns_costs_05_t[i])
 
-for i in range(len(lns_costs_05)):
-    opt_cost = nrwcbs_costs_05[i][1][-1]
-    for j in range(len(lns_costs_05[i][1])):
-        lns_costs_05[i][1][j] /= opt_cost
-    for j in range(len(nrwcbs_costs_05[i][1])):
-        nrwcbs_costs_05[i][1][j] /= opt_cost
+# for i in range(len(lns_costs_05)):
+#     opt_cost = nrwcbs_costs_05[i][1][-1]
+#     for j in range(len(lns_costs_05[i][1])):
+#         lns_costs_05[i][1][j] /= opt_cost
+#     for j in range(len(nrwcbs_costs_05[i][1])):
+#         nrwcbs_costs_05[i][1][j] /= opt_cost
 
 kRadiusTimeout = 300
 
@@ -449,13 +453,13 @@ if PLOT_BPCBS:
     ps.save_fig("cbs_bpcbs_times_density_05_bw")
 
 if PLOT_COSTS:
-    ps.setupfig(halfsize = True)
-    plt_costs(lns_costs_05, nrwcbs_costs_05)
-    ps.save_fig("costs_test")
+    # ps.setupfig(halfsize = True)
+    # plt_costs(lns_costs_05, nrwcbs_costs_05)
+    # ps.save_fig("costs_test")
 
     ps.setupfig(halfsize = True)
     plt_costs(lns_suboptimality_05, nrwcbs_suboptimality_05)
-    ps.save_fig("costs_test_suboptimality")
+    ps.save_fig("suboptimality_plot")
 
 
 if PLOT_AGENTS_DENSITY:
