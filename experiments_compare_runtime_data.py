@@ -315,12 +315,12 @@ lns_data_lst = []
 
 DO_X = 0
 DO_NRWCBS = 0
-DO_CBS = 1
+DO_CBS = 0
 DO_NWCBS = 0
 DO_LNS = 0
-DO_BPCBS = 1
-
-LNS_ACBS_BOUNDS = 0
+DO_BPCBS = 0
+name_prefix = ""
+LNS_ACBS_BOUNDS = 1
 
 for i in range(args.trials):
     # if i == 16:
@@ -404,16 +404,13 @@ for i in range(args.trials):
                                     nrwcbs_runtimes,
                                     nrwcbs_ratios,
                                     nrwcbs_costs))
-        if (len(nrwcbs_runtimes) > 0):
-            print(nrwcbs_runtimes[0])
-        
-        try:
+        if (len(nrwcbs_runtimes) > 1):
             print(nrwcbs_runtimes[-2])
-            lns_timeout = nrwcbs_runtimes[-2]
-        except:
-            lns_timeout = args.timeout
+        else:
+            print(nrwcbs_runtimes)
+            
         print("LNS")
-        lns_runtimes, lns_costs = run_lns(lns_timeout)
+        lns_runtimes, lns_costs = run_lns(args.timeout)
         lns_data_lst.append(sh.LNSData(args.obs_density,
                                     args.width,
                                     args.height,
@@ -421,9 +418,10 @@ for i in range(args.trials):
                                     args.timeout,
                                     lns_runtimes,
                                     lns_costs))
-        
         if (len(lns_runtimes) > 0):
             print(lns_runtimes[0])
+
+        name_prefix = "bounds"
 
     if DO_NRWCBS:
         print("NRWCBS")
@@ -532,9 +530,9 @@ if DO_LNS:
     lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 if LNS_ACBS_BOUNDS:
-    sh.save_to_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
+    sh.save_to_file("bounds_nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
     nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
-    sh.save_to_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
+    sh.save_to_file("bounds_lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
     lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 
