@@ -531,9 +531,9 @@ if DO_LNS:
 
 if LNS_ACBS_BOUNDS:
     sh.save_to_file("bounds_nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)), nrwcbs_data_lst)
-    nrwcbs_data_lst = sh.read_from_file("nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+    nrwcbs_data_lst = sh.read_from_file("bounds_nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
     sh.save_to_file("bounds_lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
-    lns_data_lst = sh.read_from_file("lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+    lns_data_lst = sh.read_from_file("bounds_lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 
 # Ensures data can be reloaded properly
