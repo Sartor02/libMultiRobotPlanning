@@ -256,8 +256,8 @@ bpcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/bpcbs_s
 bpcbs_datas_density_05 = [x for lst in bpcbs_datas_density_05 for x in lst]
 bpcbs_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in bpcbs_datas_density_05]
 
-lns_bounds_filename = "datasave/bounds_lns_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.01timeout10trials10width100.datasave"
-nrwcbs_bounds_filename = "datasave/bounds_nrwcbs_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.01timeout10trials10width100.datasave"
+lns_bounds_filename = "datasave/bounds_lns_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.1timeout10trials10width100.datasave"
+nrwcbs_bounds_filename = "datasave/bounds_nrwcbs_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.1timeout10trials10width100.datasave"
 
 lns_costs_05 = read_from_file(lns_bounds_filename)
 nrwcbs_costs_05 = read_from_file(nrwcbs_bounds_filename)
@@ -278,12 +278,20 @@ lns_suboptimality_05 = []
 for i in range(len(lns_suboptimality_05_t)):
     if (len(nrwcbs_costs_05_t[i][0]) < 2):
         continue
+    try:
+        if (nrwcbs_suboptimality_05_t[i][1][-2] > 1.010):
+            continue
+    except:
+        pass
     denominator = nrwcbs_costs_05_t[i][1][0] / nrwcbs_suboptimality_05_t[i][1][0]
     nrwcbs_suboptimality_05.append([nrwcbs_suboptimality_05_t[i][0][:-1], nrwcbs_suboptimality_05_t[i][1][:-1]])
     suboptimality_bounds = []
     for cost in lns_suboptimality_05_t[i][1]:
         suboptimality_bounds.append(cost / denominator) 
     lns_suboptimality_05.append([lns_suboptimality_05_t[i][0], suboptimality_bounds])
+
+    nrwcbs_suboptimality_05[-1][0].append(10)
+    nrwcbs_suboptimality_05[-1][1].append(nrwcbs_suboptimality_05[-1][1][-1])
 
 # for i in range(len(lns_costs_05_t)):
 #     if nrwcbs_costs_05_t[i][1][-1] == -1:
@@ -349,12 +357,13 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
 
 def plt_costs(lns, nrwcbs):
     size = 1
-    for i in range(7):
-        color = ps.color(0, 4)
-        colort = ps.alpha(color, 0.4)
+    color = ps.color(0, 4)
+    colort = ps.alpha(color, 0.4)
+    for i in range(len(nrwcbs)):    
         plt.plot(lns[i][0], lns[i][1], markersize=size, c=colort, marker='o')
-        color = ps.color(2, 4)
-        colort = ps.alpha(color, 0.4)
+    color = ps.color(2, 4)
+    colort = ps.alpha(color, 0.4)
+    for i in range(len(nrwcbs)):
         plt.plot(nrwcbs[i][0], nrwcbs[i][1], markersize=size, c=colort, marker='o')
     # for i in range(9, 18):
     #     color = ps.color(0, 4)
@@ -436,8 +445,8 @@ min_time = 1 / 200000
 max_time = 2000
 PLOT_AGENTS_DENSITY = 0
 PLOT_BOUNDS = 0
-PLOT_SANDBOX = 0
-PLOT_COSTS = 1
+PLOT_SANDBOX = 1
+PLOT_COSTS = 0
 PLOT_BPCBS = 0
 
 if PLOT_BPCBS:
@@ -692,8 +701,8 @@ if PLOT_SANDBOX:
 
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_first_times_density_01)
-    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_first_times_density_01, "NWCBS Valid", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid (Ours)", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_01, "NWCBS Valid (Ours)", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
     plt_bw(lns_agents_first_times_density_01, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
     plt_bw(xstar_agents_first_times_density_01, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
     plt_bw(cbs_agents_times_density_01, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
@@ -704,8 +713,8 @@ if PLOT_SANDBOX:
 
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_first_times_density_1)
-    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_first_times_density_1, "NWCBS Valid", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid (Ours)", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_1, "NWCBS Valid (Ours)", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
     plt_bw(lns_agents_first_times_density_1, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
     plt_bw(xstar_agents_first_times_density_1, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
     plt_bw(cbs_agents_times_density_1, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
@@ -716,8 +725,8 @@ if PLOT_SANDBOX:
 
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_optimal_times_density_1)
-    plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt.", 0, 4, False, 0, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_optimal_times_density_1, "NWCBS Opt.", 1, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt. (Ours)", 0, 4, False, 0, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_optimal_times_density_1, "NWCBS Opt. (Ours)", 1, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
     plt_bw(xstar_agents_optimal_times_density_1, "X* Opt.", 2, 4, False, 2, num_pos=4, position_offset=0.12, plot_width=0.06)
     plt_bw(cbs_agents_times_density_1, "CBS", 3, 4, False, 3, num_pos=4, position_offset=0.12, plot_width=0.06)
     ps.grid()
@@ -727,8 +736,8 @@ if PLOT_SANDBOX:
 
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_optimal_times_density_01)
-    plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt.", 0, 4, False, 0, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_optimal_times_density_01, "NWCBS Opt.", 1, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt. (Ours)", 0, 4, False, 0, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_optimal_times_density_01, "NWCBS Opt. (Ours)", 1, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
     plt_bw(xstar_agents_optimal_times_density_01, "X* Opt.", 2, 4, False, 2, num_pos=4, position_offset=0.12, plot_width=0.06)
     plt_bw(cbs_agents_times_density_01, "CBS", 3, 4, False, 3, num_pos=4, position_offset=0.12, plot_width=0.06)
     ps.grid()
