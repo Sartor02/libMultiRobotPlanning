@@ -321,16 +321,16 @@ lns_data_lst = []
 # xstar_list = []
 
 DO_X = 0
-DO_NRWCBS = 1
+DO_NRWCBS = 0
 DO_CBS = 0
 DO_NWCBS = 0
 DO_LNS = 0
 DO_BPCBS = 0
 name_prefix = ""
-LNS_ACBS_BOUNDS = 0
+LNS_ACBS_BOUNDS = 1
 
 for i in range(args.trials):
-    i = 28
+    i = 19
     # if i == 16:
     #     sys.exit()
     print("Trial {}:==============================================".format(i))
@@ -416,11 +416,13 @@ for i in range(args.trials):
                                     nrwcbs_costs))
         if (len(nrwcbs_runtimes) > 1):
             print(nrwcbs_runtimes[-2])
+            lns_timeout = nrwcbs_runtimes[-2]
         else:
             print(nrwcbs_runtimes)
+            lns_timeout = args.timeout
             
         print("LNS")
-        lns_runtimes, lns_costs = run_lns(args.timeout)
+        lns_runtimes, lns_costs = run_lns(lns_timeout)
         lns_data_lst.append(sh.LNSData(args.obs_density,
                                     args.width,
                                     args.height,
@@ -482,9 +484,7 @@ for i in range(args.trials):
                                     args.timeout,
                                     nwcbs_runtimes,
                                     nwcbs_ratios))
-    
-    print(nrwcbs_costs)
-    print(nrwcbs_ratios)
+
     sys.exit()
         # for i in range(1, len(nwcbs_ratios)):
         #     if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
