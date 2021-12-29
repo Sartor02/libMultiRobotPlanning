@@ -331,18 +331,23 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
     xs = sorted(agents_to_times_dict.keys())
     positions = [e + current_offset for e in range(1, len(xs) + 1)]
     values = [agents_to_times_dict[k] for k in xs]
-    color = ps.color(plt_idx, max_idx)
+    color = ps.color_red(plt_idx, max_idx)
+    if "(Ours)" in name:
+        color = ps.color_blue(plt_idx, max_idx)
     colort = ps.alpha(color, 0.5)
+    ps.draw_minor([1/100000, 1/10000,1/1000,1/100, 1/10, 1, 10, 100, 1000])
     bplot = plt.boxplot(values, 
         patch_artist=True, 
-        whis=1.0,
+        whis=1.5,
         boxprops=dict(facecolor=colort, color=colort),
         flierprops=dict(marker='.', markersize=1, color=colort, markeredgecolor=color),
         capprops=dict(color=color),
         whiskerprops=dict(color=colort),
         medianprops=dict(color=color),
         widths=plot_width,
-        positions=positions
+        positions=positions,
+        # sym='',
+        zorder=1000
         # 
         )
     label_string="{}".format(name)
@@ -354,6 +359,10 @@ def plt_bw(agents_times_lst, name, plt_idx, max_idx, show_y_axis, pos_idx, num_p
         plt.ylabel("Time (seconds)")
     plt.xlabel("Number of agents")
     plt.xticks([e + 1 for e in range(len(xs))], xs)
+    plt.yticks([1/100000, 1/10000,1/1000,1/100, 1/10, 1, 10, 100, 1000])
+    ps.draw_minor([1/100000, 1/10000,1/1000,1/100, 1/10, 1, 10, 100, 1000])
+    # plt.yscale('log', subs=[2, 3, 4, 5, 6, 7, 8, 9])
+    # plt.grid(True,which="both")
 
 def plt_costs(lns, nrwcbs):
     size = 1
@@ -701,11 +710,11 @@ if PLOT_SANDBOX:
 
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_first_times_density_01)
-    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid (Ours)", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_first_times_density_01, "NWCBS Valid (Ours)", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(lns_agents_first_times_density_01, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(xstar_agents_first_times_density_01, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(cbs_agents_times_density_01, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nrwcbs_agents_first_times_density_01, "ACBS Valid (Ours)", 0, 4, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_01, "NWCBS Valid (Ours)", 2, 4, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(lns_agents_first_times_density_01, "LNS Valid", 0, 6, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_first_times_density_01, "X* Valid", 2, 6, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_01, "CBS Valid/Opt.", 4, 6, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
     ps.grid()
     ps.legend('br')
     plt.ylim(min_time, max_time)
@@ -713,11 +722,11 @@ if PLOT_SANDBOX:
 
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_first_times_density_1)
-    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid (Ours)", 0, 5, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_first_times_density_1, "NWCBS Valid (Ours)", 1, 5, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(lns_agents_first_times_density_1, "LNS Valid", 2, 5, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(xstar_agents_first_times_density_1, "X* Valid", 3, 5, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
-    plt_bw(cbs_agents_times_density_1, "CBS Valid/Opt.", 4, 5, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nrwcbs_agents_first_times_density_1, "ACBS Valid (Ours)", 0, 4, False, 0, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_first_times_density_1, "NWCBS Valid (Ours)", 2, 4, False, 1, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(lns_agents_first_times_density_1, "LNS Valid", 0, 6, False, 2, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_first_times_density_1, "X* Valid", 2, 6, False, 3, num_pos=5, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_1, "CBS Valid/Opt.", 4, 6, False, 4, num_pos=5, position_offset=0.12, plot_width=0.06)
     ps.grid()
     ps.legend('br')
     plt.ylim(min_time, max_time)
@@ -726,9 +735,9 @@ if PLOT_SANDBOX:
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_optimal_times_density_1)
     plt_bw(nrwcbs_agents_optimal_times_density_1, "ACBS Opt. (Ours)", 0, 4, False, 0, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_optimal_times_density_1, "NWCBS Opt. (Ours)", 1, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(xstar_agents_optimal_times_density_1, "X* Opt.", 2, 4, False, 2, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(cbs_agents_times_density_1, "CBS", 3, 4, False, 3, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_optimal_times_density_1, "NWCBS Opt. (Ours)", 2, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_optimal_times_density_1, "X* Opt.", 2, 6, False, 2, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_1, "CBS", 4, 6, False, 3, num_pos=4, position_offset=0.12, plot_width=0.06)
     ps.grid()
     ps.legend('br')
     plt.ylim(min_time, max_time)
@@ -737,9 +746,9 @@ if PLOT_SANDBOX:
     ps.setupfig(halfsize=True)
     draw_timeout_data(kTimeout, xstar_agents_optimal_times_density_01)
     plt_bw(nrwcbs_agents_optimal_times_density_01, "ACBS Opt. (Ours)", 0, 4, False, 0, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(nwcbs_agents_optimal_times_density_01, "NWCBS Opt. (Ours)", 1, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(xstar_agents_optimal_times_density_01, "X* Opt.", 2, 4, False, 2, num_pos=4, position_offset=0.12, plot_width=0.06)
-    plt_bw(cbs_agents_times_density_01, "CBS", 3, 4, False, 3, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(nwcbs_agents_optimal_times_density_01, "NWCBS Opt. (Ours)", 2, 4, False, 1, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(xstar_agents_optimal_times_density_01, "X* Opt.", 2, 6, False, 2, num_pos=4, position_offset=0.12, plot_width=0.06)
+    plt_bw(cbs_agents_times_density_01, "CBS", 4, 6, False, 3, num_pos=4, position_offset=0.12, plot_width=0.06)
     ps.grid()
     ps.legend('br')
     plt.ylim(min_time, max_time)

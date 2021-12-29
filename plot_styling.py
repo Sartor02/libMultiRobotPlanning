@@ -71,17 +71,35 @@ def setupfig(current_fig=None, halfsize=False, thirdsize=False, quartersize=Fals
     if quartersize:
         halfsize_scale = 0.19
     fig.set_size_inches(7 /kScaleDown * 1.58 * halfsize_scale , 7.8 / kScaleDown / 1.61 * kVerticalScale, forward=True)
+    # fig.set_size_inches(7 /kScaleDown * 1.58 * halfsize_scale , 13.8 / kScaleDown / 1.61 * kVerticalScale, forward=True)
     plt.gca().set_axisbelow(True)
 
 def grid(plt=plt):
     plt.grid(linewidth=linewidth/2)
     plt.grid(which='minor', color=minor_tick_color, linestyle='--', alpha=0.7, clip_on=True, linewidth=linewidth/4)
 
+def draw_minor(ticks, plt=plt):
+    for i in ticks:
+        for x in range(10):
+            plt.axhline(i*x, color=minor_tick_color, linestyle='--', alpha=0.7, clip_on=True, linewidth=linewidth/4, dashes=(8,4), zorder = 0)
+
 def color(count, total_elements):
     start = 0.2
     stop = 0.8
     cm_subsection = np.linspace(start, stop, total_elements) 
     return [ matplotlib.cm.magma(x) for x in cm_subsection ][count]
+
+def color_red(count, total_elements):
+    start = 0.2
+    stop = 0.8
+    cm_subsection = np.linspace(start, stop, total_elements) 
+    return [ matplotlib.cm.autumn(x) for x in cm_subsection ][count]
+
+def color_blue(count, total_elements):
+    start = 0.2
+    stop = 0.8
+    cm_subsection = np.linspace(start, stop, total_elements) 
+    return [ matplotlib.cm.winter(x) for x in cm_subsection ][count]
 
 def alpha(color, val=0.5):
     assert(type(color) == tuple)
