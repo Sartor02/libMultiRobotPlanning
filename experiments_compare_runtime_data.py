@@ -330,7 +330,6 @@ name_prefix = ""
 LNS_ACBS_BOUNDS = 1
 
 for i in range(args.trials):
-    i = 19
     # if i == 16:
     #     sys.exit()
     print("Trial {}:==============================================".format(i))
@@ -338,9 +337,6 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
-
-    if args.agents == 50 and i == 15:
-        continue
 
     if DO_X:
         print("X*")
@@ -485,7 +481,6 @@ for i in range(args.trials):
                                     nwcbs_runtimes,
                                     nwcbs_ratios))
 
-    sys.exit()
         # for i in range(1, len(nwcbs_ratios)):
         #     if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
         #         print("{}, {}".format(nwcbs_ratios[i-1], nwcbs_ratios[i]))
