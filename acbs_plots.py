@@ -256,54 +256,77 @@ bpcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/bpcbs_s
 bpcbs_datas_density_05 = [x for lst in bpcbs_datas_density_05 for x in lst]
 bpcbs_agents_times_density_05 = [(x.num_agents, x.runtimes) for x in bpcbs_datas_density_05]
 
-lns_bounds_filename = "datasave/bounds_lns_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.1timeout10trials10width100.datasave"
-nrwcbs_bounds_filename = "datasave/bounds_nrwcbs_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.1timeout10trials10width100.datasave"
+# BOUNDS TABLE DATA
 
-lns_costs_05 = read_from_file(lns_bounds_filename)
-nrwcbs_costs_05 = read_from_file(nrwcbs_bounds_filename)
+bounds_nrwcbs_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/bounds_nrwcbs_supplemental_data_lst_*density0.1timeout{}*'.format(30))]
+bounds_nrwcbs_datas_density_1 = [x for lst in bounds_nrwcbs_datas_density_1 for x in lst]
+bounds_nrwcbs_1 = {i*10 : [] for i in range(1, 7)}
+for data in bounds_nrwcbs_datas_density_1:
+    bounds_nrwcbs_1[data.num_agents].append(data)
 
-nrwcbs_costs_05_t = [[inst.runtimes, inst.costs] for inst in nrwcbs_costs_05]
-lns_costs_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
+bounds_nrwcbs_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/bounds_nrwcbs_supplemental_data_lst_*density0.01timeout{}*'.format(30))]
+bounds_nrwcbs_datas_density_01 = [x for lst in bounds_nrwcbs_datas_density_01 for x in lst]
+bounds_nrwcbs_01 = {i*10 : [] for i in range(1, 7)}
+for data in bounds_nrwcbs_datas_density_01:
+    bounds_nrwcbs_01[data.num_agents].append(data)
 
-nrwcbs_suboptimality_05_t = [[inst.runtimes, inst.ratios] for inst in nrwcbs_costs_05]
-lns_suboptimality_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
+bounds_nrwcbs_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/bounds_nrwcbs_supplemental_data_lst_*density0.05timeout{}*'.format(30))]
+bounds_nrwcbs_datas_density_05 = [x for lst in bounds_nrwcbs_datas_density_05 for x in lst]
+bounds_nrwcbs_05 = {i*10 : [] for i in range(1, 7)}
+for data in bounds_nrwcbs_datas_density_05:
+    bounds_nrwcbs_05[data.num_agents].append(data)
 
-# nrwcbs_costs_05 = []
-# lns_costs_05 = []
+bounds_lns_datas_density_1 = [read_from_file(f) for f in glob.glob('datasave/bounds_lns_supplemental_data_lst_*density0.1timeout{}*'.format(30))]
+bounds_lns_datas_density_1 = [x for lst in bounds_lns_datas_density_1 for x in lst]
+bounds_lns_1 = {i*10 : [] for i in range(1, 7)}
+for data in bounds_lns_datas_density_1:
+    bounds_lns_1[data.num_agents].append(data)
 
-nrwcbs_suboptimality_05 = []
-lns_suboptimality_05 = []
+bounds_lns_datas_density_01 = [read_from_file(f) for f in glob.glob('datasave/bounds_lns_supplemental_data_lst_*density0.01timeout{}*'.format(30))]
+bounds_lns_datas_density_01 = [x for lst in bounds_lns_datas_density_01 for x in lst]
+bounds_lns_01 = {i*10 : [] for i in range(1, 7)}
+for data in bounds_lns_datas_density_01:
+    bounds_lns_01[data.num_agents].append(data)
 
-# for suboptimality bounds
-for i in range(len(lns_suboptimality_05_t)):
-    if (len(nrwcbs_costs_05_t[i][0]) < 2):
-        continue
-    try:
-        if (nrwcbs_suboptimality_05_t[i][1][-2] > 1.010):
-            continue
-    except:
-        pass
-    denominator = nrwcbs_costs_05_t[i][1][0] / nrwcbs_suboptimality_05_t[i][1][0]
-    nrwcbs_suboptimality_05.append([nrwcbs_suboptimality_05_t[i][0][:-1], nrwcbs_suboptimality_05_t[i][1][:-1]])
-    suboptimality_bounds = []
-    for cost in lns_suboptimality_05_t[i][1]:
-        suboptimality_bounds.append(cost / denominator) 
-    lns_suboptimality_05.append([lns_suboptimality_05_t[i][0], suboptimality_bounds])
+bounds_lns_datas_density_05 = [read_from_file(f) for f in glob.glob('datasave/bounds_lns_supplemental_data_lst_*density0.05timeout{}*'.format(30))]
+bounds_lns_datas_density_05 = [x for lst in bounds_lns_datas_density_05 for x in lst]
+bounds_lns_05 = {i*10 : [] for i in range(1, 7)}
+for data in bounds_lns_datas_density_05:
+    bounds_lns_05[data.num_agents].append(data)
 
-    nrwcbs_suboptimality_05[-1][0].append(10)
-    nrwcbs_suboptimality_05[-1][1].append(nrwcbs_suboptimality_05[-1][1][-1])
+# lns_bounds_filename = "datasave/bounds_lns_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.1timeout10trials10width100.datasave"
+# nrwcbs_bounds_filename = "datasave/bounds_nrwcbs_supplemental_data_lst_Namespaceagents20height100memory_limit16obs_density0.1timeout10trials10width100.datasave"
 
-# for i in range(len(lns_costs_05_t)):
-#     if nrwcbs_costs_05_t[i][1][-1] == -1:
-#         nrwcbs_costs_05.append([nrwcbs_costs_05_t[i][0][:-1], nrwcbs_costs_05_t[i][1][:-1]])
-#         lns_costs_05.append(lns_costs_05_t[i])
+# lns_costs_05 = read_from_file(lns_bounds_filename)
+# nrwcbs_costs_05 = read_from_file(nrwcbs_bounds_filename)
 
-# for i in range(len(lns_costs_05)):
-#     opt_cost = nrwcbs_costs_05[i][1][-1]
-#     for j in range(len(lns_costs_05[i][1])):
-#         lns_costs_05[i][1][j] /= opt_cost
-#     for j in range(len(nrwcbs_costs_05[i][1])):
-#         nrwcbs_costs_05[i][1][j] /= opt_cost
+# nrwcbs_costs_05_t = [[inst.runtimes, inst.costs] for inst in nrwcbs_costs_05]
+# lns_costs_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
+
+# nrwcbs_suboptimality_05_t = [[inst.runtimes, inst.ratios] for inst in nrwcbs_costs_05]
+# lns_suboptimality_05_t = [[inst.runtimes, inst.costs] for inst in lns_costs_05]
+
+# nrwcbs_suboptimality_05 = []
+# lns_suboptimality_05 = []
+
+# # for suboptimality bounds
+# for i in range(len(lns_suboptimality_05_t)):
+#     if (len(nrwcbs_costs_05_t[i][0]) < 2):
+#         continue
+#     try:
+#         if (nrwcbs_suboptimality_05_t[i][1][-2] > 1.010):
+#             continue
+#     except:
+#         pass
+#     denominator = nrwcbs_costs_05_t[i][1][0] / nrwcbs_suboptimality_05_t[i][1][0]
+#     nrwcbs_suboptimality_05.append([nrwcbs_suboptimality_05_t[i][0][:-1], nrwcbs_suboptimality_05_t[i][1][:-1]])
+#     suboptimality_bounds = []
+#     for cost in lns_suboptimality_05_t[i][1]:
+#         suboptimality_bounds.append(cost / denominator) 
+#     lns_suboptimality_05.append([lns_suboptimality_05_t[i][0], suboptimality_bounds])
+
+#     nrwcbs_suboptimality_05[-1][0].append(10)
+#     nrwcbs_suboptimality_05[-1][1].append(nrwcbs_suboptimality_05[-1][1][-1])
 
 kRadiusTimeout = 300
 
@@ -448,15 +471,90 @@ def plt_bounds(bounds_data, show_y_axis, planner_name,  acbs=False):
         plt.ylabel("$\epsilon$-suboptimality Bound")
     plt.xlabel("{} Iterations".format(planner_name))
 
+
+def get_lns_opt_time(runtimes, costs, opt):
+    # print(opt,end=": ")
+    for i in range(len(costs)):
+        # print(costs[i], end=" ")
+        if costs[i] == opt:
+            return runtimes[i]
+    return 100000003
+    
+
 # PLOTS
 
 min_time = 1 / 200000
 max_time = 2000
 PLOT_AGENTS_DENSITY = 0
 PLOT_BOUNDS = 0
-PLOT_SANDBOX = 1
+PLOT_SANDBOX = 0
 PLOT_COSTS = 0
 PLOT_BPCBS = 0
+WRITE_TABLE = 1
+
+if WRITE_TABLE:
+    # out = open("acbs_lns_table.csv", "w")
+    # what fraction of testcses are individual path costs
+
+    nrwcbs_better_01 = {i : 0 for i in range(10, 70, 10)}    
+    frac_ind_01 = {i : 0 for i in range(10, 70, 10)}
+    for num_agents in range(10, 70, 10):
+        num_casses = 0
+        for i in range(len(bounds_nrwcbs_01[num_agents])):
+            if bounds_nrwcbs_01[num_agents][i].runtimes[-1] != -1:
+                # print("TIMEOUT 01, agent: {}".format(num_agents))
+                continue
+            num_casses+=1
+            if abs(bounds_nrwcbs_01[num_agents][i].runtimes[0] / bounds_nrwcbs_01[num_agents][i].runtimes[-2] - bounds_nrwcbs_01[num_agents][i].ratios[0]) < 0.00001:
+                # we know individual path cost is the same0
+                frac_ind_01[num_agents] += 1
+            if bounds_nrwcbs_01[num_agents][i].runtimes[-2] < get_lns_opt_time(bounds_lns_01[num_agents][i].runtimes, bounds_lns_01[num_agents][i].costs, bounds_nrwcbs_01[num_agents][i].costs[-2]):
+                nrwcbs_better_01[num_agents]+=1
+        if num_casses == 0:
+            frac_ind_01[num_agents] = -1
+            continue
+        # frac_ind_01[num_agents] /= 30
+
+    print("1 Percent obstacles")
+    print(frac_ind_01)
+    print(nrwcbs_better_01)
+    print()
+
+    frac_ind_05 = {i : 0 for i in range(10, 70, 10)}
+    for num_agents in range(10, 70, 10):
+        num_casses = 0
+        for i in range(len(bounds_nrwcbs_05[num_agents])):
+            if bounds_nrwcbs_05[num_agents][i].runtimes[-1] != -1:
+                # print("TIMEOUT 05, agent: {}".format(num_agents))
+                continue
+            num_casses+=1
+            if abs(bounds_nrwcbs_05[num_agents][i].runtimes[0] / bounds_nrwcbs_05[num_agents][i].runtimes[-2] - bounds_nrwcbs_05[num_agents][i].ratios[0]) < 0.00001:
+                # we know individual path cost is the same
+                frac_ind_05[num_agents] += 1
+        if num_casses == 0:
+            frac_ind_05[num_agents] = -1
+            continue
+        # frac_ind_05[num_agents] /= 30
+
+    print(frac_ind_05)
+
+    frac_ind_1 = {i : 0 for i in range(10, 70, 10)}
+    for num_agents in range(10, 70, 10):
+        num_casses = 0
+        for i in range(len(bounds_nrwcbs_1[num_agents])):
+            if bounds_nrwcbs_1[num_agents][i].runtimes[-1] != -1:
+                # print("TIMEOUT 1, agent: {}".format(num_agents))
+                continue
+            num_casses+=1
+            if abs(bounds_nrwcbs_1[num_agents][i].runtimes[0] / bounds_nrwcbs_1[num_agents][i].runtimes[-2] - bounds_nrwcbs_1[num_agents][i].ratios[0]) < 0.00001:
+                # we know individual path cost is the same
+                frac_ind_1[num_agents] += 1
+        if num_casses == 0:
+            frac_ind_1[num_agents] = -1
+            continue
+        # frac_ind_1[num_agents] /= 30
+    
+    print(frac_ind_1)
 
 if PLOT_BPCBS:
     min_time = 1 / 20000
