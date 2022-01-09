@@ -303,6 +303,13 @@ def run_pr(timeout):
     f.close()
     return (planned_cost / opt_cost, runtime)
 
+def run_individual(timeout):
+    cmd = "timeout {} release/individual_planner -i {} -o simple_test_ind{}.result".format(timeout, generic_map, args_to_string(args))
+    retcode = run_with_current_proc(cmd)
+    if (retcode != 0):
+        return -1
+    return int(open("simple_test_ind{}.result".format(args_to_string(args))).readline())
+
 xstar_data_lst = []
 mstar_data_lst = []
 afs_data_lst = []
@@ -313,6 +320,7 @@ nrwcbs_data_lst = []
 nwcbs_data_lst = []
 pr_data_lst = []
 lns_data_lst = []
+ind_data_lst = []
 
 # xstar_first_list = []
 # acbs_first_list = []
@@ -321,15 +329,17 @@ lns_data_lst = []
 # xstar_list = []
 
 DO_X = 0
-DO_NRWCBS = 0
+DO_INDIVIDUAL = 0
+DO_NRWCBS = 1
 DO_CBS = 0
-DO_NWCBS = 0
+DO_NWCBS = 1
 DO_LNS = 0
 DO_BPCBS = 0
 name_prefix = ""
-LNS_ACBS_BOUNDS = 1
+LNS_ACBS_BOUNDS = 0
 
 for i in range(args.trials):
+    i = 2
     # if i == 16:
     #     sys.exit()
     print("Trial {}:==============================================".format(i))
@@ -337,6 +347,16 @@ for i in range(args.trials):
     generate_new_scenario(args.agents, args.width, args.height, args.obs_density, seed)
 
     print(generic_map)
+
+    if DO_INDIVIDUAL:
+        print('INDIVIDUAL PATH COST')
+        ind_cost = run_individual(args.timeout)
+        ind_data_lst.append(sh.IndData(args.obs_density,
+                                        args.width,
+                                        args.height,
+                                        args.agents,
+                                        ind_cost))
+        print(ind_cost)
 
     if DO_X:
         print("X*")
@@ -443,7 +463,7 @@ for i in range(args.trials):
                                     nrwcbs_ratios,
                                     nrwcbs_costs))
         if (len(nrwcbs_runtimes) > 1):
-            print(nrwcbs_runtimes[-2])
+            print(nrwcbs_runtimes[0])
         else:
             print(nrwcbs_runtimes)
         # for i in range(1, len(nrwcbs_ratios)):
@@ -480,6 +500,10 @@ for i in range(args.trials):
                                     args.timeout,
                                     nwcbs_runtimes,
                                     nwcbs_ratios))
+        try:
+            print(nwcbs_runtimes[0])
+        except:
+            print("no runtimes")
 
         # for i in range(1, len(nwcbs_ratios)):
         #     if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
@@ -509,7 +533,7 @@ for i in range(args.trials):
     #                                args.timeout,
     #                                pr_bounds,
     #                                pr_runtimes))
-
+sys.exit()
 
 if DO_X:
     sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
@@ -542,6 +566,10 @@ if LNS_ACBS_BOUNDS:
     nrwcbs_data_lst = sh.read_from_file("bounds_nrwcbs_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
     sh.save_to_file("bounds_lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)), lns_data_lst)
     lns_data_lst = sh.read_from_file("bounds_lns_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
+
+if DO_INDIVIDUAL:
+    sh.save_to_file("ind_{}data_lst_{}".format(outfile_infix, args_to_string(args)), ind_data_lst)
+    ind_data_lst = sh.read_from_file("ind_{}data_lst_{}".format(outfile_infix, args_to_string(args)))
 
 
 # Ensures data can be reloaded properly

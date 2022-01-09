@@ -8,7 +8,7 @@ def set_font(size):
                             'text.usetex': False,
                             # Use the Computer modern font
                             'font.family': 'serif',
-                            'font.serif': ['cmr10'],
+                            'font.serif': ['Times New Roman'],
                             'font.size' : size,
                             'mathtext.fontset': 'cm',
                             # Use ASCII minus
@@ -45,12 +45,12 @@ def set_font(size):
     #                         })
 linewidth = 0.5
 minor_tick_color = (0.9, 0.9, 0.9)
-kFontSize = 6
+kFontSize = 8
 
 legend_handles = []
 legend_labels = []
 
-def setupfig(current_fig=None, halfsize=False, thirdsize=False, quartersize=False):
+def setupfig(current_fig=None, halfsize=False, thirdsize=False, quartersize=False, acbssize=False):
     global legend_handles
     global legend_labels
     legend_handles = []
@@ -70,6 +70,8 @@ def setupfig(current_fig=None, halfsize=False, thirdsize=False, quartersize=Fals
         halfsize_scale = 0.30
     if quartersize:
         halfsize_scale = 0.19
+    if acbssize:
+        halfsize_scale = 0.7
     fig.set_size_inches(7 /kScaleDown * 1.58 * halfsize_scale , 7.8 / kScaleDown / 1.61 * kVerticalScale, forward=True)
     # fig.set_size_inches(7 /kScaleDown * 1.58 * halfsize_scale , 13.8 / kScaleDown / 1.61 * kVerticalScale, forward=True)
     plt.gca().set_axisbelow(True)
