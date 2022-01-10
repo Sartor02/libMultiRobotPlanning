@@ -257,6 +257,7 @@ def run_nwcbs(timeout):
     cmd = "timeout {} release/nwcbs -i {} -o simple_test_nwcbs{}.result".format(timeout, generic_map, args_to_string(args))
     retcode = run_with_current_proc(cmd)
     df = pd.read_csv("simple_test_nwcbs{}.result".format(args_to_string(args)))
+    print(df)
     runtimes = list(df['Runtime'])
     ratios = list(df['Ratio'])
     if len(runtimes) == 0:
@@ -339,6 +340,7 @@ name_prefix = ""
 LNS_ACBS_BOUNDS = 0
 
 for i in range(args.trials):
+    i = 15
     # if i == 16:
     #     sys.exit()
     print("Trial {}:==============================================".format(i))
@@ -503,6 +505,7 @@ for i in range(args.trials):
             print(nwcbs_runtimes[0])
         except:
             print("no runtimes")
+sys.exit()
 
         # for i in range(1, len(nwcbs_ratios)):
         #     if nwcbs_ratios[i] > nwcbs_ratios[i-1]:
