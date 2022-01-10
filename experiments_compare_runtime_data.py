@@ -330,7 +330,7 @@ ind_data_lst = []
 
 DO_X = 0
 DO_INDIVIDUAL = 0
-DO_NRWCBS = 1
+DO_NRWCBS = 0
 DO_CBS = 0
 DO_NWCBS = 1
 DO_LNS = 0
@@ -339,7 +339,6 @@ name_prefix = ""
 LNS_ACBS_BOUNDS = 0
 
 for i in range(args.trials):
-    i = 2
     # if i == 16:
     #     sys.exit()
     print("Trial {}:==============================================".format(i))
@@ -533,7 +532,6 @@ for i in range(args.trials):
     #                                args.timeout,
     #                                pr_bounds,
     #                                pr_runtimes))
-sys.exit()
 
 if DO_X:
     sh.save_to_file("xstar_{}data_lst_{}".format(outfile_infix, args_to_string(args)), xstar_data_lst)
