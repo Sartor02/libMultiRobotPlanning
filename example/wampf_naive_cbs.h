@@ -48,7 +48,7 @@ class NWAStarGridWAMPFImplementation {
         path_(path) {}
 
   std::optional<Window> FirstCollisionWindow() {
-    auto res = FirstConflict();
+    auto res = FirstConflict(); // return where is the first conflict (res->first) and the agents involved (res->second)
     if (!res) {
       return {};
     }
@@ -79,7 +79,7 @@ class NWAStarGridWAMPFImplementation {
   }
 
   void PlanIn(Window* w) {
-    auto [start_idx, goal_idx] = GetStartEndIndices(*w);
+    auto [start_idx, goal_idx] = GetStartEndIndices(*w); // start e goal are the time indexes of the window
 
     std::vector<naive_cbs_wampf_impl::CBSState> start_state;
     JointState goal_state;
@@ -99,7 +99,7 @@ class NWAStarGridWAMPFImplementation {
     std::vector<PlanResult<naive_cbs_wampf_impl::CBSState,
                            naive_cbs_wampf_impl::CBSAction, int>>
         cbs_repair;
-    bool success = cbs.search(start_state, cbs_repair);
+    bool success = cbs.search(start_state, cbs_repair); // Use of CBS for path search
     if (!success) {
       w->Grow();
       PlanIn(w);
@@ -112,8 +112,17 @@ class NWAStarGridWAMPFImplementation {
       const size_t path_idx = w->agent_idxs_[i];
       NP_CHECK(path_idx < path_->size());
       auto& local_path = (*path_)[path_idx];
-      local_path = libMultiRobotPlanning::wampf::InsertPathRepair(
+     
+      // Check if goal_idx is greater than the last timestamp of the local path.
+      const auto local_goal_idx = local_path.states.back().second;
+      if (goal_idx > local_goal_idx) {
+        local_path = libMultiRobotPlanning::wampf::InsertPathRepair(
+          local_path, repair[i], start_idx, local_goal_idx);  
+      }
+      else{
+        local_path = libMultiRobotPlanning::wampf::InsertPathRepair(
           local_path, repair[i], start_idx, goal_idx);
+      }
     }
   }
 
